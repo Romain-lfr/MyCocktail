@@ -4,28 +4,28 @@
 
 SET SCHEMA 'MyCocktail';
 
-DELETE FROM MyCocktail._Dosage CASCADE; 
-DELETE FROM MyCocktail._Etape CASCADE;
-DELETE FROM MyCocktail._Cocktail CASCADE;
-DELETE FROM MyCocktail._Ingredients CASCADE;
-DELETE FROM MyCocktail._Ustensile CASCADE;
-DELETE FROM MyCocktail._Frigo CASCADE;
-DELETE FROM MyCocktail._Compte CASCADE;
-DELETE FROM MyCocktail._Etape_Ustensile CASCADE;
+DELETE FROM MyCocktail._dosage CASCADE; 
+DELETE FROM MyCocktail._etape CASCADE;
+DELETE FROM MyCocktail._cocktail CASCADE;
+DELETE FROM MyCocktail._ingredients CASCADE;
+DELETE FROM MyCocktail._ustensile CASCADE;
+DELETE FROM MyCocktail._frigo CASCADE;
+DELETE FROM MyCocktail._compte CASCADE;
+DELETE FROM MyCocktail._etape_ustensile CASCADE;
 
 
 -- 2. Compte (IDs en CO-XXXXX)
-INSERT INTO MyCocktail._Compte (idCompte, pseudo, mailCompte, mdpCompte, dateNaissance) VALUES  
+INSERT INTO MyCocktail._compte (idCompte, pseudo, mailCompte, mdpCompte, dateNaissance) VALUES  
     ('CO-00001', 'admin', 'admin@gmail.fr', 'password1234.', '1995-05-15'),
     ('CO-00002', 'Romain', 'romain@gmail.fr', 'password1234.', '2006-04-12'),
     ('CO-00003', 'Lise', 'lise@gmail.fr', 'password1234.', '1973-05-21');
 
 -- 2. Frigo (IDs en FR-XXXX)
-INSERT INTO MyCocktail._Frigo (idFrigo, idCompte) VALUES  
+INSERT INTO MyCocktail._frigo (idFrigo, idCompte) VALUES  
     ('FR-0001', 'CO-00001'); 
 
 -- 3. Ingrédients (IDs en IN-XXXX)
-INSERT INTO MyCocktail._Ingredients (idIngredients, nomIngredients, categorie) VALUES  
+INSERT INTO MyCocktail._ingredients (idIngredients, nomIngredients, categorie) VALUES  
     ('IN-0001', 'Rhum Blanc', 'Alcool'),
     ('IN-0002', 'Menthe', 'Herbe'),
     ('IN-0003', 'Sucre en poudre', 'Divers'),
@@ -37,18 +37,18 @@ INSERT INTO MyCocktail._Ingredients (idIngredients, nomIngredients, categorie) V
     ('IN-0009', 'Glaçon', 'Divers');
 
 -- 4. Ustensile (IDs en US-XXXX)
-INSERT INTO MyCocktail._Ustensile (idUstensile, nomUstensile) VALUES  
+INSERT INTO MyCocktail._ustensile (idUstensile, nomUstensile) VALUES  
     ('US-0001', 'Pilon'),
     ('US-0002', 'Shaker'),
     ('US-0003', 'Doseur');
 
 -- 5. Cocktail (IDs en CK-XXXX)
-INSERT INTO MyCocktail._Cocktail (idCocktail, nomCocktail, descriptionCocktail, difficulte, alcool, duree, prix, idCompte_Auteur) VALUES  
+INSERT INTO MyCocktail._cocktail (idCocktail, nomCocktail, descriptionCocktail, difficulte, alcool, duree, prix, idCompte_Auteur) VALUES  
     ('CK-0001', 'Mojito', 'Le classique cubain rafraîchissant.', 2, TRUE, '3 min', 4.50, 'CO-00001'),
     ('CK-0002', 'Tequila Sunrise', 'Le classique cubain rafraîchissant.', 2, TRUE, '3 min', 4.50, 'CO-00001');
 
 -- 6. Etape (IDs en E-XXXX)
-INSERT INTO MyCocktail._Etape (idEtape, descriptionEtape, numeroEtape, idCocktail) VALUES  
+INSERT INTO MyCocktail._etape (idEtape, descriptionEtape, numeroEtape, idCocktail) VALUES  
     ('ET-00001', 'Ajouter le sucre en poudre dans le verre, puis le jus d''1/2 citron vert.', 1, 'CK-0001'),
     ('ET-00002', 'Ecraser 4 feuilles de menthe, ajouter le rhum et compléter avec l''eau gazeuse.', 2, 'CK-0001'),
     ('ET-00003', 'Remuer et ajouter 1 branche de menthe.', 3, 'CK-0001'),
@@ -61,7 +61,7 @@ INSERT INTO MyCocktail._Etape (idEtape, descriptionEtape, numeroEtape, idCocktai
     
 
 -- 7. Dosage et etape_ingredients
-INSERT INTO MyCocktail._Dosage (idEtape, idIngredients, quantite, unite) VALUES  
+INSERT INTO MyCocktail._dosage (idEtape, idIngredients, quantite, unite) VALUES  
     ('ET-00001', 'IN-0003', 0.5 , 'cuillère'),
     ('ET-00001', 'IN-0005', 0.5, 'pièce'),
     ('ET-00002', 'IN-0002', 5, 'feuilles'),
@@ -77,7 +77,7 @@ INSERT INTO MyCocktail._Dosage (idEtape, idIngredients, quantite, unite) VALUES
     
     
 -- 8. Etape_ustensile
-INSERT INTO MyCocktail._Etape_Ustensile (idEtape, idUstensile) VALUES  
+INSERT INTO MyCocktail._etape_ustensile (idEtape, idUstensile) VALUES  
     ('ET-00002', 'US-0001'),
     ('ET-00002', 'US-0003');
     
