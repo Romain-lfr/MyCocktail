@@ -1,0 +1,299 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model avis {
+  idavis          String        @id @db.VarChar(13)
+  idcocktail      String        @db.VarChar(13)
+  idcompte        String        @db.VarChar(13)
+  noteavis        Int
+  titreavis       String        @db.VarChar(100)
+  descriptionavis String
+  dateavis        DateTime      @default(now()) @db.Timestamptz(6)
+  cocktail        cocktail      @relation(fields: [idcocktail], references: [idcocktail], onDelete: Cascade, onUpdate: NoAction, map: "fk_avis_cocktail")
+  compte          compte        @relation(fields: [idcompte], references: [idcompte], onDelete: Cascade, onUpdate: NoAction, map: "fk_avis_compte")
+  image_avis      image_avis[]
+  reponse         reponse[]
+  signalement     signalement[]
+
+  @@unique([idcocktail, idcompte], map: "uq_avis_unique")
+  @@map("_avis")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model cocktail {
+  idcocktail     String           @id @db.VarChar(13)
+  nomcocktail    String           @db.VarChar(100)
+  description    String
+  difficulte     difficulte_enum  @default(Facile)
+  alcool         Boolean          @default(false)
+  duree          Int
+  statut         statut_enum      @default(brouillon)
+  datecreation   DateTime         @default(now()) @db.Timestamptz(6)
+  idcompte       String           @db.VarChar(13)
+  avis           avis[]
+  compte         compte           @relation(fields: [idcompte], references: [idcompte], onDelete: NoAction, onUpdate: NoAction, map: "fk_cocktail_compte")
+  dosage         dosage[]
+  etape          etape[]
+  favori         favori[]
+  image_cocktail image_cocktail[]
+  signalement    signalement[]
+
+  @@unique([nomcocktail, idcompte], map: "uq_cocktail_nom_auteur")
+  @@map("_cocktail")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model compte {
+  idcompte                                      String        @id @db.VarChar(13)
+  pseudo                                        String        @unique @db.VarChar(50)
+  mailcompte                                    String        @unique @db.VarChar(100)
+  numtel                                        String?       @db.VarChar(20)
+  mdpcompte                                     String        @db.VarChar(255)
+  datenaissance                                 DateTime      @db.Date
+  dateinscription                               DateTime      @default(now()) @db.Timestamptz(6)
+  role                                          role_enum     @default(user)
+  avis                                          avis[]
+  cocktail                                      cocktail[]
+  favori                                        favori[]
+  frigo                                         frigo?
+  image_compte                                  image_compte?
+  reponse                                       reponse[]
+  signalement_signalement_idcompteTocompte      signalement[] @relation("signalement_idcompteTocompte")
+  signalement_signalement_idcomptecibleTocompte signalement[] @relation("signalement_idcomptecibleTocompte")
+
+  @@map("_compte")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model dosage {
+  idcocktail   String     @db.VarChar(13)
+  idingredient String     @db.VarChar(13)
+  quantite     Decimal    @db.Decimal(6, 2)
+  unite        String     @db.VarChar(20)
+  idetape      String?    @db.VarChar(13)
+  cocktail     cocktail   @relation(fields: [idcocktail], references: [idcocktail], onDelete: Cascade, onUpdate: NoAction, map: "fk_dosage_cocktail")
+  etape        etape?     @relation(fields: [idetape], references: [idetape], onUpdate: NoAction, map: "fk_dosage_etape")
+  ingredient   ingredient @relation(fields: [idingredient], references: [idingredient], onDelete: NoAction, onUpdate: NoAction, map: "fk_dosage_ingredient")
+
+  @@id([idcocktail, idingredient], map: "pk_dosage")
+  @@map("_dosage")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model etape {
+  idetape          String            @id @db.VarChar(13)
+  idcocktail       String            @db.VarChar(13)
+  numeroetape      Int
+  descriptionetape String
+  dosage           dosage[]
+  cocktail         cocktail          @relation(fields: [idcocktail], references: [idcocktail], onDelete: Cascade, onUpdate: NoAction, map: "fk_etape_cocktail")
+  etape_ustensile  etape_ustensile[]
+
+  @@unique([idcocktail, numeroetape], map: "uq_etape_ordre")
+  @@map("_etape")
+}
+
+model etape_ustensile {
+  idetape     String    @db.VarChar(13)
+  idustensile String    @db.VarChar(13)
+  etape       etape     @relation(fields: [idetape], references: [idetape], onDelete: Cascade, onUpdate: NoAction, map: "fk_eu_etape")
+  ustensile   ustensile @relation(fields: [idustensile], references: [idustensile], onUpdate: NoAction, map: "fk_eu_ustensile")
+
+  @@id([idetape, idustensile], map: "pk_etape_ustensile")
+  @@map("_etape_ustensile")
+}
+
+model favori {
+  idcompte   String   @db.VarChar(13)
+  idcocktail String   @db.VarChar(13)
+  datefavori DateTime @default(now()) @db.Timestamptz(6)
+  cocktail   cocktail @relation(fields: [idcocktail], references: [idcocktail], onDelete: Cascade, onUpdate: NoAction, map: "fk_favori_cocktail")
+  compte     compte   @relation(fields: [idcompte], references: [idcompte], onDelete: Cascade, onUpdate: NoAction, map: "fk_favori_compte")
+
+  @@id([idcompte, idcocktail], map: "pk_favori")
+  @@map("_favori")
+}
+
+model frigo {
+  idfrigo           String              @id @db.VarChar(13)
+  idcompte          String              @unique @db.VarChar(13)
+  compte            compte              @relation(fields: [idcompte], references: [idcompte], onDelete: Cascade, onUpdate: NoAction, map: "fk_frigo_compte")
+  frigo_composition frigo_composition[]
+
+  @@map("_frigo")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model frigo_composition {
+  idfrigo      String     @db.VarChar(13)
+  idingredient String     @db.VarChar(13)
+  quantite     Decimal    @db.Decimal(8, 2)
+  unite        String     @db.VarChar(20)
+  frigo        frigo      @relation(fields: [idfrigo], references: [idfrigo], onDelete: Cascade, onUpdate: NoAction, map: "fk_fc_frigo")
+  ingredient   ingredient @relation(fields: [idingredient], references: [idingredient], onDelete: Cascade, onUpdate: NoAction, map: "fk_fc_ingredient")
+
+  @@id([idfrigo, idingredient], map: "pk_frigo_composition")
+  @@map("_frigo_composition")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model image {
+  idimage          String             @id @db.VarChar(13)
+  urlimage         String             @unique @db.VarChar(500)
+  titleimage       String             @db.VarChar(150)
+  image_avis       image_avis[]
+  image_cocktail   image_cocktail[]
+  image_compte     image_compte[]
+  image_ingredient image_ingredient[]
+  image_ustensile  image_ustensile[]
+
+  @@map("_image")
+}
+
+model image_avis {
+  idimage String @db.VarChar(13)
+  idavis  String @db.VarChar(13)
+  avis    avis   @relation(fields: [idavis], references: [idavis], onDelete: Cascade, onUpdate: NoAction, map: "fk_ia_avis")
+  image   image  @relation(fields: [idimage], references: [idimage], onDelete: Cascade, onUpdate: NoAction, map: "fk_ia_image")
+
+  @@id([idimage, idavis], map: "pk_image_avis")
+  @@map("_image_avis")
+}
+
+model image_cocktail {
+  idimage    String   @db.VarChar(13)
+  idcocktail String   @db.VarChar(13)
+  cocktail   cocktail @relation(fields: [idcocktail], references: [idcocktail], onDelete: Cascade, onUpdate: NoAction, map: "fk_ic_cocktail")
+  image      image    @relation(fields: [idimage], references: [idimage], onDelete: Cascade, onUpdate: NoAction, map: "fk_ic_image")
+
+  @@id([idimage, idcocktail], map: "pk_image_cocktail")
+  @@map("_image_cocktail")
+}
+
+model image_compte {
+  idimage  String @db.VarChar(13)
+  idcompte String @unique @db.VarChar(13)
+  compte   compte @relation(fields: [idcompte], references: [idcompte], onDelete: Cascade, onUpdate: NoAction, map: "fk_icp_compte")
+  image    image  @relation(fields: [idimage], references: [idimage], onDelete: Cascade, onUpdate: NoAction, map: "fk_icp_image")
+
+  @@id([idimage, idcompte], map: "pk_image_compte")
+  @@map("_image_compte")
+}
+
+model image_ingredient {
+  idimage      String     @db.VarChar(13)
+  idingredient String     @unique @db.VarChar(13)
+  image        image      @relation(fields: [idimage], references: [idimage], onDelete: Cascade, onUpdate: NoAction, map: "fk_ii_image")
+  ingredient   ingredient @relation(fields: [idingredient], references: [idingredient], onDelete: Cascade, onUpdate: NoAction, map: "fk_ii_ingredient")
+
+  @@id([idimage, idingredient], map: "pk_image_ingredient")
+  @@map("_image_ingredient")
+}
+
+model image_ustensile {
+  idimage     String    @db.VarChar(13)
+  idustensile String    @unique @db.VarChar(13)
+  image       image     @relation(fields: [idimage], references: [idimage], onDelete: Cascade, onUpdate: NoAction, map: "fk_iu_image")
+  ustensile   ustensile @relation(fields: [idustensile], references: [idustensile], onDelete: Cascade, onUpdate: NoAction, map: "fk_iu_ustensile")
+
+  @@id([idimage, idustensile], map: "pk_image_ustensile")
+  @@map("_image_ustensile")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model ingredient {
+  idingredient      String              @id @db.VarChar(13)
+  nomingredient     String              @unique @db.VarChar(100)
+  categorie         categorie_enum      @default(autre)
+  dosage            dosage[]
+  frigo_composition frigo_composition[]
+  image_ingredient  image_ingredient?
+
+  @@map("_ingredient")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model reponse {
+  idreponse   String   @id @db.VarChar(13)
+  idavis      String   @db.VarChar(13)
+  idcompte    String   @db.VarChar(13)
+  commentaire String
+  datereponse DateTime @default(now()) @db.Timestamptz(6)
+  avis        avis     @relation(fields: [idavis], references: [idavis], onDelete: Cascade, onUpdate: NoAction, map: "fk_reponse_avis")
+  compte      compte   @relation(fields: [idcompte], references: [idcompte], onDelete: Cascade, onUpdate: NoAction, map: "fk_reponse_compte")
+
+  @@unique([idavis, idcompte], map: "uq_reponse_unique")
+  @@map("_reponse")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model signalement {
+  idsignalement                            String     @id @db.VarChar(13)
+  idcompte                                 String     @db.VarChar(13)
+  idcocktail                               String?    @db.VarChar(13)
+  idavis                                   String?    @db.VarChar(13)
+  idcomptecible                            String?    @db.VarChar(13)
+  motif                                    motif_enum
+  datesignalement                          DateTime   @default(now()) @db.Timestamptz(6)
+  avis                                     avis?      @relation(fields: [idavis], references: [idavis], onDelete: Cascade, onUpdate: NoAction, map: "fk_sig_avis")
+  cocktail                                 cocktail?  @relation(fields: [idcocktail], references: [idcocktail], onDelete: Cascade, onUpdate: NoAction, map: "fk_sig_cocktail")
+  compte_signalement_idcompteTocompte      compte     @relation("signalement_idcompteTocompte", fields: [idcompte], references: [idcompte], onDelete: Cascade, onUpdate: NoAction, map: "fk_sig_compte")
+  compte_signalement_idcomptecibleTocompte compte?    @relation("signalement_idcomptecibleTocompte", fields: [idcomptecible], references: [idcompte], onDelete: Cascade, onUpdate: NoAction, map: "fk_sig_compte_cible")
+
+  @@unique([idcompte, idcocktail, idavis, idcomptecible], map: "uq_signalement")
+  @@map("_signalement")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model ustensile {
+  idustensile     String            @id @db.VarChar(13)
+  nomustensile    String            @unique @db.VarChar(100)
+  etape_ustensile etape_ustensile[]
+  image_ustensile image_ustensile?
+
+  @@map("_ustensile")
+}
+
+enum categorie_enum {
+  alcool
+  jus
+  sirop
+  soda
+  eau
+  fruit
+  autre
+}
+
+enum difficulte_enum {
+  Facile
+  Moyen
+  Difficile
+}
+
+enum motif_enum {
+  contenu_inapproprie
+  spam
+  hors_sujet
+  violence
+  autre
+}
+
+enum role_enum {
+  user
+  moderateur
+  admin
+}
+
+enum statut_enum {
+  brouillon
+  publi_    @map("publié")
+  priv_     @map("privé")
+  archiv_   @map("archivé")
+}
