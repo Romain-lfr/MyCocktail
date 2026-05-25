@@ -61,6 +61,8 @@ SELECT ajouter_ingredient('Sirop de sucre',      'sirop');   -- ING-00016
 SELECT ajouter_ingredient('Sucre de canne',      'sirop');   -- ING-00017
 SELECT ajouter_ingredient('Fruit de la passion', 'fruit');   -- ING-00018
 SELECT ajouter_ingredient('Tranches d''orange',  'fruit');   -- ING-00019
+SELECT ajouter_ingredient('Jus de pomme',        'jus');     -- ING-00020
+SELECT ajouter_ingredient('Sirop de rose',       'sirop');   -- ING-00021
 
 /* ============================================================
    3. USTENSILES
@@ -75,6 +77,7 @@ SELECT ajouter_ustensile('Cuillère de bar');    -- UST-00005
 SELECT ajouter_ustensile('Passoire à cocktail');-- UST-00006
 SELECT ajouter_ustensile('Verre à punch');      -- UST-00007
 SELECT ajouter_ustensile('Grande casserole');   -- UST-00008
+SELECT ajouter_ustensile('Verre à cocktail');   -- UST-00009
 
 /* ============================================================
    4. COCKTAILS
@@ -98,7 +101,15 @@ INSERT INTO _cocktail (idCocktail, nomCocktail, description, difficulte, alcool,
 
     ('CKT-00005', 'Punch',
      'Un punch festif et généreux à base de rhum ambré, jus de fruits et grenadine. Idéal pour les grandes occasions.',
-     'Moyen', TRUE, 20, 'publié', 'CPT-00001');
+     'Moyen', TRUE, 20, 'publié', 'CPT-00001'),
+     
+    ('CKT-00006', 'Virgin Mojito',
+     'La version sans alcool du célèbre cocktail cubain. Tout aussi rafraîchissant grâce à la menthe fraîche et au citron vert.',
+     'Facile', FALSE, 8, 'publié', 'CPT-00001'),
+
+    ('CKT-00007', 'Apple Rose',
+     'Un cocktail sans alcool doux et floral, associant la fraîcheur du jus de pomme au parfum délicat du sirop de rose.',
+     'Facile', FALSE, 5, 'publié', 'CPT-00001');
 
 /* ============================================================
    5. ETAPES
@@ -127,8 +138,19 @@ INSERT INTO _etape (idEtape, idCocktail, numeroEtape, descriptionEtape) VALUES
     -- Punch
     ('ETP-00013', 'CKT-00005', 1, 'Verser le rhum ambré dans la grande casserole.'),
     ('ETP-00014', 'CKT-00005', 2, 'Ajouter le jus d''orange, le jus d''ananas, le jus de fruit de la passion et la grenadine.'),
-    ('ETP-00015', 'CKT-00005', 3, 'Mélanger et réfrigérer au moins 1 heure avant de servir avec des glaçons.');
+    ('ETP-00015', 'CKT-00005', 3, 'Mélanger et réfrigérer au moins 1 heure avant de servir avec des glaçons.'),
 
+
+    -- Virgin Mojito
+    ('ETP-00016', 'CKT-00006', 1, 'Écraser les feuilles de menthe et les morceaux de citron vert au pilon au fond du verre.'),
+    ('ETP-00017', 'CKT-00006', 2, 'Ajouter le sirop de sucre, puis remplir le verre à moitié de glaçons (ou glace pilée).'),
+    ('ETP-00018', 'CKT-00006', 3, 'Compléter avec de l''eau gazeuse et mélanger délicatement à la cuillère.'),
+
+    -- Apple Rose
+    ('ETP-00019', 'CKT-00007', 1, 'Remplir le shaker de glaçons.'),
+    ('ETP-00020', 'CKT-00007', 2, 'Verser le jus de pomme, le jus de citron vert et le sirop de rose dans le shaker, puis agiter vigoureusement.'),
+    ('ETP-00021', 'CKT-00007', 3, 'Filtrer et verser le mélange dans un verre à cocktail.');
+    
 /* ============================================================
    6. DOSAGES
    ============================================================ */
@@ -165,7 +187,22 @@ INSERT INTO _dosage (idCocktail, idIngredient, quantite, unite, idEtape) VALUES
     ('CKT-00005', 'ING-00010', 50, 'cl',      'ETP-00014'),   -- Jus d''ananas
     ('CKT-00005', 'ING-00018', 30, 'cl',      'ETP-00014'),   -- Fruit de la passion
     ('CKT-00005', 'ING-00013', 10, 'cl',      'ETP-00014'),   -- Grenadine
-    ('CKT-00005', 'ING-00015', 20, 'glaçons', 'ETP-00015');   -- Glaçons
+    ('CKT-00005', 'ING-00015', 20, 'glaçons', 'ETP-00015'),   -- Glaçons
+    
+    -- Virgin Mojito
+    ('CKT-00006', 'ING-00007', 3,  'cl',       'ETP-00016'),  -- Jus de citron vert
+    ('CKT-00006', 'ING-00014', 6,  'feuilles', 'ETP-00016'),  -- Feuilles de menthe
+    ('CKT-00006', 'ING-00016', 2,  'cl',       'ETP-00017'),  -- Sirop de sucre
+    ('CKT-00006', 'ING-00015', 6,  'glaçons',  'ETP-00017'),  -- Glaçons
+    ('CKT-00006', 'ING-00011', 15, 'cl',       'ETP-00018'),  -- Eau gazeuse
+
+    -- Apple Rose
+    ('CKT-00007', 'ING-00015', 6,  'glaçons',  'ETP-00019'),  -- Glaçons
+    ('CKT-00007', 'ING-00020', 12, 'cl',       'ETP-00020'),  -- Jus de pomme
+    ('CKT-00007', 'ING-00007', 2,  'cl',       'ETP-00020'),  -- Jus de citron vert
+    ('CKT-00007', 'ING-00021', 1.5, 'cl',      'ETP-00020');  -- Sirop de rose
+    
+
 
 /* ============================================================
    7. ETAPE_USTENSILE
@@ -191,7 +228,17 @@ INSERT INTO _etape_ustensile (idEtape, idUstensile) VALUES
     
     -- Punch
     ('ETP-00013', 'UST-00008'),  -- Grande casserole
-    ('ETP-00015', 'UST-00007');  -- Verre à punch
+    ('ETP-00015', 'UST-00007'),  -- Verre à punch
+    
+    -- Virgin Mojito
+    ('ETP-00016', 'UST-00002'),  -- Pilon
+    ('ETP-00016', 'UST-00003'),  -- Verre long drink
+    ('ETP-00018', 'UST-00005'),  -- Cuillère de bar
+
+    -- Apple Rose
+    ('ETP-00019', 'UST-00001'),  -- Shaker
+    ('ETP-00021', 'UST-00006'),  -- Passoire à cocktail
+    ('ETP-00021', 'UST-00009');  -- Verre à cocktail
 
 /* ============================================================
    8. FRIGOS
@@ -219,28 +266,20 @@ INSERT INTO _frigo_composition (idFrigo, idIngredient, quantite, unite) VALUES
    9. AVIS
    ============================================================ */
 INSERT INTO _avis (idAvis, idCocktail, idCompte, noteAvis, titreAvis, descriptionAvis) VALUES
-    -- admin note le Mojito
-    ('AVS-00001', 'CKT-00001', 'CPT-00001', 5,
+    -- romain note le Mojito au lieu d'admin
+    ('AVS-00001', 'CKT-00001', 'CPT-00002', 5,
      'Un incontournable !',
      'Recette parfaite, le mojito le plus rafraîchissant que j''aie jamais préparé. La menthe fraîche fait toute la différence.'),
 
-    -- romain note le Mojito
-    ('AVS-00002', 'CKT-00001', 'CPT-00002', 4,
-     'Très bon mais sucré',
-     'Excellente recette, facile à suivre. Je mettrais un peu moins de sirop de sucre la prochaine fois mais c''est vraiment bon.'),
+    -- Suppression de l'ancien doublon de romain sur le Mojito pour respecter la contrainte uq_avis_unique (1 avis max par user/cocktail)
 
-    -- admin note le Gin Tonic
-    ('AVS-00003', 'CKT-00002', 'CPT-00001', 4,
+    -- romain note le Gin Tonic
+    ('AVS-00003', 'CKT-00002', 'CPT-00002', 4,
      'Simple et efficace',
      'Rien de compliqué, c''est exactement ça le charme du Gin Tonic. Bien équilibré entre l''amertume du tonic et le gin.'),
 
-    -- romain note le Gin Tonic
-    ('AVS-00004', 'CKT-00002', 'CPT-00002', 3,
-     'Correct sans plus',
-     'C''est un Gin Tonic classique, rien de surprenant. Ça manque un peu d''originalité à mon goût mais la recette est bonne.'),
-
-    -- admin note le Tequila Sunrise
-    ('AVS-00005', 'CKT-00003', 'CPT-00001', 5,
+    -- romain note le Tequila Sunrise
+    ('AVS-00005', 'CKT-00003', 'CPT-00002', 5,
      'Magnifique à regarder et à boire',
      'L''effet dégradé est vraiment impressionnant quand on verse la grenadine doucement. Beau visuellement et délicieux.'),
 
@@ -249,78 +288,52 @@ INSERT INTO _avis (idAvis, idCocktail, idCompte, noteAvis, titreAvis, descriptio
      'Mon cocktail préféré !',
      'Je fais cette recette tout l''été, mes amis adorent. Le mélange cranberry et orange est parfait, pas trop sucré.'),
 
-    -- admin note le Punch
-    ('AVS-00007', 'CKT-00005', 'CPT-00001', 4,
-     'Parfait pour les soirées',
-     'Idéal quand on reçoit beaucoup de monde. La préparation à l''avance est un vrai plus. Je rajoute un peu de jus de citron vert.'),
-
     -- romain note le Punch
-    ('AVS-00008', 'CKT-00005', 'CPT-00002', 4,
-     'Festif et généreux',
-     'On a testé pour un anniversaire, tout le monde a adoré. Les quantités sont bien pensées pour un grand groupe.');
+    ('AVS-00007', 'CKT-00005', 'CPT-00002', 4,
+     'Parfait pour les soirées',
+     'Idéal quand on reçoit beaucoup de monde. La préparation à l''avance est un vrai plus. Je rajoute un peu de jus de citron vert.');
+
 
 /* ============================================================
    10. REPONSES
    ============================================================ */
 INSERT INTO _reponse (idReponse, idAvis, idCompte, commentaire) VALUES
-    -- Réponses sur AVS001 (admin note le Mojito → 5 étoiles)
-    ('REP-00001', 'AVS-00001', 'CPT-00002',
+    -- Réponses sur AVS-00001 (romain note le Mojito)
+    ('REP-00001', 'AVS-00001', 'CPT-00001', -- L'admin répond (1ère réponse de l'admin)
      'Totalement d''accord, la menthe fraîche c''est obligatoire, avec de la menthe séchée c''est une catastrophe !'),
-    ('REP-00002', 'AVS-00001', 'CPT-00001',
+    ('REP-00002', 'AVS-00001', 'CPT-00002', -- Romain rétorque (1ère réponse de Romain)
      'Exactement ! Et un bon rhum blanc fait aussi toute la différence, évite les rhums bas de gamme.'),
-    ('REP-00003', 'AVS-00001', 'CPT-00002',
+    ('REP-00003', 'AVS-00001', 'CPT-00003', -- L'utilisateur "test" s'incruste dans la discussion pour poser sa question !
      'Tu recommandes quelle marque de rhum ? Je tourne toujours sur Bacardi mais je veux changer.'),
 
-    -- Réponses sur AVS002 (romain note le Mojito → 4 étoiles)
-    ('REP-00004', 'AVS-00002', 'CPT-00001',
-     'Bonne idée pour le sucre, tu peux aussi remplacer le sirop par du sucre de canne directement pilonné avec la menthe !'),
-    ('REP-00005', 'AVS-00002', 'CPT-00002',
-     'Oui j''ai essayé avec du sucre de canne, c''est vraiment mieux, ça donne plus de texture.'),
-
-    -- Réponses sur AVS004 (romain note le Gin Tonic → 3 étoiles)
-    ('REP-00006', 'AVS-00004', 'CPT-00001',
+    -- Réponses sur AVS-00003 (romain note le Gin Tonic)
+    ('REP-00006', 'AVS-00003', 'CPT-00001',
      'Pour plus d''originalité tu peux ajouter quelques baies de genièvre ou un zeste de pamplemousse !'),
-    ('REP-00007', 'AVS-00004', 'CPT-00002',
+    ('REP-00007', 'AVS-00003', 'CPT-00002',
      'Bonne idée le pamplemousse, je vais tester ça ce week-end.'),
-    ('REP-00008', 'AVS-00004', 'CPT-00001',
-     'Le choix du gin change tout aussi - un gin plus floral donne une dimension complètement différente.'),
 
-    -- Réponses sur AVS005 (admin note le Tequila Sunrise → 5 étoiles)
-    ('REP-00009', 'AVS-00005', 'CPT-00002',
+    -- Réponses sur AVS-00005 (romain note le Tequila Sunrise)
+    ('REP-00009', 'AVS-00005', 'CPT-00001',
      'L''astuce c''est vraiment de verser la grenadine avec le dos d''une cuillère pour qu''elle coule doucement.'),
-    ('REP-00010', 'AVS-00005', 'CPT-00001',
+    ('REP-00010', 'AVS-00005', 'CPT-00002',
      'Oui ! Et de ne surtout pas mélanger ensuite, sinon l''effet dégradé disparaît complètement.'),
 
-    -- Réponses sur AVS006 (romain note le Sex on the Beach → 5 étoiles)
+    -- Réponses sur AVS-00006 (romain note le Sex on the Beach)
     ('REP-00011', 'AVS-00006', 'CPT-00001',
      'Super recette en effet ! Pour varier tu peux remplacer le peach schnapps par du Malibu, ça donne une touche coco sympa.'),
-    ('REP-00012', 'AVS-00006', 'CPT-00002',
-     'Bonne idée le Malibu, je note ça pour la prochaine fois. Merci admin !'),
 
-    -- Réponses sur AVS007 (admin note le Punch → 4 étoiles)
-    ('REP-00013', 'AVS-00007', 'CPT-00002',
+    -- Réponses sur AVS-00007 (romain note le Punch)
+    ('REP-00013', 'AVS-00007', 'CPT-00001',
      'Le citron vert c''est une super idée, ça coupe un peu le sucré. J''ajoute aussi une pincée de cannelle personnellement.'),
-    ('REP-00014', 'AVS-00007', 'CPT-00001',
-     'La cannelle ?! Je n''aurais pas pensé à ça, je vais essayer au prochain repas de famille.'),
-    ('REP-00015', 'AVS-00007', 'CPT-00002',
-     'Oui et tu peux aussi ajouter quelques tranches de fruits frais directement dans le saladier, c''est joli visuellement.');
-
-/* ============================================================
-   11. FAVORIS
-   ============================================================ */
-INSERT INTO _favori (idCompte, idCocktail) VALUES
-    ('CPT-00001', 'CKT-00001'),  -- admin aime le Mojito
-    ('CPT-00001', 'CKT-00003'),  -- admin aime le Tequila Sunrise
-    ('CPT-00002', 'CKT-00001'),  -- romain aime le Mojito
-    ('CPT-00002', 'CKT-00004'),  -- romain aime le Sex on the Beach
-    ('CPT-00002', 'CKT-00005');  -- romain aime le Punch
-
+    ('REP-00014', 'AVS-00007', 'CPT-00002',
+     'La cannelle ?! Je n''aurais pas pensé à ça, je vais essayer au prochain repas de famille.');
+     
 /* ============================================================
    12. SIGNALEMENTS
    ============================================================ */
 INSERT INTO _signalement (idSignalement, idCompte, idCocktail, idAvis, motif) VALUES
     ('SIG-00001', 'CPT-00002', 'CKT-00001', NULL, 'spam'),         -- romain signale le Mojito (test)
-    ('SIG-00002', 'CPT-00001', NULL, 'AVS-00004',  'hors_sujet');  -- admin signale l'avis AVS004
+    ('SIG-00002', 'CPT-00001', NULL, 'AVS-00005',  'hors_sujet');  -- admin signale l'avis AVS004
 
 /* ============================================================
    VUES
@@ -343,3 +356,16 @@ LEFT JOIN _dosage     d ON e.idEtape     = d.idEtape
 LEFT JOIN _ingredient i ON d.idIngredient = i.idIngredient
 GROUP BY  c.nomCocktail, e.numeroEtape, e.descriptionEtape
 ORDER BY  c.nomCocktail, e.numeroEtape;
+
+
+/* ============================================================
+   18. IMAGE
+   ============================================================ */
+   
+SELECT ajouter_image_cocktail('CKT-00001', '/public/images/mojito.jpg', 'Mojito');
+SELECT ajouter_image_cocktail('CKT-00002', '/public/images/gin_tonic.jpg', 'Gin Tonic');
+SELECT ajouter_image_cocktail('CKT-00003', '/public/images/tequila_sunrise.webp', 'Tequila Sunrise');
+SELECT ajouter_image_cocktail('CKT-00004', '/public/images/sex_on_the_beach.webp', 'Sex on the Beach');
+SELECT ajouter_image_cocktail('CKT-00005', '/public/images/punch.webp', 'Punch');
+SELECT ajouter_image_cocktail('CKT-00006', '/public/images/virgin_mojito.webp', 'Virgin Mojito');
+SELECT ajouter_image_cocktail('CKT-00007', '/public/images/apple_rose.jpg', 'Apple Rose');
