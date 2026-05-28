@@ -326,6 +326,29 @@ CREATE TABLE _image (
     CONSTRAINT chk_image_title_len   CHECK (LENGTH(TRIM(titleImage)) >= 2)
 );
 
+-- Séquence pour générer les numéros d'images automatiquement
+CREATE SEQUENCE IF NOT EXISTS seq_image START 1;
+
+-- Fonction maîtresse pour insérer une image dans la table globale
+CREATE OR REPLACE FUNCTION ajouter_image(
+    p_url   VARCHAR(500),
+    p_titre VARCHAR(150)
+)
+RETURNS _image AS $$
+DECLARE
+    v_id     VARCHAR(13);
+    v_result _image;
+BEGIN
+    v_id := 'IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0');
+
+    INSERT INTO _image (idImage, urlImage, titleImage)
+    VALUES (v_id, TRIM(p_url), TRIM(p_titre))
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
 /* ============================================================
    9. IMAGE_COCKTAIL
    ============================================================ */
@@ -341,6 +364,26 @@ CREATE TABLE _image_cocktail (
         FOREIGN KEY (idCocktail) REFERENCES _cocktail(idCocktail)
         ON DELETE CASCADE
 );
+
+CREATE OR REPLACE FUNCTION ajouter_image_cocktail(
+    p_idCocktail VARCHAR(13),
+    p_url        VARCHAR(500),
+    p_titre      VARCHAR(150)
+)
+RETURNS VARCHAR(13) AS $$
+DECLARE
+    v_img _image;
+BEGIN
+    -- 1. Création de l'image globale
+    v_img := ajouter_image(p_url, p_titre);
+    
+    -- 2. Liaison avec le cocktail
+    INSERT INTO _image_cocktail (idImage, idCocktail)
+    VALUES (v_img.idImage, p_idCocktail);
+
+    RETURN v_img.idImage;
+END;
+$$ LANGUAGE plpgsql;
 
 /* ============================================================
    10. AVIS
@@ -411,6 +454,24 @@ CREATE TABLE _image_avis (
         FOREIGN KEY (idAvis)  REFERENCES _avis(idAvis)
         ON DELETE CASCADE
 );
+
+CREATE OR REPLACE FUNCTION ajouter_image_avis(
+    p_idAvis VARCHAR(13),
+    p_url    VARCHAR(500),
+    p_titre  VARCHAR(150)
+)
+RETURNS VARCHAR(13) AS $$
+DECLARE
+    v_img _image;
+BEGIN
+    v_img := ajouter_image(p_url, p_titre);
+    
+    INSERT INTO _image_avis (idImage, idAvis)
+    VALUES (v_img.idImage, p_idAvis);
+
+    RETURN v_img.idImage;
+END;
+$$ LANGUAGE plpgsql;
 
 /* ============================================================
    12. REPONSE
@@ -595,6 +656,27 @@ CREATE TABLE _image_compte (
         ON DELETE CASCADE
 );
 
+CREATE OR REPLACE FUNCTION modifier_image_compte(
+    p_idCompte VARCHAR(13),
+    p_url      VARCHAR(500),
+    p_titre    VARCHAR(150)
+)
+RETURNS VARCHAR(13) AS $$
+DECLARE
+    v_img _image;
+BEGIN
+    v_img := ajouter_image(p_url, p_titre);
+    
+    -- Insère ou remplace si le compte a déjà une image
+    INSERT INTO _image_compte (idImage, idCompte)
+    VALUES (v_img.idImage, p_idCompte)
+    ON CONFLICT (idCompte) 
+    DO UPDATE SET idImage = EXCLUDED.idImage;
+
+    RETURN v_img.idImage;
+END;
+$$ LANGUAGE plpgsql;
+
 /* ============================================================
    18. IMAGE_INGREDIENT
    ============================================================ */
@@ -611,6 +693,26 @@ CREATE TABLE _image_ingredient (
         ON DELETE CASCADE
 );
 
+CREATE OR REPLACE FUNCTION modifier_image_ingredient(
+    p_idIngredient VARCHAR(13),
+    p_url          VARCHAR(500),
+    p_titre        VARCHAR(150)
+)
+RETURNS VARCHAR(13) AS $$
+DECLARE
+    v_img _image;
+BEGIN
+    v_img := ajouter_image(p_url, p_titre);
+    
+    INSERT INTO _image_ingredient (idImage, idIngredient)
+    VALUES (v_img.idImage, p_idIngredient)
+    ON CONFLICT (idIngredient) 
+    DO UPDATE SET idImage = EXCLUDED.idImage;
+
+    RETURN v_img.idImage;
+END;
+$$ LANGUAGE plpgsql;
+
 /* ============================================================
    19. IMAGE_USTENSILE
    ============================================================ */
@@ -626,3 +728,23 @@ CREATE TABLE _image_ustensile (
         FOREIGN KEY (idUstensile)  REFERENCES _ustensile(idUstensile)
         ON DELETE CASCADE
 );
+
+CREATE OR REPLACE FUNCTION modifier_image_ustensile(
+    p_idUstensile VARCHAR(13),
+    p_url         VARCHAR(500),
+    p_titre       VARCHAR(150)
+)
+RETURNS VARCHAR(13) AS $$
+DECLARE
+    v_img _image;
+BEGIN
+    v_img := ajouter_image(p_url, p_titre);
+    
+    INSERT INTO _image_ustensile (idImage, idUstensile)
+    VALUES (v_img.idImage, p_idUstensile)
+    ON CONFLICT (idUstensile) 
+    DO UPDATE SET idImage = EXCLUDED.idImage;
+
+    RETURN v_img.idImage;
+END;
+$$ LANGUAGE plpgsql;
