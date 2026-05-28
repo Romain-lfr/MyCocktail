@@ -42,23 +42,34 @@ export class CocktailService {
   }
 
   async findByNom(nom: string, user?: any) {
-  const cocktail = await this.prisma.cocktail.findFirst({
-    where: { nomcocktail: { equals: nom, mode: 'insensitive' } },
-    include: {
-      image_cocktail: { include: { image: true } },
-      etape: {
-        orderBy: { numeroetape: 'asc' },
-        include: { etape_ustensile: { include: { ustensile: true } } },
+    const cocktail = await this.prisma.cocktail.findFirst({
+      where: { nomcocktail: { equals: nom, mode: 'insensitive' } },
+      include: {
+        image_cocktail: { include: { image: true } },
+        etape: {
+          orderBy: { numeroetape: 'asc' },
+          include: { etape_ustensile: { include: { ustensile: true } } },
+        },
+        dosage: { include: { ingredient: true } },
+        avis: {
+          include: {
+            compte: { select: { pseudo: true } },
+            reponse: {
+              include: {
+                compte: { select: { pseudo: true } },
+              },
+            },
+          },
+          orderBy: { dateavis: 'desc' },
+        },
       },
-      dosage: { include: { ingredient: true } },
-    },
-  });
+    });
 
-  if (cocktail?.alcool && (!user || user.estMineur)) {
-    throw new ForbiddenException('Accès refusé');
+    if (cocktail?.alcool && (!user || user.estMineur)) {
+      throw new ForbiddenException('Accès refusé');
+    }
+
+    return cocktail;
   }
-
-  return cocktail;
-}
   
 }

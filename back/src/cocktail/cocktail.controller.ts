@@ -12,9 +12,17 @@ export class CocktailController {
   @UseGuards(OptionalJwtAuthGuard)
   findAll(@Query('alcool') alcool?: string, @Request() req?: any) {
     const user = req.user;
-    console.log('USER:', user);
-    if (user && !user.estMineur) return this.cocktailService.findAll();
-    return this.cocktailService.findAll(false);
+    console.log('USER:', user, 'alcool:', alcool);
+
+    // Si pas connecté ou mineur → mocktails uniquement
+    if (!user || user.estMineur) {
+      return this.cocktailService.findAll(false);
+    }
+
+    // Si connecté et majeur → filtre selon le paramètre
+    if (alcool === 'true') return this.cocktailService.findAll(true);
+    if (alcool === 'false') return this.cocktailService.findAll(false);
+    return this.cocktailService.findAll();
   }
 
   @Get(':nom')

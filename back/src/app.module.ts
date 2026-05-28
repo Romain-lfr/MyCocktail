@@ -6,6 +6,7 @@ import { join } from 'path';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { CocktailModule } from './cocktail/cocktail.module';
+import { CompteModule } from './compte/compte.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { CocktailModule } from './cocktail/cocktail.module';
     PrismaModule,
     AuthModule,
     CocktailModule,
+    CompteModule,
   ],
   controllers: [AppController],
   providers: [AppService],

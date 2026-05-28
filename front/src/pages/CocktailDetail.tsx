@@ -4,6 +4,20 @@ import { useNavigate } from "react-router-dom";
 
 import axios from "axios";
 
+interface Avis {
+  idavis: string;
+  noteavis: number;
+  titreavis: string;
+  descriptionavis: string;
+  dateavis: string;
+  compte: { pseudo: string };
+  reponse: {
+    idreponse: string;
+    commentaire: string;
+    compte: { pseudo: string };
+  }[];
+}
+
 interface Cocktail {
   idcocktail: string;
   nomcocktail: string;
@@ -23,6 +37,7 @@ interface Cocktail {
     unite: string;
     ingredient: { nomingredient: string };
   }[];
+  avis: Avis[];
 }
 
 function CocktailDetail() {
@@ -82,6 +97,28 @@ function CocktailDetail() {
           <p>{e.descriptionetape}</p>
           {e.etape_ustensile.length > 0 && (
             <p>Ustensiles : {e.etape_ustensile.map((u) => u.ustensile.nomustensile).join(", ")}</p>
+          )}
+        </div>
+      ))}
+
+      <h2>Avis</h2>
+      {cocktail.avis.length === 0 && <p>Aucun avis pour le moment.</p>}
+      {cocktail.avis.map((a) => (
+        <div key={a.idavis} style={{ border: '1px solid #ccc', padding: '10px', margin: '10px 0' }}>
+          <p>⭐ {a.noteavis}/5 — <strong>{a.titreavis}</strong></p>
+          <p>{a.descriptionavis}</p>
+          <p>Par {a.compte.pseudo} — {new Date(a.dateavis).toLocaleDateString()}</p>
+
+          {a.reponse.length > 0 && (
+            <div style={{ marginLeft: '20px', borderLeft: '2px solid #ccc', paddingLeft: '10px' }}>
+              <p><strong>Réponse :</strong></p>
+              {a.reponse.map((r) => (
+                <div key={r.idreponse}>
+                  <p>{r.commentaire}</p>
+                  <p>Par {r.compte.pseudo}</p>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       ))}
