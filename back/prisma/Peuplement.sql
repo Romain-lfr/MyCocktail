@@ -361,6 +361,8 @@ ORDER BY  c.nomCocktail, e.numeroEtape;
 /* ============================================================
    18. IMAGE
    ============================================================ */
+
+   -- image Cocktail
    
 SELECT ajouter_image_cocktail('CKT-00001', '/public/images/mojito.jpg', 'Mojito');
 SELECT ajouter_image_cocktail('CKT-00002', '/public/images/gin_tonic.jpg', 'Gin Tonic');
@@ -369,3 +371,11 @@ SELECT ajouter_image_cocktail('CKT-00004', '/public/images/sex_on_the_beach.webp
 SELECT ajouter_image_cocktail('CKT-00005', '/public/images/punch.webp', 'Punch');
 SELECT ajouter_image_cocktail('CKT-00006', '/public/images/virgin_mojito.webp', 'Virgin Mojito');
 SELECT ajouter_image_cocktail('CKT-00007', '/public/images/apple_rose.jpg', 'Apple Rose');
+
+   -- image Ingredient
+
+SELECT modifier_image_ingredient('ING-00001', 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Rhum Blanc');
+SELECT modifier_image_ingredient('ING-00001', 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Gin');
+SELECT modifier_image_ingredient('ING-00001', 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Rhum Blanc');
+SELECT modifier_image_ingredient('ING-00001', 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Rhum Blanc');
+SELECT modifier_image_ingredient('ING-00001', 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Rhum Blanc');

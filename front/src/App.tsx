@@ -8,6 +8,7 @@ import Compte from "./pages/Compte";
 import MesCocktails from "./pages/MesCocktails";
 import MesFavoris from "./pages/MesFavoris";
 import MesAvis from "./pages/MesAvis";
+import AjouterCocktail from "./pages/AjouterCocktail";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/compte/cocktails" element={<MesCocktails />} />
         <Route path="/compte/favoris" element={<MesFavoris />} />
         <Route path="/compte/avis" element={<MesAvis />} />
+        <Route path="/cocktail/ajouter" element={<AjouterCocktail />} />
       </Routes>
     </BrowserRouter>
   );

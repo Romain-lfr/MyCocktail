@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { CocktailModule } from './cocktail/cocktail.module';
 import { CompteModule } from './compte/compte.module';
+import { ImageModule } from './image/image.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { CompteModule } from './compte/compte.module';
     AuthModule,
     CocktailModule,
     CompteModule,
+    ImageModule,
   ],
   controllers: [AppController],
   providers: [AppService],
