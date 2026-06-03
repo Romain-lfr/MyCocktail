@@ -518,6 +518,10 @@ CREATE TABLE _avis (
         ON DELETE CASCADE
 );
 
+-- ============================================================
+-- TRIGGER : Vérification qu'un auteur ne peut pas noter son propre cocktail
+-- ============================================================
+
 CREATE OR REPLACE FUNCTION check_avis_auteur()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -671,7 +675,6 @@ DECLARE
     v_id VARCHAR(13);
     v_result _reponse;
 BEGIN
-    -- Génération de l'ID : REP-00001
     v_id := 'REP-' || LPAD(nextval('seq_reponse')::TEXT, 5, '0');
 
     INSERT INTO _reponse (idReponse, idAvis, idCompte, commentaire)
@@ -720,7 +723,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* ============================================================
-   14. SIGNALEMENT
+   14. SIGNALEMENT --TODO ajouter le signalement des réponses
    ============================================================ */
 CREATE TABLE _signalement (
     idSignalement      VARCHAR(13)     PRIMARY KEY,
@@ -833,7 +836,7 @@ CREATE TABLE _frigo_composition (
 
 
 /* ============================================================
-   17. IMAGE_COMPTE (Relation 1 à 1 unique)
+   17. IMAGE_COMPTE
    ============================================================ */
 CREATE TABLE _image_compte (
     idImage         VARCHAR(13)     NOT NULL,
@@ -874,7 +877,7 @@ $$ LANGUAGE plpgsql;
 
 
 /* ============================================================
-   18. IMAGE_INGREDIENT (Relation 1 à 1 unique)
+   18. IMAGE_INGREDIENT
    ============================================================ */
 CREATE TABLE _image_ingredient (
     idImage         VARCHAR(13)     NOT NULL,
@@ -915,7 +918,7 @@ $$ LANGUAGE plpgsql;
 
 
 /* ============================================================
-   19. IMAGE_USTENSILE (Relation 1 à 1 unique)
+   19. IMAGE_USTENSILE
    ============================================================ */
 CREATE TABLE _image_ustensile (
     idImage         VARCHAR(13)     NOT NULL,
