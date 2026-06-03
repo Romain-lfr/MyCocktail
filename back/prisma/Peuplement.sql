@@ -1,13 +1,15 @@
 /* ============================================================ */
-/*         MyCocktail - Peuplement de la base de données        */
+/* MyCocktail - Peuplement de la base de données                */
 /* ============================================================ */
 
 SET search_path TO MyCocktail;
 
 /* ============================================================
-   NETTOYAGE
+   NETTOYAGE COMPLET
    ============================================================ */
 DELETE FROM _image_compte;
+DELETE FROM _image_ingredient;
+DELETE FROM _image_ustensile;
 DELETE FROM _frigo_composition;
 DELETE FROM _frigo;
 DELETE FROM _signalement;
@@ -25,321 +27,275 @@ DELETE FROM _ustensile;
 DELETE FROM _ingredient;
 DELETE FROM _compte;
 
-/* ============================================================
-   1. COMPTES
-   admin  → majeur, rôle admin
-   romain → majeur 
-   test   → mineur
-   ============================================================ */
+-- Réinitialisation de TOUTES les séquences d'identifiants
 SELECT setval('seq_compte', 1, false);
+SELECT setval('seq_ingredient', 1, false);
+SELECT setval('seq_ustensile', 1, false);
+SELECT setval('seq_etape', 1, false);
+SELECT setval('seq_image', 1, false);
+SELECT setval('seq_cocktail', 1, false);
+SELECT setval('seq_avis', 1, false);
+SELECT setval('seq_reponse', 1, false);
+-- SELECT setval('seq_signalement', 1, false);
 
-SELECT inscrire_compte('admin',  'admin@mycocktail.com',  'Admin1234',  '1990-04-12', 'admin'); -- CPT-00001
-SELECT inscrire_compte('romain', 'romain@mycocktail.com', 'Romain1234', '2006-12-04', 'user');  -- CPT-00002
-SELECT inscrire_compte('test',   'test@mycocktail.com',   'Test1234',   '2010-11-05', 'user');  -- CPT-00003
+/* ============================================================
+   EXECUTION DU PEUPLEMENT DYNAMIQUE VIA FONCTIONS
+   ============================================================ */
+DO $$
+DECLARE
+    -- Variables pour stocker les IDs des cocktails générés dynamiquement
+    c_moj VARCHAR(13); c_gin VARCHAR(13); c_teq VARCHAR(13);
+    c_sex VARCHAR(13); c_pun VARCHAR(13); c_vmo VARCHAR(13);
+    c_app VARCHAR(13);
+
+    -- Variables pour stocker les IDs d'étapes générés dynamiquement
+    e1_moj VARCHAR(13); e2_moj VARCHAR(13); e3_moj VARCHAR(13);
+    e1_gin VARCHAR(13); e2_gin VARCHAR(13); e3_gin VARCHAR(13);
+    e1_teq VARCHAR(13); e2_teq VARCHAR(13); e3_teq VARCHAR(13);
+    e1_sex VARCHAR(13); e2_sex VARCHAR(13); e3_sex VARCHAR(13);
+    e1_pun VARCHAR(13); e2_pun VARCHAR(13); e3_pun VARCHAR(13);
+    e1_vmo VARCHAR(13); e2_vmo VARCHAR(13); e3_vmo VARCHAR(13);
+    e1_app VARCHAR(13); e2_app VARCHAR(13); e3_app VARCHAR(13);
+
+    -- Variables pour stocker les IDs des avis générés dynamiquement
+    a1 VARCHAR(13); a2 VARCHAR(13); a3 VARCHAR(13); 
+    a4 VARCHAR(13); a5 VARCHAR(13);
+BEGIN
+
+/* ============================================================
+   1. COMPTES (génèrent auto leurs frigos FRG-XXXXX)
+   ============================================================ */
+PERFORM inscrire_compte('admin',  'admin@mycocktail.com',  'Admin1234',  '1990-04-12', 'admin'); -- CPT-00001
+PERFORM inscrire_compte('romain', 'romain@mycocktail.com', 'Romain1234', '2006-12-04', 'user');  -- CPT-00002
+PERFORM inscrire_compte('test',   'test@mycocktail.com',   'Test1234',   '2010-11-05', 'user');  -- CPT-00003
 
 /* ============================================================
    2. INGREDIENTS
    ============================================================ */
-SELECT setval('seq_ingredient', 1, false);
-
-SELECT ajouter_ingredient('Rhum blanc',          'alcool');  -- ING-00001
-SELECT ajouter_ingredient('Gin',                 'alcool');  -- ING-00002
-SELECT ajouter_ingredient('Tequila',             'alcool');  -- ING-00003
-SELECT ajouter_ingredient('Vodka',               'alcool');  -- ING-00004
-SELECT ajouter_ingredient('Rhum ambré',          'alcool');  -- ING-00005
-SELECT ajouter_ingredient('Peach Schnapps',      'alcool');  -- ING-00006
-SELECT ajouter_ingredient('Jus de citron vert',  'jus');     -- ING-00007
-SELECT ajouter_ingredient('Jus d''orange',       'jus');     -- ING-00008
-SELECT ajouter_ingredient('Jus de cranberry',    'jus');     -- ING-00009
-SELECT ajouter_ingredient('Jus d''ananas',       'jus');     -- ING-00010
-SELECT ajouter_ingredient('Eau gazeuse',         'soda');    -- ING-00011
-SELECT ajouter_ingredient('Tonic',               'soda');    -- ING-00012
-SELECT ajouter_ingredient('Grenadine',           'sirop');   -- ING-00013
-SELECT ajouter_ingredient('Feuilles de menthe',  'autre');   -- ING-00014
-SELECT ajouter_ingredient('Glaçons',             'autre');   -- ING-00015
-SELECT ajouter_ingredient('Sirop de sucre',      'sirop');   -- ING-00016
-SELECT ajouter_ingredient('Sucre de canne',      'sirop');   -- ING-00017
-SELECT ajouter_ingredient('Fruit de la passion', 'fruit');   -- ING-00018
-SELECT ajouter_ingredient('Tranches d''orange',  'fruit');   -- ING-00019
-SELECT ajouter_ingredient('Jus de pomme',        'jus');     -- ING-00020
-SELECT ajouter_ingredient('Sirop de rose',       'sirop');   -- ING-00021
+PERFORM ajouter_ingredient('Rhum blanc',          'alcool');  -- ING-00001
+PERFORM ajouter_ingredient('Gin',                 'alcool');  -- ING-00002
+PERFORM ajouter_ingredient('Tequila',             'alcool');  -- ING-00003
+PERFORM ajouter_ingredient('Vodka',               'alcool');  -- ING-00004
+PERFORM ajouter_ingredient('Rhum ambré',          'alcool');  -- ING-00005
+PERFORM ajouter_ingredient('Peach Schnapps',      'alcool');  -- ING-00006
+PERFORM ajouter_ingredient('Jus de citron vert',  'jus');     -- ING-00007
+PERFORM ajouter_ingredient('Jus d''orange',       'jus');     -- ING-00008
+PERFORM ajouter_ingredient('Jus de cranberry',    'jus');     -- ING-00009
+PERFORM ajouter_ingredient('Jus d''ananas',       'jus');     -- ING-00010
+PERFORM ajouter_ingredient('Eau gazeuse',         'soda');    -- ING-00011
+PERFORM ajouter_ingredient('Tonic',               'soda');    -- ING-00012
+PERFORM ajouter_ingredient('Grenadine',           'sirop');   -- ING-00013
+PERFORM ajouter_ingredient('Feuilles de menthe',  'autre');   -- ING-00014
+PERFORM ajouter_ingredient('Glaçons',             'autre');   -- ING-00015
+PERFORM ajouter_ingredient('Sirop de sucre',      'sirop');   -- ING-00016
+PERFORM ajouter_ingredient('Sucre de canne',      'sirop');   -- ING-00017
+PERFORM ajouter_ingredient('Fruit de la passion', 'fruit');   -- ING-00018
+PERFORM ajouter_ingredient('Tranches d''orange',  'fruit');   -- ING-00019
+PERFORM ajouter_ingredient('Jus de pomme',        'jus');     -- ING-00020
+PERFORM ajouter_ingredient('Sirop de rose',       'sirop');   -- ING-00021
 
 /* ============================================================
    3. USTENSILES
    ============================================================ */
-SELECT setval('seq_ustensile', 1, false);
-
-SELECT ajouter_ustensile('Shaker');             -- UST-00001
-SELECT ajouter_ustensile('Pilon');              -- UST-00002
-SELECT ajouter_ustensile('Verre à long drink'); -- UST-00003
-SELECT ajouter_ustensile('Verre à martini');    -- UST-00004
-SELECT ajouter_ustensile('Cuillère de bar');    -- UST-00005
-SELECT ajouter_ustensile('Passoire à cocktail');-- UST-00006
-SELECT ajouter_ustensile('Verre à punch');      -- UST-00007
-SELECT ajouter_ustensile('Grande casserole');   -- UST-00008
-SELECT ajouter_ustensile('Verre à cocktail');   -- UST-00009
+PERFORM ajouter_ustensile('Shaker');              -- UST-00001
+PERFORM ajouter_ustensile('Pilon');               -- UST-00002
+PERFORM ajouter_ustensile('Verre à long drink');  -- UST-00003
+PERFORM ajouter_ustensile('Verre à martini');     -- UST-00004
+PERFORM ajouter_ustensile('Cuillère de bar');     -- UST-00005
+PERFORM ajouter_ustensile('Passoire à cocktail'); -- UST-00006
+PERFORM ajouter_ustensile('Verre à punch');       -- UST-00007
+PERFORM ajouter_ustensile('Grande casserole');    -- UST-00008
+PERFORM ajouter_ustensile('Verre à cocktail');    -- UST-00009
 
 /* ============================================================
-   4. COCKTAILS
+   4. COCKTAILS (via ajouter_cocktail -> génère COK-XXXXX)
    ============================================================ */
-INSERT INTO _cocktail (idCocktail, nomCocktail, description, difficulte, alcool, duree, statut, idCompte) VALUES
-    ('CKT-00001', 'Mojito',
-     'Le grand classique cubain à base de rhum, menthe fraîche et citron vert. Rafraîchissant et incontournable.',
-     'Facile', TRUE, 10, 'publié', 'CPT-00001'),
-
-    ('CKT-00002', 'Gin Tonic',
-     'Un cocktail sobre et élégant, le mariage parfait entre le gin et le tonic avec une tranche de citron vert.',
-     'Facile', TRUE, 5, 'publié', 'CPT-00001'),
-
-    ('CKT-00003', 'Tequila Sunrise',
-     'Un cocktail solaire aux couleurs du lever de soleil, mêlant tequila, jus d''orange et grenadine.',
-     'Facile', TRUE, 8, 'publié', 'CPT-00001'),
-
-    ('CKT-00004', 'Sex on the Beach',
-     'Un cocktail fruité et coloré à base de vodka, peach schnapps, jus d''orange et jus de cranberry.',
-     'Facile', TRUE, 8, 'publié', 'CPT-00001'),
-
-    ('CKT-00005', 'Punch',
-     'Un punch festif et généreux à base de rhum ambré, jus de fruits et grenadine. Idéal pour les grandes occasions.',
-     'Moyen', TRUE, 20, 'publié', 'CPT-00001'),
-     
-    ('CKT-00006', 'Virgin Mojito',
-     'La version sans alcool du célèbre cocktail cubain. Tout aussi rafraîchissant grâce à la menthe fraîche et au citron vert.',
-     'Facile', FALSE, 8, 'publié', 'CPT-00001'),
-
-    ('CKT-00007', 'Apple Rose',
-     'Un cocktail sans alcool doux et floral, associant la fraîcheur du jus de pomme au parfum délicat du sirop de rose.',
-     'Facile', FALSE, 5, 'publié', 'CPT-00001');
+c_moj := (ajouter_cocktail('Mojito', 'Le grand classique cubain à base de rhum, menthe fraîche et citron vert. Rafraîchissant et incontournable.', 10, 'CPT-00001', 'Facile', TRUE, 'publié')).idCocktail;
+c_gin := (ajouter_cocktail('Gin Tonic', 'Un cocktail sobre et élégant, le mariage parfait entre le gin and le tonic avec une tranche de citron vert.', 5, 'CPT-00001', 'Facile', TRUE, 'publié')).idCocktail;
+c_teq := (ajouter_cocktail('Tequila Sunrise', 'Un cocktail solaire aux couleurs du lever de soleil, mêlant tequila, jus d''orange et grenadine.', 8, 'CPT-00001', 'Facile', TRUE, 'publié')).idCocktail;
+c_sex := (ajouter_cocktail('Sex on the Beach', 'Un cocktail fruité et coloré à base de vodka, peach schnapps, jus d''orange et jus de cranberry.', 8, 'CPT-00001', 'Facile', TRUE, 'publié')).idCocktail;
+c_pun := (ajouter_cocktail('Punch', 'Un punch festif et généreux à base de rhum ambré, jus de fruits et grenadine. Idéal pour les grandes occasions.', 20, 'CPT-00001', 'Moyen', TRUE, 'publié')).idCocktail;
+c_vmo := (ajouter_cocktail('Virgin Mojito', 'La version sans alcool du célèbre cocktail cubain. Tout aussi rafraîchissant grâce à la menthe fraîche et au citron vert.', 8, 'CPT-00001', 'Facile', FALSE, 'publié')).idCocktail;
+c_app := (ajouter_cocktail('Apple Rose', 'Un cocktail sans alcool doux et floral, associant la fraîcheur du jus de pomme au parfum délicat du sirop de rose.', 5, 'CPT-00001', 'Facile', FALSE, 'publié')).idCocktail;
 
 /* ============================================================
-   5. ETAPES
+   5. ÉTAPES DYNAMIQUES
    ============================================================ */
-INSERT INTO _etape (idEtape, idCocktail, numeroEtape, descriptionEtape) VALUES
-    -- Mojito
-    ('ETP-00001', 'CKT-00001', 1, 'Écraser les feuilles de menthe et le citron vert au pilon dans le verre.'),
-    ('ETP-00002', 'CKT-00001', 2, 'Ajouter le sirop de sucre et le rhum blanc, puis mélanger avec la cuillère de bar.'),
-    ('ETP-00003', 'CKT-00001', 3, 'Remplir de glaçons puis compléter avec l''eau gazeuse. Décorer d''une feuille de menthe.'),
+-- Mojito
+e1_moj := (ajouter_etape_cocktail(c_moj, 'Écraser les feuilles de menthe et le citron vert au pilon dans le verre.')).idEtape;
+e2_moj := (ajouter_etape_cocktail(c_moj, 'Ajouter le sirop de sucre et le rhum blanc, puis mélanger avec la cuillère de bar.')).idEtape;
+e3_moj := (ajouter_etape_cocktail(c_moj, 'Remplir de glaçons puis compléter avec l''eau gazeuse. Décorer d''une feuille de menthe.')).idEtape;
 
-    -- Gin Tonic
-    ('ETP-00004', 'CKT-00002', 1, 'Remplir un verre à long drink de glaçons.'),
-    ('ETP-00005', 'CKT-00002', 2, 'Verser le gin sur les glaçons puis compléter avec le tonic.'),
-    ('ETP-00006', 'CKT-00002', 3, 'Mélanger délicatement avec la cuillère de bar. Décorer d''une tranche de citron vert.'),
+-- Gin Tonic
+e1_gin := (ajouter_etape_cocktail(c_gin, 'Remplir un verre à long drink de glaçons.')).idEtape;
+e2_gin := (ajouter_etape_cocktail(c_gin, 'Verser le gin sur les glaçons puis compléter avec le tonic.')).idEtape;
+e3_gin := (ajouter_etape_cocktail(c_gin, 'Mélanger délicatement avec la cuillère de bar. Décorer d''une tranche de citron vert.')).idEtape;
 
-    -- Tequila Sunrise
-    ('ETP-00007', 'CKT-00003', 1, 'Remplir un verre à long drink de glaçons et y verser la tequila.'),
-    ('ETP-00008', 'CKT-00003', 2, 'Ajouter le jus d''orange sans mélanger.'),
-    ('ETP-00009', 'CKT-00003', 3, 'Verser lentement la grenadine le long du verre pour créer l''effet sunrise. Ne pas mélanger.'),
+-- Tequila Sunrise
+e1_teq := (ajouter_etape_cocktail(c_teq, 'Remplir un verre à long drink de glaçons et y verser la tequila.')).idEtape;
+e2_teq := (ajouter_etape_cocktail(c_teq, 'Ajouter le jus d''orange sans mélanger.')).idEtape;
+e3_teq := (ajouter_etape_cocktail(c_teq, 'Verser lentement la grenadine le long du verre pour créer l''effet sunrise. Ne pas mélanger.')).idEtape;
 
-    -- Sex on the Beach
-    ('ETP-00010', 'CKT-00004', 1, 'Verser la vodka et le peach schnapps dans le shaker avec des glaçons.'),
-    ('ETP-00011', 'CKT-00004', 2, 'Ajouter le jus d''orange et le jus de cranberry, puis shaker.'),
-    ('ETP-00012', 'CKT-00004', 3, 'Filtrer et verser dans un verre à long drink rempli de glaçons. Décorer d''une tranche d''orange.'),
+-- Sex on the Beach
+e1_sex := (ajouter_etape_cocktail(c_sex, 'Verser la vodka et le peach schnapps dans le shaker avec des glaçons.')).idEtape;
+e2_sex := (ajouter_etape_cocktail(c_sex, 'Ajouter le jus d''orange et le jus de cranberry, puis shaker.')).idEtape;
+e3_sex := (ajouter_etape_cocktail(c_sex, 'Filtrer et verser dans un verre à long drink rempli de glaçons. Décorer d''une tranche d''orange.')).idEtape;
 
-    -- Punch
-    ('ETP-00013', 'CKT-00005', 1, 'Verser le rhum ambré dans la grande casserole.'),
-    ('ETP-00014', 'CKT-00005', 2, 'Ajouter le jus d''orange, le jus d''ananas, le jus de fruit de la passion et la grenadine.'),
-    ('ETP-00015', 'CKT-00005', 3, 'Mélanger et réfrigérer au moins 1 heure avant de servir avec des glaçons.'),
+-- Punch
+e1_pun := (ajouter_etape_cocktail(c_pun, 'Verser le rhum ambré dans la grande casserole.')).idEtape;
+e2_pun := (ajouter_etape_cocktail(c_pun, 'Ajouter le jus d''orange, le jus d''ananas, le jus de fruit de la passion et la grenadine.')).idEtape;
+e3_pun := (ajouter_etape_cocktail(c_pun, 'Mélanger et réfrigérer au moins 1 heure avant de servir avec des glaçons.')).idEtape;
 
+-- Virgin Mojito
+e1_vmo := (ajouter_etape_cocktail(c_vmo, 'Écraser les feuilles de menthe et les morceaux de citron vert au pilon au fond du verre.')).idEtape;
+e2_vmo := (ajouter_etape_cocktail(c_vmo, 'Ajouter le sirop de sucre, puis remplir le verre à moitié de glaçons (ou glace pilée).')).idEtape;
+e3_vmo := (ajouter_etape_cocktail(c_vmo, 'Compléter avec de l''eau gazeuse et mélanger délicatement à la cuillère.')).idEtape;
 
-    -- Virgin Mojito
-    ('ETP-00016', 'CKT-00006', 1, 'Écraser les feuilles de menthe et les morceaux de citron vert au pilon au fond du verre.'),
-    ('ETP-00017', 'CKT-00006', 2, 'Ajouter le sirop de sucre, puis remplir le verre à moitié de glaçons (ou glace pilée).'),
-    ('ETP-00018', 'CKT-00006', 3, 'Compléter avec de l''eau gazeuse et mélanger délicatement à la cuillère.'),
-
-    -- Apple Rose
-    ('ETP-00019', 'CKT-00007', 1, 'Remplir le shaker de glaçons.'),
-    ('ETP-00020', 'CKT-00007', 2, 'Verser le jus de pomme, le jus de citron vert et le sirop de rose dans le shaker, puis agiter vigoureusement.'),
-    ('ETP-00021', 'CKT-00007', 3, 'Filtrer et verser le mélange dans un verre à cocktail.');
-    
-/* ============================================================
-   6. DOSAGES
-   ============================================================ */
-INSERT INTO _dosage (idCocktail, idIngredient, quantite, unite, idEtape) VALUES
-    -- Mojito
-    ('CKT-00001', 'ING-00001', 5,  'cl',       'ETP-00002'),  -- Rhum blanc
-    ('CKT-00001', 'ING-00007', 3,  'cl',       'ETP-00001'),  -- Jus de citron vert
-    ('CKT-00001', 'ING-00016', 2,  'cl',       'ETP-00002'),  -- Sirop de sucre
-    ('CKT-00001', 'ING-00011', 10, 'cl',       'ETP-00003'),  -- Eau gazeuse
-    ('CKT-00001', 'ING-00014', 6,  'feuilles', 'ETP-00001'),  -- Feuilles de menthe
-    ('CKT-00001', 'ING-00015', 6,  'glaçons',  'ETP-00003'),  -- Glaçons
-
-    -- Gin Tonic
-    ('CKT-00002', 'ING-00002', 5,  'cl',      'ETP-00005'),   -- Gin
-    ('CKT-00002', 'ING-00012', 15, 'cl',      'ETP-00005'),   -- Tonic
-    ('CKT-00002', 'ING-00015', 6,  'glaçons', 'ETP-00004'),   -- Glaçons
-
-    -- Tequila Sunrise
-    ('CKT-00003', 'ING-00003', 5,  'cl',      'ETP-00007'),   -- Tequila
-    ('CKT-00003', 'ING-00008', 10, 'cl',      'ETP-00008'),   -- Jus d''orange
-    ('CKT-00003', 'ING-00013', 2,  'cl',      'ETP-00009'),   -- Grenadine
-    ('CKT-00003', 'ING-00015', 6,  'glaçons', 'ETP-00007'),   -- Glaçons
-
-    -- Sex on the Beach
-    ('CKT-00004', 'ING-00004', 4,  'cl',      'ETP-00010'),   -- Vodka
-    ('CKT-00004', 'ING-00006', 2,  'cl',      'ETP-00010'),   -- Peach Schnapps
-    ('CKT-00004', 'ING-00008', 6,  'cl',      'ETP-00011'),   -- Jus d''orange
-    ('CKT-00004', 'ING-00009', 6,  'cl',      'ETP-00011'),   -- Jus de cranberry
-    ('CKT-00004', 'ING-00015', 6,  'glaçons', 'ETP-00010'),   -- Glaçons
-
-    -- Punch
-    ('CKT-00005', 'ING-00005', 50, 'cl',      'ETP-00013'),   -- Rhum ambré
-    ('CKT-00005', 'ING-00008', 50, 'cl',      'ETP-00014'),   -- Jus d''orange
-    ('CKT-00005', 'ING-00010', 50, 'cl',      'ETP-00014'),   -- Jus d''ananas
-    ('CKT-00005', 'ING-00018', 30, 'cl',      'ETP-00014'),   -- Fruit de la passion
-    ('CKT-00005', 'ING-00013', 10, 'cl',      'ETP-00014'),   -- Grenadine
-    ('CKT-00005', 'ING-00015', 20, 'glaçons', 'ETP-00015'),   -- Glaçons
-    
-    -- Virgin Mojito
-    ('CKT-00006', 'ING-00007', 3,  'cl',       'ETP-00016'),  -- Jus de citron vert
-    ('CKT-00006', 'ING-00014', 6,  'feuilles', 'ETP-00016'),  -- Feuilles de menthe
-    ('CKT-00006', 'ING-00016', 2,  'cl',       'ETP-00017'),  -- Sirop de sucre
-    ('CKT-00006', 'ING-00015', 6,  'glaçons',  'ETP-00017'),  -- Glaçons
-    ('CKT-00006', 'ING-00011', 15, 'cl',       'ETP-00018'),  -- Eau gazeuse
-
-    -- Apple Rose
-    ('CKT-00007', 'ING-00015', 6,  'glaçons',  'ETP-00019'),  -- Glaçons
-    ('CKT-00007', 'ING-00020', 12, 'cl',       'ETP-00020'),  -- Jus de pomme
-    ('CKT-00007', 'ING-00007', 2,  'cl',       'ETP-00020'),  -- Jus de citron vert
-    ('CKT-00007', 'ING-00021', 1.5, 'cl',      'ETP-00020');  -- Sirop de rose
-    
-
+-- Apple Rose
+e1_app := (ajouter_etape_cocktail(c_app, 'Remplir le shaker de glaçons.')).idEtape;
+e2_app := (ajouter_etape_cocktail(c_app, 'Verser le jus de pomme, le jus de citron vert et le sirop de rose dans le shaker, puis agiter vigoureusement.')).idEtape;
+e3_app := (ajouter_etape_cocktail(c_app, 'Filtrer et verser le mélange dans un verre à cocktail.')).idEtape;
 
 /* ============================================================
-   7. ETAPE_USTENSILE
+   6. DOSAGES (via ajouter_dosage)
    ============================================================ */
-INSERT INTO _etape_ustensile (idEtape, idUstensile) VALUES
+-- Mojito
+PERFORM ajouter_dosage(c_moj, 'ING-00001', 5,  'cl',       e2_moj);
+PERFORM ajouter_dosage(c_moj, 'ING-00007', 3,  'cl',       e1_moj);
+PERFORM ajouter_dosage(c_moj, 'ING-00016', 2,  'cl',       e2_moj);
+PERFORM ajouter_dosage(c_moj, 'ING-00011', 10, 'cl',       e3_moj);
+PERFORM ajouter_dosage(c_moj, 'ING-00014', 6,  'feuilles', e1_moj);
+PERFORM ajouter_dosage(c_moj, 'ING-00015', 6,  'glaçons',  e3_moj);
 
-    -- Mojito
-    ('ETP-00001', 'UST-00002'),  -- Pilon
-    ('ETP-00001', 'UST-00003'),  -- Verre long drink
-    ('ETP-00002', 'UST-00005'),  -- Cuillère de bar
-    
-    -- Gin Tonic
-    ('ETP-00004', 'UST-00003'),  -- Verre long drink
-    ('ETP-00006', 'UST-00005'),  -- Cuillère de bar
-    
-    -- Tequila Sunrise
-    ('ETP-00007', 'UST-00003'),  -- Verre long drink
-    
-    -- Sex on the Beach
-    ('ETP-00010', 'UST-00001'),  -- Shaker
-    ('ETP-00012', 'UST-00006'),  -- Passoire à cocktail
-    ('ETP-00012', 'UST-00003'),  -- Verre long drink
-    
-    -- Punch
-    ('ETP-00013', 'UST-00008'),  -- Grande casserole
-    ('ETP-00015', 'UST-00007'),  -- Verre à punch
-    
-    -- Virgin Mojito
-    ('ETP-00016', 'UST-00002'),  -- Pilon
-    ('ETP-00016', 'UST-00003'),  -- Verre long drink
-    ('ETP-00018', 'UST-00005'),  -- Cuillère de bar
+-- Gin Tonic
+PERFORM ajouter_dosage(c_gin, 'ING-00002', 5,  'cl',      e2_gin);
+PERFORM ajouter_dosage(c_gin, 'ING-00012', 15, 'cl',      e2_gin);
+PERFORM ajouter_dosage(c_gin, 'ING-00015', 6,  'glaçons', e1_gin);
 
-    -- Apple Rose
-    ('ETP-00019', 'UST-00001'),  -- Shaker
-    ('ETP-00021', 'UST-00006'),  -- Passoire à cocktail
-    ('ETP-00021', 'UST-00009');  -- Verre à cocktail
+-- Tequila Sunrise
+PERFORM ajouter_dosage(c_teq, 'ING-00003', 5,  'cl',      e1_teq);
+PERFORM ajouter_dosage(c_teq, 'ING-00008', 10, 'cl',      e2_teq);
+PERFORM ajouter_dosage(c_teq, 'ING-00013', 2,  'cl',      e3_teq);
+PERFORM ajouter_dosage(c_teq, 'ING-00015', 6,  'glaçons', e1_teq);
+
+-- Sex on the Beach
+PERFORM ajouter_dosage(c_sex, 'ING-00004', 4,  'cl',      e1_sex);
+PERFORM ajouter_dosage(c_sex, 'ING-00006', 2,  'cl',      e1_sex);
+PERFORM ajouter_dosage(c_sex, 'ING-00008', 6,  'cl',      e2_sex);
+PERFORM ajouter_dosage(c_sex, 'ING-00009', 6,  'cl',      e2_sex);
+PERFORM ajouter_dosage(c_sex, 'ING-00015', 6,  'glaçons', e1_sex);
+
+-- Punch
+PERFORM ajouter_dosage(c_pun, 'ING-00005', 50, 'cl',      e1_pun);
+PERFORM ajouter_dosage(c_pun, 'ING-00008', 50, 'cl',      e2_pun);
+PERFORM ajouter_dosage(c_pun, 'ING-00010', 50, 'cl',      e2_pun);
+PERFORM ajouter_dosage(c_pun, 'ING-00018', 30, 'cl',      e2_pun);
+PERFORM ajouter_dosage(c_pun, 'ING-00013', 10, 'cl',      e2_pun);
+PERFORM ajouter_dosage(c_pun, 'ING-00015', 20, 'glaçons', e3_pun);
+   
+-- Virgin Mojito
+PERFORM ajouter_dosage(c_vmo, 'ING-00007', 3,  'cl',       e1_vmo);
+PERFORM ajouter_dosage(c_vmo, 'ING-00014', 6,  'feuilles', e1_vmo);
+PERFORM ajouter_dosage(c_vmo, 'ING-00016', 2,  'cl',       e2_vmo);
+PERFORM ajouter_dosage(c_vmo, 'ING-00015', 6,  'glaçons',  e2_vmo);
+PERFORM ajouter_dosage(c_vmo, 'ING-00011', 15, 'cl',       e3_vmo);
+
+-- Apple Rose
+PERFORM ajouter_dosage(c_app, 'ING-00015', 6,  'glaçons',  e1_app);
+PERFORM ajouter_dosage(c_app, 'ING-00020', 12, 'cl',       e2_app);
+PERFORM ajouter_dosage(c_app, 'ING-00007', 2,  'cl',       e2_app);
+PERFORM ajouter_dosage(c_app, 'ING-00021', 1.5, 'cl',      e2_app);
 
 /* ============================================================
-   8. FRIGOS
+   7. ETAPE_USTENSILE (via ajouter_ustensile_etape)
    ============================================================ */
+-- Mojito
+PERFORM ajouter_ustensile_etape(e1_moj, 'UST-00002'); PERFORM ajouter_ustensile_etape(e1_moj, 'UST-00003'); PERFORM ajouter_ustensile_etape(e2_moj, 'UST-00005');
+-- Gin Tonic
+PERFORM ajouter_ustensile_etape(e1_gin, 'UST-00003'); PERFORM ajouter_ustensile_etape(e3_gin, 'UST-00005');
+-- Tequila Sunrise
+PERFORM ajouter_ustensile_etape(e1_teq, 'UST-00003');
+-- Sex on the Beach
+PERFORM ajouter_ustensile_etape(e1_sex, 'UST-00001'); PERFORM ajouter_ustensile_etape(e3_sex, 'UST-00006'); PERFORM ajouter_ustensile_etape(e3_sex, 'UST-00003');
+-- Punch
+PERFORM ajouter_ustensile_etape(e1_pun, 'UST-00008'); PERFORM ajouter_ustensile_etape(e3_pun, 'UST-00007');
+-- Virgin Mojito
+PERFORM ajouter_ustensile_etape(e1_vmo, 'UST-00002'); PERFORM ajouter_ustensile_etape(e1_vmo, 'UST-00003'); PERFORM ajouter_ustensile_etape(e3_vmo, 'UST-00005');
+-- Apple Rose
+PERFORM ajouter_ustensile_etape(e1_app, 'UST-00001'); PERFORM ajouter_ustensile_etape(e3_app, 'UST-00006'); PERFORM ajouter_ustensile_etape(e3_app, 'UST-00009');
 
+/* ============================================================
+   8. CONTENU DES FRIGOS (Pas de fonction spécifique, insertion directe)
+   ============================================================ */
 INSERT INTO _frigo_composition (idFrigo, idIngredient, quantite, unite) VALUES
-    -- Frigo admin : de quoi faire un Mojito
-    ('FRG-00001', 'ING-00001', 70,  'cl'),        -- Rhum blanc
-    ('FRG-00001', 'ING-00007', 10,  'cl'),        -- Jus de citron vert
-    ('FRG-00001', 'ING-00014', 30,  'feuilles'),  -- Feuilles de menthe
-    ('FRG-00001', 'ING-00016', 50,  'cl'),        -- Sirop de sucre
-    ('FRG-00001', 'ING-00011', 150, 'cl'),        -- Eau gazeuse
+   ('FRG-00001', 'ING-00001', 70,  'cl'),       
+   ('FRG-00001', 'ING-00007', 10,  'cl'),       
+   ('FRG-00001', 'ING-00014', 30,  'feuilles'), 
+   ('FRG-00001', 'ING-00016', 50,  'cl'),       
+   ('FRG-00001', 'ING-00011', 150, 'cl'),       
 
-    -- Frigo romain : de quoi faire un Tequila Sunrise
-    ('FRG-00002', 'ING-00003', 70,  'cl'),        -- Tequila
-    ('FRG-00002', 'ING-00008', 100, 'cl'),        -- Jus d''orange
-    ('FRG-00002', 'ING-00013', 20,  'cl'),        -- Grenadine
+   ('FRG-00002', 'ING-00003', 70,  'cl'),       
+   ('FRG-00002', 'ING-00008', 100, 'cl'),       
+   ('FRG-00002', 'ING-00013', 20,  'cl'),       
 
-    -- Frigo test (mineur) : uniquement des softs
-    ('FRG-00003', 'ING-00008', 200, 'cl'),        -- Jus d''orange
-    ('FRG-00003', 'ING-00012', 200, 'cl'),        -- Tonic
-    ('FRG-00003', 'ING-00013', 150, 'cl');        -- Grenadine
+   ('FRG-00003', 'ING-00008', 200, 'cl'),       
+   ('FRG-00003', 'ING-00012', 200, 'cl'),       
+   ('FRG-00003', 'ING-00013', 150, 'cl');       
 
 /* ============================================================
-   9. AVIS
+   9. AVIS (via ajouter_avis -> capture des IDs pour les réponses)
    ============================================================ */
-INSERT INTO _avis (idAvis, idCocktail, idCompte, noteAvis, titreAvis, descriptionAvis) VALUES
-    -- romain note le Mojito au lieu d'admin
-    ('AVS-00001', 'CKT-00001', 'CPT-00002', 5,
-     'Un incontournable !',
-     'Recette parfaite, le mojito le plus rafraîchissant que j''aie jamais préparé. La menthe fraîche fait toute la différence.'),
-
-    -- Suppression de l'ancien doublon de romain sur le Mojito pour respecter la contrainte uq_avis_unique (1 avis max par user/cocktail)
-
-    -- romain note le Gin Tonic
-    ('AVS-00003', 'CKT-00002', 'CPT-00002', 4,
-     'Simple et efficace',
-     'Rien de compliqué, c''est exactement ça le charme du Gin Tonic. Bien équilibré entre l''amertume du tonic et le gin.'),
-
-    -- romain note le Tequila Sunrise
-    ('AVS-00005', 'CKT-00003', 'CPT-00002', 5,
-     'Magnifique à regarder et à boire',
-     'L''effet dégradé est vraiment impressionnant quand on verse la grenadine doucement. Beau visuellement et délicieux.'),
-
-    -- romain note le Sex on the Beach
-    ('AVS-00006', 'CKT-00004', 'CPT-00002', 5,
-     'Mon cocktail préféré !',
-     'Je fais cette recette tout l''été, mes amis adorent. Le mélange cranberry et orange est parfait, pas trop sucré.'),
-
-    -- romain note le Punch
-    ('AVS-00007', 'CKT-00005', 'CPT-00002', 4,
-     'Parfait pour les soirées',
-     'Idéal quand on reçoit beaucoup de monde. La préparation à l''avance est un vrai plus. Je rajoute un peu de jus de citron vert.');
-
+a1 := (ajouter_avis(c_moj, 'CPT-00002', 5, 'Un incontournable !', 'Recette parfaite, le mojito le plus rafraîchissant que j''aie jamais préparé.')).idAvis;
+a2 := (ajouter_avis(c_gin, 'CPT-00002', 4, 'Simple et efficace', 'Rien de compliqué, c''est exactement ça le charme du Gin Tonic.')).idAvis;
+a3 := (ajouter_avis(c_teq, 'CPT-00002', 5, 'Magnifique à regarder et à boire', 'L''effet dégradé est vraiment impressionnant quand on verse la grenadine.')).idAvis;
+a4 := (ajouter_avis(c_sex, 'CPT-00002', 5, 'Mon cocktail préféré !', 'Je fais cette recette tout l''été, mes amis adorent.')).idAvis;
+a5 := (ajouter_avis(c_pun, 'CPT-00002', 4, 'Parfait pour les soirées', 'Idéal quand on reçoit beaucoup de monde.')).idAvis;
 
 /* ============================================================
-   10. REPONSES
+   10. REPONSES (via ajouter_reponse)
    ============================================================ */
-INSERT INTO _reponse (idReponse, idAvis, idCompte, commentaire) VALUES
-    -- Réponses sur AVS-00001 (romain note le Mojito)
-    ('REP-00001', 'AVS-00001', 'CPT-00001', -- L'admin répond (1ère réponse de l'admin)
-     'Totalement d''accord, la menthe fraîche c''est obligatoire, avec de la menthe séchée c''est une catastrophe !'),
-    ('REP-00002', 'AVS-00001', 'CPT-00002', -- Romain rétorque (1ère réponse de Romain)
-     'Exactement ! Et un bon rhum blanc fait aussi toute la différence, évite les rhums bas de gamme.'),
-    ('REP-00003', 'AVS-00001', 'CPT-00003', -- L'utilisateur "test" s'incruste dans la discussion pour poser sa question !
-     'Tu recommandes quelle marque de rhum ? Je tourne toujours sur Bacardi mais je veux changer.'),
-
-    -- Réponses sur AVS-00003 (romain note le Gin Tonic)
-    ('REP-00006', 'AVS-00003', 'CPT-00001',
-     'Pour plus d''originalité tu peux ajouter quelques baies de genièvre ou un zeste de pamplemousse !'),
-    ('REP-00007', 'AVS-00003', 'CPT-00002',
-     'Bonne idée le pamplemousse, je vais tester ça ce week-end.'),
-
-    -- Réponses sur AVS-00005 (romain note le Tequila Sunrise)
-    ('REP-00009', 'AVS-00005', 'CPT-00001',
-     'L''astuce c''est vraiment de verser la grenadine avec le dos d''une cuillère pour qu''elle coule doucement.'),
-    ('REP-00010', 'AVS-00005', 'CPT-00002',
-     'Oui ! Et de ne surtout pas mélanger ensuite, sinon l''effet dégradé disparaît complètement.'),
-
-    -- Réponses sur AVS-00006 (romain note le Sex on the Beach)
-    ('REP-00011', 'AVS-00006', 'CPT-00001',
-     'Super recette en effet ! Pour varier tu peux remplacer le peach schnapps par du Malibu, ça donne une touche coco sympa.'),
-
-    -- Réponses sur AVS-00007 (romain note le Punch)
-    ('REP-00013', 'AVS-00007', 'CPT-00001',
-     'Le citron vert c''est une super idée, ça coupe un peu le sucré. J''ajoute aussi une pincée de cannelle personnellement.'),
-    ('REP-00014', 'AVS-00007', 'CPT-00002',
-     'La cannelle ?! Je n''aurais pas pensé à ça, je vais essayer au prochain repas de famille.');
-     
+PERFORM ajouter_reponse(a1, 'CPT-00001', 'Totalement d''accord, la menthe fraîche c''est obligatoire !');
+PERFORM ajouter_reponse(a1, 'CPT-00002', 'Exactement ! Et un bon rhum blanc fait aussi toute la différence.');
+PERFORM ajouter_reponse(a1, 'CPT-00003', 'Tu recommandes quelle marque de rhum ?');
+PERFORM ajouter_reponse(a2, 'CPT-00001', 'Pour plus d''originalité tu peux ajouter quelques baies de genièvre !');
+PERFORM ajouter_reponse(a2, 'CPT-00002', 'Bonne idée, je vais tester ça ce week-end.');
+PERFORM ajouter_reponse(a3, 'CPT-00001', 'L''astuce c''est vraiment de verser la grenadine doucement.');
+PERFORM ajouter_reponse(a3, 'CPT-00002', 'Oui ! Et de ne surtout pas mélanger ensuite.');
+PERFORM ajouter_reponse(a4, 'CPT-00001', 'Super recette en effet !');
+PERFORM ajouter_reponse(a5, 'CPT-00001', 'Le citron vert c''est une super idée, ça coupe un peu le sucré.');
+PERFORM ajouter_reponse(a5, 'CPT-00002', 'Je vais essayer au prochain repas de famille.');
+   
 /* ============================================================
-   12. SIGNALEMENTS
+   11. SIGNALEMENTS (via ajouter_signalement)
    ============================================================ */
-INSERT INTO _signalement (idSignalement, idCompte, idCocktail, idAvis, motif) VALUES
-    ('SIG-00001', 'CPT-00002', 'CKT-00001', NULL, 'spam'),         -- romain signale le Mojito (test)
-    ('SIG-00002', 'CPT-00001', NULL, 'AVS-00005',  'hors_sujet');  -- admin signale l'avis AVS004
+PERFORM ajouter_signalement('CPT-00002', 'spam', c_moj, NULL, NULL);        
+PERFORM ajouter_signalement('CPT-00001', 'hors_sujet', NULL, a3, NULL);
 
 /* ============================================================
-   VUES
+   12. IMAGES DES COCKTAILS (Utilisent déjà des fonctions)
    ============================================================ */
+PERFORM ajouter_image_cocktail(c_moj, '/public/images/mojito.jpg', 'Mojito');
+PERFORM ajouter_image_cocktail(c_gin, '/public/images/gin_tonic.jpg', 'Gin Tonic');
+PERFORM ajouter_image_cocktail(c_teq, '/public/images/tequila_sunrise.webp', 'Tequila Sunrise');
+PERFORM ajouter_image_cocktail(c_sex, '/public/images/sex_on_the_beach.webp', 'Sex on the Beach');
+PERFORM ajouter_image_cocktail(c_pun, '/public/images/punch.webp', 'Punch');
+PERFORM ajouter_image_cocktail(c_vmo, '/public/images/virgin_mojito.webp', 'Virgin Mojito');
+PERFORM ajouter_image_cocktail(c_app, '/public/images/apple_rose.jpg', 'Apple Rose');
 
--- Vue : cocktails avec leurs étapes et ingrédients associés
+/* ============================================================
+   13. IMAGES DES INGRÉDIENTS (Utilisent déjà des fonctions)
+   ============================================================ */
+PERFORM modifier_image_ingredient('ING-00001', 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Rhum Blanc');
+PERFORM modifier_image_ingredient('ING-00002', 'https://mon-site.com/uploads/ingredients/gin.jpg', 'Gin');
+PERFORM modifier_image_ingredient('ING-00003', 'https://mon-site.com/uploads/ingredients/tequila.jpg', 'Tequila');
+PERFORM modifier_image_ingredient('ING-00004', 'https://mon-site.com/uploads/ingredients/vodka.jpg', 'Vodka');
+PERFORM modifier_image_ingredient('ING-00007', 'https://mon-site.com/uploads/ingredients/citron_vert.jpg', 'Jus de Citron Vert');
+
+END $$;
+
+/* ============================================================
+   VUES DE CONSULTATION
+   ============================================================ */
 CREATE OR REPLACE VIEW vue_cocktails_compacte AS
 SELECT
     c.nomCocktail,
@@ -356,26 +312,3 @@ LEFT JOIN _dosage     d ON e.idEtape     = d.idEtape
 LEFT JOIN _ingredient i ON d.idIngredient = i.idIngredient
 GROUP BY  c.nomCocktail, e.numeroEtape, e.descriptionEtape
 ORDER BY  c.nomCocktail, e.numeroEtape;
-
-
-/* ============================================================
-   18. IMAGE
-   ============================================================ */
-
-   -- image Cocktail
-   
-SELECT ajouter_image_cocktail('CKT-00001', '/public/images/mojito.jpg', 'Mojito');
-SELECT ajouter_image_cocktail('CKT-00002', '/public/images/gin_tonic.jpg', 'Gin Tonic');
-SELECT ajouter_image_cocktail('CKT-00003', '/public/images/tequila_sunrise.webp', 'Tequila Sunrise');
-SELECT ajouter_image_cocktail('CKT-00004', '/public/images/sex_on_the_beach.webp', 'Sex on the Beach');
-SELECT ajouter_image_cocktail('CKT-00005', '/public/images/punch.webp', 'Punch');
-SELECT ajouter_image_cocktail('CKT-00006', '/public/images/virgin_mojito.webp', 'Virgin Mojito');
-SELECT ajouter_image_cocktail('CKT-00007', '/public/images/apple_rose.jpg', 'Apple Rose');
-
-   -- image Ingredient
-
-SELECT modifier_image_ingredient('ING-00001', 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Rhum Blanc');
-SELECT modifier_image_ingredient('ING-00001', 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Gin');
-SELECT modifier_image_ingredient('ING-00001', 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Rhum Blanc');
-SELECT modifier_image_ingredient('ING-00001', 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Rhum Blanc');
-SELECT modifier_image_ingredient('ING-00001', 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Rhum Blanc');

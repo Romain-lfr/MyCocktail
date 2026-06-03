@@ -1,5 +1,5 @@
 /* ============================================================ */
-/*           MyCocktail - Base de données PostgreSQL            */
+/* MyCocktail - Base de données PostgreSQL            */
 /* ============================================================ */
 
 DROP SCHEMA IF EXISTS MyCocktail CASCADE;
@@ -20,6 +20,19 @@ CREATE TYPE motif_enum      AS ENUM ('contenu_inapproprie', 'spam', 'hors_sujet'
 CREATE TYPE role_enum       AS ENUM ('user', 'moderateur', 'admin');
 
 /* ============================================================
+        SEQUENCE - Définition des séquences pour les ID automatiques 
+   ============================================================ */
+CREATE SEQUENCE IF NOT EXISTS seq_compte START 1;
+CREATE SEQUENCE IF NOT EXISTS seq_cocktail START 1;
+CREATE SEQUENCE IF NOT EXISTS seq_avis START 1;
+CREATE SEQUENCE IF NOT EXISTS seq_reponse START 1;
+CREATE SEQUENCE IF NOT EXISTS seq_image START 1;
+CREATE SEQUENCE IF NOT EXISTS seq_etape START 1;
+CREATE SEQUENCE IF NOT EXISTS seq_ustensile START 1;
+CREATE SEQUENCE IF NOT EXISTS seq_ingredient START 1;
+CREATE SEQUENCE IF NOT EXISTS seq_signalement START 1;
+
+/* ============================================================
    1. COMPTE
    ============================================================ */
 
@@ -33,13 +46,12 @@ CREATE TABLE _compte (
     dateInscription TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
     role            role_enum       NOT NULL DEFAULT 'user',
 
-    CONSTRAINT chk_compte_pseudo_len      CHECK (LENGTH(TRIM(pseudo))     >= 3),
+    CONSTRAINT chk_compte_pseudo_len      CHECK (LENGTH(TRIM(pseudo))      >= 3),
     CONSTRAINT chk_compte_mail_len        CHECK (LENGTH(TRIM(mailCompte)) >= 5),
     CONSTRAINT chk_compte_mail_low        CHECK (mailCompte = LOWER(mailCompte)),
     CONSTRAINT chk_compte_mdp_len         CHECK (LENGTH(mdpCompte)        >= 8),
     CONSTRAINT chk_compte_numtel_format   CHECK (numTel ~ '^\+?[\d\s\-]{7,20}$'),
     CONSTRAINT chk_compte_date_naiss      CHECK (dateNaissance BETWEEN '1900-01-01' AND CURRENT_DATE)
-    
 );
 
 -- ============================================================
@@ -60,9 +72,6 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_hash_mdp
 BEFORE INSERT OR UPDATE OF mdpCompte ON _compte
 FOR EACH ROW EXECUTE FUNCTION hash_mdp();
-
--- Séquence pour générer les numéros de comptes automatiquement
-CREATE SEQUENCE seq_compte START 1;
 
 -- ============================================================
 -- Fonction utilitaire : créer un compte (ID automatique)
@@ -133,8 +142,6 @@ CREATE TABLE _ingredient (
     CONSTRAINT chk_ingredient_nom_len  CHECK (LENGTH(TRIM(nomIngredient)) >= 2)
 );
 
--- Séquence pour générer les numéros d'ingrédients automatiquement
-CREATE SEQUENCE seq_ingredient START 1;
 
 -- ============================================================
 -- Fonction utilitaire : ajouter un ingrédient (ID automatique)
@@ -169,12 +176,8 @@ CREATE TABLE _ustensile (
     CONSTRAINT chk_ustensile_nom_len   CHECK (LENGTH(TRIM(nomUstensile)) >= 2)
 );
 
--- Séquence pour générer les numéros d'ustensiles automatiquement
-CREATE SEQUENCE seq_ustensile START 1;
-
 -- ============================================================
 -- Fonction utilitaire : ajouter un ustensile (ID automatique)
--- Usage : SELECT ajouter_ustensile('Shaker');
 -- ============================================================
 CREATE OR REPLACE FUNCTION ajouter_ustensile(
     p_nom VARCHAR(100)
@@ -210,7 +213,7 @@ CREATE TABLE _cocktail (
     idCompte        VARCHAR(13)     NOT NULL, -- Auteur de la recette
 
     CONSTRAINT chk_cocktail_nom_len    CHECK (LENGTH(TRIM(nomCocktail)) >= 2),
-    CONSTRAINT chk_cocktail_desc_len   CHECK (LENGTH(TRIM(description)) >= 10),
+    CONSTRAINT chk_cocktail_desc_len    CHECK (LENGTH(TRIM(description)) >= 1), -- TODO 1 -> 10 
     CONSTRAINT chk_cocktail_duree_pos  CHECK (duree > 0),
 
     -- Un auteur ne peut pas avoir deux cocktails avec le même nom
@@ -219,6 +222,35 @@ CREATE TABLE _cocktail (
     CONSTRAINT fk_cocktail_compte
         FOREIGN KEY (idCompte) REFERENCES _compte(idCompte)
 );
+
+-- ============================================================
+-- Fonction utilitaire : ajouter un Cocktail (ID automatique)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION ajouter_cocktail(
+    p_nom VARCHAR(100),
+    p_description TEXT,
+    p_duree INT,
+    p_idCompte VARCHAR(13),
+    p_difficulte difficulte_enum DEFAULT 'Facile',
+    p_alcool BOOLEAN DEFAULT FALSE,
+    p_statut statut_enum DEFAULT 'brouillon'
+)
+RETURNS _cocktail AS $$
+DECLARE
+    v_id VARCHAR(13);
+    v_result _cocktail;
+BEGIN
+    -- Génération de l'ID : COK-00001
+    v_id := 'COK-' || LPAD(nextval('seq_cocktail')::TEXT, 5, '0');
+
+    INSERT INTO _cocktail (idCocktail, nomCocktail, description, difficulte, alcool, duree, statut, idCompte)
+    VALUES (v_id, TRIM(p_nom), TRIM(p_description), p_difficulte, p_alcool, p_duree, p_statut, p_idCompte)
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
 
 
 /* ============================================================
@@ -242,9 +274,38 @@ CREATE TABLE _etape (
         ON DELETE CASCADE
 );
 
+-- ============================================================
+-- Fonction utilitaire : Ajouter une étape à un cocktail
+-- (Le numéro de l'étape est calculé automatiquement)
+-- ============================================================
+CREATE OR REPLACE FUNCTION ajouter_etape_cocktail(
+    p_idCocktail       VARCHAR(13),
+    p_descriptionEtape TEXT
+)
+RETURNS _etape AS $$
+DECLARE
+    v_id           VARCHAR(13);
+    v_prochain_num INT;
+    v_result       _etape;
+BEGIN
+    v_id := 'ETP-' || LPAD(nextval('seq_etape')::TEXT, 5, '0');
+
+    SELECT COALESCE(MAX(numeroEtape), 0) + 1 
+    INTO v_prochain_num 
+    FROM _etape 
+    WHERE idCocktail = p_idCocktail;
+
+    INSERT INTO _etape (idEtape, idCocktail, numeroEtape, descriptionEtape)
+    VALUES (v_id, p_idCocktail, v_prochain_num, TRIM(p_descriptionEtape))
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
 
 /* ============================================================
-   6. DOSAGE  (Cocktail <-> Ingrédient)
+   6. DOSAGE  (Étape <-> Ingrédient)
    ============================================================ */
 
 CREATE TABLE _dosage (
@@ -271,15 +332,35 @@ CREATE TABLE _dosage (
 );
 
 -- ============================================================
+-- Fonction utilitaire : Ajouter un ingrédient à une étape
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION ajouter_dosage(
+    p_idCocktail VARCHAR(13),
+    p_idIngredient VARCHAR(13),
+    p_quantite NUMERIC(6,2),
+    p_unite VARCHAR(20),
+    p_idEtape VARCHAR(13) DEFAULT NULL
+)
+RETURNS _dosage AS $$
+DECLARE
+    v_result _dosage;
+BEGIN
+    INSERT INTO _dosage (idCocktail, idIngredient, quantite, unite, idEtape)
+    VALUES (p_idCocktail, p_idIngredient, p_quantite, TRIM(p_unite), p_idEtape)
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================
 -- TRIGGER : Cohérence des Dosages et Étapes
--- Vérifie que si on associe un ingrédient à une étape,
--- cette étape appartient bien au même cocktail que le dosage.
 -- ============================================================
 CREATE OR REPLACE FUNCTION check_dosage_etape_cocktail()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.idEtape IS NOT NULL THEN
-        -- FIX : point-virgule manquant après le PERFORM
         PERFORM * FROM _etape
             WHERE idEtape    = NEW.idEtape
               AND idCocktail = NEW.idCocktail;
@@ -311,11 +392,32 @@ CREATE TABLE _etape_ustensile (
         ON DELETE CASCADE,
     CONSTRAINT fk_eu_ustensile
         FOREIGN KEY (idUstensile) REFERENCES _ustensile(idUstensile)
-        ON DELETE RESTRICT -- Empêche la suppression d'un ustensile s'il est encore utilisé
+        ON DELETE RESTRICT 
 );
 
+-- ============================================================
+-- Fonction utilitaire : Ajouter un ustensile à une étape
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION ajouter_ustensile_etape(
+    p_idEtape VARCHAR(13),
+    p_idUstensile VARCHAR(13)
+)
+RETURNS _etape_ustensile AS $$
+DECLARE
+    v_result _etape_ustensile;
+BEGIN
+    INSERT INTO _etape_ustensile (idEtape, idUstensile)
+    VALUES (p_idEtape, p_idUstensile)
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
+
 /* ============================================================
-   8. IMAGE
+   8. IMAGE 
    ============================================================ */
 CREATE TABLE _image (
     idImage         VARCHAR(13)     PRIMARY KEY,
@@ -326,10 +428,11 @@ CREATE TABLE _image (
     CONSTRAINT chk_image_title_len   CHECK (LENGTH(TRIM(titleImage)) >= 2)
 );
 
--- Séquence pour générer les numéros d'images automatiquement
-CREATE SEQUENCE IF NOT EXISTS seq_image START 1;
+-- ============================================================
+-- Fonction utilitaire : ajouter une Image (ID automatique)
+-- On doit ajouter l'image avec les fonctions des tables liées
+-- ============================================================
 
--- Fonction maîtresse pour insérer une image dans la table globale
 CREATE OR REPLACE FUNCTION ajouter_image(
     p_url   VARCHAR(500),
     p_titre VARCHAR(150)
@@ -349,6 +452,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
 /* ============================================================
    9. IMAGE_COCKTAIL
    ============================================================ */
@@ -365,6 +469,10 @@ CREATE TABLE _image_cocktail (
         ON DELETE CASCADE
 );
 
+-- ============================================================
+-- Fonction utilitaire : Lié une image à un cocktail (ID de l'image automatique)
+-- ============================================================
+
 CREATE OR REPLACE FUNCTION ajouter_image_cocktail(
     p_idCocktail VARCHAR(13),
     p_url        VARCHAR(500),
@@ -374,10 +482,8 @@ RETURNS VARCHAR(13) AS $$
 DECLARE
     v_img _image;
 BEGIN
-    -- 1. Création de l'image globale
     v_img := ajouter_image(p_url, p_titre);
     
-    -- 2. Liaison avec le cocktail
     INSERT INTO _image_cocktail (idImage, idCocktail)
     VALUES (v_img.idImage, p_idCocktail);
 
@@ -385,10 +491,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
 /* ============================================================
    10. AVIS
-   Un utilisateur peut laisser exactement 1 avis par cocktail,
-   avec une note entre 1 et 5.
    ============================================================ */
 CREATE TABLE _avis (
     idAvis          VARCHAR(13)     PRIMARY KEY,
@@ -403,7 +508,6 @@ CREATE TABLE _avis (
     CONSTRAINT chk_avis_titre_len    CHECK (LENGTH(TRIM(titreAvis))       >= 3),
     CONSTRAINT chk_avis_desc_len     CHECK (LENGTH(TRIM(descriptionAvis)) >= 10),
 
-    -- Un utilisateur ne peut laisser qu'un seul avis par cocktail
     CONSTRAINT uq_avis_unique        UNIQUE (idCocktail, idCompte),
 
     CONSTRAINT fk_avis_cocktail
@@ -414,14 +518,9 @@ CREATE TABLE _avis (
         ON DELETE CASCADE
 );
 
-/* ============================================================
-   Un auteur peut noter son propre cocktail
-   ============================================================ */
- 
 CREATE OR REPLACE FUNCTION check_avis_auteur()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Vérifie que l'auteur de l'avis n'est pas l'auteur du cocktail
     IF EXISTS (
         SELECT 1 FROM _cocktail
         WHERE idCocktail = NEW.idCocktail
@@ -439,6 +538,34 @@ CREATE TRIGGER trg_check_avis_auteur
 BEFORE INSERT OR UPDATE OF idCompte, idCocktail ON _avis
 FOR EACH ROW EXECUTE FUNCTION check_avis_auteur();
 
+-- ============================================================
+-- Fonction utilitaire : ajouter un Avis (ID automatique)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION ajouter_avis(
+    p_idCocktail VARCHAR(13),
+    p_idCompte VARCHAR(13),
+    p_note INT,
+    p_titre VARCHAR(100),
+    p_description TEXT
+)
+RETURNS _avis AS $$
+DECLARE
+    v_id VARCHAR(13);
+    v_result _avis;
+BEGIN
+    -- Génération de l'ID : AVS-00001
+    v_id := 'AVS-' || LPAD(nextval('seq_avis')::TEXT, 5, '0');
+
+    INSERT INTO _avis (idAvis, idCocktail, idCompte, noteAvis, titreAvis, descriptionAvis)
+    VALUES (v_id, p_idCocktail, p_idCompte, p_note, TRIM(p_titre), TRIM(p_description))
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
+
 /* ============================================================
    11. IMAGE_AVIS
    ============================================================ */
@@ -454,6 +581,10 @@ CREATE TABLE _image_avis (
         FOREIGN KEY (idAvis)  REFERENCES _avis(idAvis)
         ON DELETE CASCADE
 );
+
+-- ============================================================
+-- Fonction utilitaire : Lié une image à un avis (ID de l'image automatique)
+-- ============================================================
 
 CREATE OR REPLACE FUNCTION ajouter_image_avis(
     p_idAvis VARCHAR(13),
@@ -473,6 +604,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
 /* ============================================================
    12. REPONSE
    ============================================================ */
@@ -484,7 +616,6 @@ CREATE TABLE _reponse (
     dateReponse     TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
 
     CONSTRAINT chk_reponse_comment_len CHECK (LENGTH(TRIM(commentaire)) >= 2),
-
     CONSTRAINT uq_reponse_unique UNIQUE (idAvis, idCompte),
 
     CONSTRAINT fk_reponse_avis
@@ -495,9 +626,7 @@ CREATE TABLE _reponse (
         ON DELETE CASCADE
 );
 
--- ============================================================
--- Vue : fil de discussion complet d'un cocktail
--- ============================================================
+-- Vues liées aux discussions et notes
 CREATE VIEW v_fil_discussion AS
 SELECT
     c.nomCocktail                           AS cocktail,
@@ -517,9 +646,6 @@ JOIN  _compte    auteur_avis ON a.idCompte   = auteur_avis.idCompte
 LEFT JOIN _reponse  r        ON r.idAvis     = a.idAvis
 LEFT JOIN _compte   auteur_rep ON r.idCompte = auteur_rep.idCompte;
 
--- ============================================================
--- Vue : note moyenne par cocktail
--- ============================================================
 CREATE VIEW v_notes_cocktails AS
 SELECT
     c.idCocktail,
@@ -530,6 +656,31 @@ FROM _cocktail c
 LEFT JOIN _avis a ON a.idCocktail = c.idCocktail
 GROUP BY c.idCocktail, c.nomCocktail
 ORDER BY note_moyenne DESC NULLS LAST;
+
+-- ============================================================
+-- Fonction utilitaire : lié une réponse à un avis (ID automatique)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION ajouter_reponse(
+    p_idAvis VARCHAR(13),
+    p_idCompte VARCHAR(13),
+    p_commentaire TEXT
+)
+RETURNS _reponse AS $$
+DECLARE
+    v_id VARCHAR(13);
+    v_result _reponse;
+BEGIN
+    -- Génération de l'ID : REP-00001
+    v_id := 'REP-' || LPAD(nextval('seq_reponse')::TEXT, 5, '0');
+
+    INSERT INTO _reponse (idReponse, idAvis, idCompte, commentaire)
+    VALUES (v_id, p_idAvis, p_idCompte, TRIM(p_commentaire))
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
 
 /* ============================================================
    13. FAVORI
@@ -548,22 +699,40 @@ CREATE TABLE _favori (
         ON DELETE CASCADE
 );
 
+-- ============================================================
+-- Fonction utilitaire : Ajouté un cocktail en favori (ID automatique)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION ajouter_favori(
+    p_idCompte VARCHAR(13),
+    p_idCocktail VARCHAR(13)
+)
+RETURNS _favori AS $$
+DECLARE
+    v_result _favori;
+BEGIN
+    INSERT INTO _favori (idCompte, idCocktail)
+    VALUES (p_idCompte, p_idCocktail)
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
 /* ============================================================
    14. SIGNALEMENT
    ============================================================ */
 CREATE TABLE _signalement (
     idSignalement      VARCHAR(13)     PRIMARY KEY,
-    idCompte           VARCHAR(13)     NOT NULL,  -- Auteur du signalement
+    idCompte           VARCHAR(13)     NOT NULL,  
     idCocktail         VARCHAR(13)     NULL,
     idAvis             VARCHAR(13)     NULL,
-    idCompteCible      VARCHAR(13)     NULL,      -- Compte signalé
+    idCompteCible      VARCHAR(13)     NULL,      
     motif              motif_enum      NOT NULL,
     dateSignalement    TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
  
-    -- Empêche le spam : un utilisateur ne peut signaler une même cible qu'une seule fois
     CONSTRAINT uq_signalement        UNIQUE (idCompte, idCocktail, idAvis, idCompteCible),
  
-    -- Le signalement doit viser exactement UNE cible parmi les trois
     CONSTRAINT chk_signalement_cible
         CHECK (
             (idCocktail IS NOT NULL AND idAvis IS NULL     AND idCompteCible IS NULL) OR
@@ -571,7 +740,6 @@ CREATE TABLE _signalement (
             (idCocktail IS NULL     AND idAvis IS NULL     AND idCompteCible IS NOT NULL)
         ),
  
-    -- Un utilisateur ne peut pas se signaler lui-même
     CONSTRAINT chk_signalement_self
         CHECK (idCompte <> idCompteCible),
  
@@ -589,22 +757,45 @@ CREATE TABLE _signalement (
         ON DELETE CASCADE
 );
 
+-- ============================================================
+-- Fonction utilitaire : Signaler du contenu (ID automatique)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION ajouter_signalement(
+    p_idCompte VARCHAR(13),
+    p_motif motif_enum,
+    p_idCocktail VARCHAR(13) DEFAULT NULL,
+    p_idAvis VARCHAR(13) DEFAULT NULL,
+    p_idCompteCible VARCHAR(13) DEFAULT NULL
+)
+RETURNS _signalement AS $$
+DECLARE
+    v_id VARCHAR(13);
+    v_result _signalement;
+BEGIN
+    -- Génération de l'ID : SIG-00001
+    v_id := 'SIG-' || LPAD(nextval('seq_signalement')::TEXT, 5, '0');
+
+    INSERT INTO _signalement (idSignalement, idCompte, motif, idCocktail, idAvis, idCompteCible)
+    VALUES (v_id, p_idCompte, p_motif, p_idCocktail, p_idAvis, p_idCompteCible)
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
 /* ============================================================
    15. FRIGO
    ============================================================ */
 CREATE TABLE _frigo (
     idFrigo         VARCHAR(13)     PRIMARY KEY,
-    idCompte        VARCHAR(13)     NOT NULL UNIQUE, -- Relation 1 à 1 : Un compte = Un frigo
+    idCompte        VARCHAR(13)     NOT NULL UNIQUE, 
 
     CONSTRAINT fk_frigo_compte
         FOREIGN KEY (idCompte) REFERENCES _compte(idCompte)
         ON DELETE CASCADE
 );
 
--- ============================================================
--- TRIGGER : Création automatique du frigo à l'inscription
--- Chaque nouveau compte reçoit automatiquement un frigo.
--- ============================================================
 CREATE OR REPLACE FUNCTION creer_frigo_auto()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -620,7 +811,7 @@ FOR EACH ROW EXECUTE FUNCTION creer_frigo_auto();
 
 
 /* ============================================================
-   16. FRIGO_COMPOSITION - Le contenu du frigo
+   16. FRIGO_COMPOSITION
    ============================================================ */
 CREATE TABLE _frigo_composition (
     idFrigo         VARCHAR(13)     NOT NULL,
@@ -640,12 +831,13 @@ CREATE TABLE _frigo_composition (
         ON DELETE CASCADE
 );
 
+
 /* ============================================================
-   17. IMAGE_COMPTE
+   17. IMAGE_COMPTE (Relation 1 à 1 unique)
    ============================================================ */
 CREATE TABLE _image_compte (
     idImage         VARCHAR(13)     NOT NULL,
-    idCompte        VARCHAR(13)     NOT NULL UNIQUE, -- Relation 1 à 1 : une image de profil max par compte
+    idCompte        VARCHAR(13)     NOT NULL UNIQUE, 
 
     CONSTRAINT pk_image_compte       PRIMARY KEY (idImage, idCompte),
     CONSTRAINT fk_icp_image
@@ -655,6 +847,10 @@ CREATE TABLE _image_compte (
         FOREIGN KEY (idCompte)  REFERENCES _compte(idCompte)
         ON DELETE CASCADE
 );
+
+-- ============================================================
+-- Fonction utilitaire : Lié une image à un compte (ID de l'image automatique)
+-- ============================================================
 
 CREATE OR REPLACE FUNCTION modifier_image_compte(
     p_idCompte VARCHAR(13),
@@ -667,7 +863,6 @@ DECLARE
 BEGIN
     v_img := ajouter_image(p_url, p_titre);
     
-    -- Insère ou remplace si le compte a déjà une image
     INSERT INTO _image_compte (idImage, idCompte)
     VALUES (v_img.idImage, p_idCompte)
     ON CONFLICT (idCompte) 
@@ -677,12 +872,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
 /* ============================================================
-   18. IMAGE_INGREDIENT
+   18. IMAGE_INGREDIENT (Relation 1 à 1 unique)
    ============================================================ */
 CREATE TABLE _image_ingredient (
     idImage         VARCHAR(13)     NOT NULL,
-    idIngredient    VARCHAR(13)     NOT NULL UNIQUE, -- Relation 1 à 1 : une image de profil max par ingredient
+    idIngredient    VARCHAR(13)     NOT NULL UNIQUE, 
 
     CONSTRAINT pk_image_ingredient       PRIMARY KEY (idImage, idIngredient),
     CONSTRAINT fk_ii_image
@@ -692,6 +888,10 @@ CREATE TABLE _image_ingredient (
         FOREIGN KEY (idIngredient)  REFERENCES _ingredient(idIngredient)
         ON DELETE CASCADE
 );
+
+-- ============================================================
+-- Fonction utilitaire : Lié une image à un ingrédient (ID de l'image automatique)
+-- ============================================================
 
 CREATE OR REPLACE FUNCTION modifier_image_ingredient(
     p_idIngredient VARCHAR(13),
@@ -713,12 +913,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
 /* ============================================================
-   19. IMAGE_USTENSILE
+   19. IMAGE_USTENSILE (Relation 1 à 1 unique)
    ============================================================ */
 CREATE TABLE _image_ustensile (
     idImage         VARCHAR(13)     NOT NULL,
-    idUstensile     VARCHAR(13)     NOT NULL UNIQUE, -- Relation 1 à 1 : une image de profil max par ustensile
+    idUstensile     VARCHAR(13)     NOT NULL UNIQUE, 
 
     CONSTRAINT pk_image_ustensile       PRIMARY KEY (idImage, idUstensile),
     CONSTRAINT fk_iu_image
@@ -728,6 +929,10 @@ CREATE TABLE _image_ustensile (
         FOREIGN KEY (idUstensile)  REFERENCES _ustensile(idUstensile)
         ON DELETE CASCADE
 );
+
+-- ============================================================
+-- Fonction utilitaire : Lié une image à un ustensile (ID de l'image automatique)
+-- ============================================================
 
 CREATE OR REPLACE FUNCTION modifier_image_ustensile(
     p_idUstensile VARCHAR(13),
