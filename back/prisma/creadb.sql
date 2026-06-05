@@ -431,87 +431,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
 /* ============================================================
-   8. IMAGE 
-   ============================================================ */
-
-CREATE TABLE _image (
-    idImage         VARCHAR(13)     PRIMARY KEY,
-    urlImage        VARCHAR(500)    NOT NULL UNIQUE,
-    titleImage      VARCHAR(150)    NOT NULL,
-    typeImage       image_enum      NOT NULL,
-
-    CONSTRAINT chk_image_url_len     CHECK (LENGTH(TRIM(urlImage))   >= 10),
-    CONSTRAINT chk_image_title_len   CHECK (LENGTH(TRIM(titleImage)) >= 2)
-);
-
--- ============================================================
--- Fonction utilitaire : ajouter une Image (ID automatique)
--- ============================================================
-
-CREATE OR REPLACE FUNCTION ajouter_image(
-    p_url   VARCHAR(500),
-    p_titre VARCHAR(150),
-    p_type  image_enum
-)
-RETURNS _image AS $$
-DECLARE
-    v_id     VARCHAR(13);
-    v_result _image;
-BEGIN
-    v_id := 'IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0');
-
-    INSERT INTO _image (idImage, urlImage, titleImage, typeImage)
-    VALUES (v_id, TRIM(p_url), TRIM(p_titre), p_type)
-    RETURNING * INTO v_result;
-
-    RETURN v_result;
-END;
-$$ LANGUAGE plpgsql;
-
--- ============================================================
--- VUE : Vue en fonction du type d'image
--- ============================================================
-
--- Vue pour les images de Profil
-CREATE OR REPLACE VIEW v_image_profil AS
-SELECT idImage, urlImage, titleImage, typeImage
-FROM _image
-WHERE typeImage = 'profil'
-WITH CHECK OPTION;
-
--- Vue pour les images de Cocktail
-CREATE OR REPLACE VIEW v_image_cocktail AS
-SELECT idImage, urlImage, titleImage, typeImage
-FROM _image
-WHERE typeImage = 'cocktail'
-WITH CHECK OPTION;
-
--- Vue pour les images d'Avis
-CREATE OR REPLACE VIEW v_image_avis AS
-SELECT idImage, urlImage, titleImage, typeImage
-FROM _image
-WHERE typeImage = 'avis'
-WITH CHECK OPTION;
-
--- Vue pour les images d'Ingrédient
-CREATE OR REPLACE VIEW v_image_ingredient AS
-SELECT idImage, urlImage, titleImage, typeImage
-FROM _image
-WHERE typeImage = 'ingrédient'
-WITH CHECK OPTION;
-
--- Vue pour les images d'Ustensile
-CREATE OR REPLACE VIEW v_image_ustensile AS
-SELECT idImage, urlImage, titleImage, typeImage
-FROM _image
-WHERE typeImage = 'ustensile'
-WITH CHECK OPTION;
-
-
-/* ============================================================
-   9. AVIS
+   8. AVIS
    ============================================================ */
 
 CREATE TABLE _avis (
@@ -588,7 +509,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* ============================================================
-   10. REPONSE
+   9. REPONSE
    ============================================================ */
 
 CREATE TABLE _reponse (
@@ -665,7 +586,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* ============================================================
-   11. FAVORI
+   10. FAVORI
    ============================================================ */
 
 CREATE TABLE _favori (
@@ -703,7 +624,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* ============================================================
-   12. SIGNALEMENT --TODO ajouter le signalement des réponses
+   11. SIGNALEMENT --TODO ajouter le signalement des réponses
    ============================================================ */
 CREATE TABLE _signalement (
     idSignalement      VARCHAR(13)     PRIMARY KEY,
@@ -767,7 +688,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 /* ============================================================
-   13. FRIGO
+   12. FRIGO
    ============================================================ */
 CREATE TABLE _frigo (
     idFrigo         VARCHAR(13)     PRIMARY KEY,
@@ -792,7 +713,7 @@ AFTER INSERT ON _compte
 FOR EACH ROW EXECUTE FUNCTION creer_frigo_auto();
 
 /* ============================================================
-   14. FRIGO_COMPOSITION
+   13. FRIGO_COMPOSITION
    ============================================================ */
 CREATE TABLE _frigo_composition (
     idFrigo         VARCHAR(13)     NOT NULL,
@@ -811,3 +732,200 @@ CREATE TABLE _frigo_composition (
         FOREIGN KEY (idIngredient) REFERENCES _ingredient(idIngredient)
         ON DELETE CASCADE
 );
+
+/* ============================================================
+   14. IMAGE 
+   ============================================================ */
+
+CREATE TABLE _image (
+    idImage         VARCHAR(13)     PRIMARY KEY,
+    urlImage        VARCHAR(500)    NOT NULL UNIQUE,
+    titleImage      VARCHAR(150)    NOT NULL,
+    typeImage       image_enum      NOT NULL,
+    idCocktail      VARCHAR(13)     NULL,
+    idCompte        VARCHAR(13)     NULL,
+    idAvis          VARCHAR(13)     NULL,
+    idIngredient    VARCHAR(13)     NULL,
+    idUstensile     VARCHAR(13)     NULL,
+
+    CONSTRAINT chk_image_url_len     CHECK (LENGTH(TRIM(urlImage))   >= 10),
+    CONSTRAINT chk_image_title_len   CHECK (LENGTH(TRIM(titleImage)) >= 2),
+
+    CONSTRAINT fk_image_cocktail
+        FOREIGN KEY (idCocktail)   REFERENCES _cocktail(idCocktail)   ON DELETE CASCADE,
+    CONSTRAINT fk_image_compte
+        FOREIGN KEY (idCompte)     REFERENCES _compte(idCompte)       ON DELETE CASCADE,
+    CONSTRAINT fk_image_avis
+        FOREIGN KEY (idAvis)       REFERENCES _avis(idAvis)           ON DELETE CASCADE,
+    CONSTRAINT fk_image_ingredient
+        FOREIGN KEY (idIngredient) REFERENCES _ingredient(idIngredient) ON DELETE CASCADE,
+    CONSTRAINT fk_image_ustensile
+        FOREIGN KEY (idUstensile)  REFERENCES _ustensile(idUstensile) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- Fonction utilitaire : ajouter une Image (ID automatique)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION ajouter_image(
+    p_url   VARCHAR(500),
+    p_titre VARCHAR(150),
+    p_type  image_enum
+)
+RETURNS _image AS $$
+DECLARE
+    v_id     VARCHAR(13);
+    v_result _image;
+BEGIN
+    v_id := 'IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0');
+
+    INSERT INTO _image (idImage, urlImage, titleImage, typeImage)
+    VALUES (v_id, TRIM(p_url), TRIM(p_titre), p_type)
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Fonction pour ajouter une image à un cocktail
+CREATE OR REPLACE FUNCTION ajouter_image_cocktail(
+    p_idCocktail VARCHAR(13),
+    p_url        VARCHAR(500),
+    p_titre      VARCHAR(150)
+)
+RETURNS _image AS $$
+DECLARE
+    v_id     VARCHAR(13);
+    v_result _image;
+BEGIN
+    v_id := 'IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0');
+
+    INSERT INTO _image (idImage, urlImage, titleImage, typeImage, idCocktail)
+    VALUES (v_id, TRIM(p_url), TRIM(p_titre), 'cocktail', p_idCocktail)
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Fonction pour ajouter une image à un avis
+CREATE OR REPLACE FUNCTION ajouter_image_avis(
+    p_idAvis VARCHAR(13),
+    p_url    VARCHAR(500),
+    p_titre  VARCHAR(150)
+)
+RETURNS _image AS $$
+DECLARE
+    v_id     VARCHAR(13);
+    v_result _image;
+BEGIN
+    v_id := 'IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0');
+
+    INSERT INTO _image (idImage, urlImage, titleImage, typeImage, idAvis)
+    VALUES (v_id, TRIM(p_url), TRIM(p_titre), 'avis', p_idAvis)
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Fonction pour définir/remplacer la photo de profil d'un compte
+CREATE OR REPLACE FUNCTION modifier_image_compte(
+    p_idCompte VARCHAR(13),
+    p_url      VARCHAR(500),
+    p_titre    VARCHAR(150)
+)
+RETURNS _image AS $$
+DECLARE
+    v_id     VARCHAR(13);
+    v_result _image;
+BEGIN
+    -- Supprime l'ancienne image de profil si elle existe
+    DELETE FROM _image WHERE idCompte = p_idCompte AND typeImage = 'profil';
+
+    v_id := 'IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0');
+
+    INSERT INTO _image (idImage, urlImage, titleImage, typeImage, idCompte)
+    VALUES (v_id, TRIM(p_url), TRIM(p_titre), 'profil', p_idCompte)
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Fonction pour définir/remplacer la photo d'un ingrédient
+CREATE OR REPLACE FUNCTION modifier_image_ingredient(
+    p_idIngredient VARCHAR(13),
+    p_url          VARCHAR(500),
+    p_titre        VARCHAR(150)
+)
+RETURNS _image AS $$
+DECLARE
+    v_id     VARCHAR(13);
+    v_result _image;
+BEGIN
+    -- Supprime l'ancienne image si elle existe
+    DELETE FROM _image WHERE idIngredient = p_idIngredient AND typeImage = 'ingrédient';
+
+    v_id := 'IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0');
+
+    INSERT INTO _image (idImage, urlImage, titleImage, typeImage, idIngredient)
+    VALUES (v_id, TRIM(p_url), TRIM(p_titre), 'ingrédient', p_idIngredient)
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Fonction pour définir/remplacer la photo d'un ustensile
+CREATE OR REPLACE FUNCTION modifier_image_ustensile(
+    p_idUstensile VARCHAR(13),
+    p_url         VARCHAR(500),
+    p_titre       VARCHAR(150)
+)
+RETURNS _image AS $$
+DECLARE
+    v_id     VARCHAR(13);
+    v_result _image;
+BEGIN
+    -- Supprime l'ancienne image si elle existe
+    DELETE FROM _image WHERE idUstensile = p_idUstensile AND typeImage = 'ustensile';
+
+    v_id := 'IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0');
+
+    INSERT INTO _image (idImage, urlImage, titleImage, typeImage, idUstensile)
+    VALUES (v_id, TRIM(p_url), TRIM(p_titre), 'ustensile', p_idUstensile)
+    RETURNING * INTO v_result;
+
+    RETURN v_result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================
+-- VUE : Vue en fonction du type d'image
+-- ============================================================
+
+CREATE OR REPLACE VIEW v_image_profil AS
+SELECT idImage, urlImage, titleImage, typeImage, idCompte
+FROM _image WHERE typeImage = 'profil'
+WITH CHECK OPTION;
+
+CREATE OR REPLACE VIEW v_image_cocktail AS
+SELECT idImage, urlImage, titleImage, typeImage, idCocktail
+FROM _image WHERE typeImage = 'cocktail'
+WITH CHECK OPTION;
+
+CREATE OR REPLACE VIEW v_image_avis AS
+SELECT idImage, urlImage, titleImage, typeImage, idAvis
+FROM _image WHERE typeImage = 'avis'
+WITH CHECK OPTION;
+
+CREATE OR REPLACE VIEW v_image_ingredient AS
+SELECT idImage, urlImage, titleImage, typeImage, idIngredient
+FROM _image WHERE typeImage = 'ingrédient'
+WITH CHECK OPTION;
+
+CREATE OR REPLACE VIEW v_image_ustensile AS
+SELECT idImage, urlImage, titleImage, typeImage, idUstensile
+FROM _image WHERE typeImage = 'ustensile'
+WITH CHECK OPTION;

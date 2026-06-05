@@ -22,9 +22,6 @@ export class CompteService {
   async getMesCocktails(idcompte: string) {
     return this.prisma.cocktail.findMany({
       where: { idcompte },
-      include: {
-        image_cocktail: { include: { image: true } },
-      },
     });
   }
 
@@ -32,11 +29,7 @@ export class CompteService {
     return this.prisma.favori.findMany({
       where: { idcompte },
       include: {
-        cocktail: {
-          include: {
-            image_cocktail: { include: { image: true } },
-          },
-        },
+        cocktail: true,
       },
     });
   }

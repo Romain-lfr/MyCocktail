@@ -6,6 +6,9 @@ import { CocktailService } from './cocktail.service';
 import { ImageService } from '../image/image.service';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { CreateDosageDto } from './dto/create-dosage.dto';
+import { CreateUstensileDto } from './dto/create-ustensile.dto';
+import { CreateEtapeDto } from './dto/create-etape.dto';
 import { CreateCocktailDto } from './dto/create-cocktail.dto';
 
 @Controller('cocktail')
@@ -56,5 +59,33 @@ export class CocktailController {
   @UseGuards(OptionalJwtAuthGuard)
   findOne(@Param('nom') nom: string, @Request() req?: any) {
     return this.cocktailService.findByNom(nom, req.user);
+  }
+
+  @Post(':id/etape')
+  @UseGuards(JwtAuthGuard)
+  addEtape(@Param('id') id: string, @Body() body: CreateEtapeDto) {
+    return this.cocktailService.addEtape(id, body);
+  }
+
+  @Get('listes/ingredients')
+  getIngredients() {
+    return this.cocktailService.getIngredients();
+  }
+
+  @Get('listes/ustensiles')
+  getUstensiles() {
+    return this.cocktailService.getUstensiles();
+  }
+
+  @Post(':id/dosage')
+  @UseGuards(JwtAuthGuard)
+  addDosage(@Param('id') id: string, @Body() body: CreateDosageDto) {
+    return this.cocktailService.addDosage(id, body);
+  }
+
+  @Post('etape/ustensile')
+  @UseGuards(JwtAuthGuard)
+  addUstensile(@Body() body: CreateUstensileDto) {
+    return this.cocktailService.addUstensile(body);
   }
 }

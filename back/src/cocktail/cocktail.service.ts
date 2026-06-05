@@ -1,52 +1,24 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCocktailDto } from './dto/create-cocktail.dto';
-
+import { CreateEtapeDto } from './dto/create-etape.dto';
+import { CreateDosageDto } from './dto/create-dosage.dto';
+import { CreateUstensileDto } from './dto/create-ustensile.dto';
 
 @Injectable()
 export class CocktailService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(alcool?: boolean) {
-  return this.prisma.cocktail.findMany({
-    where: alcool !== undefined ? { alcool } : {},
-    include: {
-      image_cocktail: {
-        include: {
-          image: true,
-        },
-      },
-    },
-  });
-  }
-
-  async findOne(id: string) {
-  return this.prisma.cocktail.findUnique({
-    where: { idcocktail: id },
-    include: {
-      image_cocktail: {
-        include: { image: true },
-      },
-      etape: {
-        orderBy: { numeroetape: 'asc' },
-        include: {
-          etape_ustensile: {
-            include: { ustensile: true },
-          },
-        },
-      },
-      dosage: {
-        include: { ingredient: true },
-      },
-    },
-  });
+    return this.prisma.cocktail.findMany({
+      where: alcool !== undefined ? { alcool } : {},
+    });
   }
 
   async findByNom(nom: string, user?: any) {
     const cocktail = await this.prisma.cocktail.findFirst({
       where: { nomcocktail: { equals: nom, mode: 'insensitive' } },
       include: {
-        image_cocktail: { include: { image: true } },
         etape: {
           orderBy: { numeroetape: 'asc' },
           include: { etape_ustensile: { include: { ustensile: true } } },
@@ -56,9 +28,7 @@ export class CocktailService {
           include: {
             compte: { select: { pseudo: true } },
             reponse: {
-              include: {
-                compte: { select: { pseudo: true } },
-              },
+              include: { compte: { select: { pseudo: true } } },
             },
           },
           orderBy: { dateavis: 'desc' },
@@ -70,31 +40,54 @@ export class CocktailService {
       throw new ForbiddenException('Accès refusé');
     }
 
+    // Récupère l'image du cocktail
+    if (cocktail) {
+      const image = await this.prisma.image.findFirst({
+        where: { typeimage: 'cocktail', urlimage: { contains: cocktail.idcocktail } },
+      });
+      return { ...cocktail, image };
+    }
+
     return cocktail;
   }
 
   async create(data: CreateCocktailDto, idcompte: string) {
-    const id = 'CKT-' + Math.random().toString(36).substr(2, 5).toUpperCase();
-    
-    return this.prisma.cocktail.create({
-      data: {
-        idcocktail: id,
-        nomcocktail: data.nomcocktail,
-        description: data.description,
-        difficulte: data.difficulte,
-        alcool: data.alcool,
-        duree: data.duree,
-        statut: 'brouillon',
-        idcompte,
-      },
+    const result = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM ajouter_cocktail(${data.nomcocktail}, ${data.description}, ${data.duree}, ${idcompte}, ${data.difficulte}::"difficulte_enum", ${data.alcool}, 'brouillon'::"statut_enum")
+    `;
+    return result[0];
+  }
+
+  async addEtape(idcocktail: string, data: CreateEtapeDto) {
+    const result = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM ajouter_etape_cocktail(${idcocktail}, ${data.descriptionetape})
+    `;
+    return result[0];
+  }
+
+  async addDosage(idcocktail: string, data: CreateDosageDto) {
+    const result = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM ajouter_dosage(${idcocktail}, ${data.idingredient}, ${data.quantite}::numeric, ${data.unite}, ${data.idetape || null})
+    `;
+    return result[0];
+  }
+
+  async addUstensile(data: CreateUstensileDto) {
+    const result = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM ajouter_ustensile_etape(${data.idetape}, ${data.idustensile})
+    `;
+    return result[0];
+  }
+
+  async getIngredients() {
+    return this.prisma.ingredient.findMany({
+      orderBy: { nomingredient: 'asc' },
     });
   }
 
-  async addImage(idcocktail: string, urlimage: string, titleimage: string) {
-    const result = await this.prisma.$queryRaw`
-      SELECT * FROM ajouter_image_cocktail(${idcocktail}, ${urlimage}, ${titleimage})
-    `;
-    return result;
+  async getUstensiles() {
+    return this.prisma.ustensile.findMany({
+      orderBy: { nomustensile: 'asc' },
+    });
   }
-  
 }

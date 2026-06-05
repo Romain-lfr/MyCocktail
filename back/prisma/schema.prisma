@@ -18,6 +18,7 @@ model avis {
   dateavis        DateTime      @default(now()) @db.Timestamptz(6)
   cocktail        cocktail      @relation(fields: [idcocktail], references: [idcocktail], onDelete: Cascade, onUpdate: NoAction, map: "fk_avis_cocktail")
   compte          compte        @relation(fields: [idcompte], references: [idcompte], onDelete: Cascade, onUpdate: NoAction, map: "fk_avis_compte")
+  image           image[]
   reponse         reponse[]
   signalement     signalement[]
 
@@ -41,6 +42,7 @@ model cocktail {
   dosage       dosage[]
   etape        etape[]
   favori       favori[]
+  image        image[]
   signalement  signalement[]
 
   @@unique([nomcocktail, idcompte], map: "uq_cocktail_nom_auteur")
@@ -61,6 +63,7 @@ model compte {
   cocktail                                      cocktail[]
   favori                                        favori[]
   frigo                                         frigo?
+  image                                         image[]
   reponse                                       reponse[]
   signalement_signalement_idcompteTocompte      signalement[] @relation("signalement_idcompteTocompte")
   signalement_signalement_idcomptecibleTocompte signalement[] @relation("signalement_idcomptecibleTocompte")
@@ -142,10 +145,20 @@ model frigo_composition {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model image {
-  idimage    String     @id @db.VarChar(13)
-  urlimage   String     @unique @db.VarChar(500)
-  titleimage String     @db.VarChar(150)
-  typeimage  image_enum
+  idimage      String      @id @db.VarChar(13)
+  urlimage     String      @unique @db.VarChar(500)
+  titleimage   String      @db.VarChar(150)
+  typeimage    image_enum
+  idcocktail   String?     @db.VarChar(13)
+  idcompte     String?     @db.VarChar(13)
+  idavis       String?     @db.VarChar(13)
+  idingredient String?     @db.VarChar(13)
+  idustensile  String?     @db.VarChar(13)
+  avis         avis?       @relation(fields: [idavis], references: [idavis], onDelete: Cascade, onUpdate: NoAction, map: "fk_image_avis")
+  cocktail     cocktail?   @relation(fields: [idcocktail], references: [idcocktail], onDelete: Cascade, onUpdate: NoAction, map: "fk_image_cocktail")
+  compte       compte?     @relation(fields: [idcompte], references: [idcompte], onDelete: Cascade, onUpdate: NoAction, map: "fk_image_compte")
+  ingredient   ingredient? @relation(fields: [idingredient], references: [idingredient], onDelete: Cascade, onUpdate: NoAction, map: "fk_image_ingredient")
+  ustensile    ustensile?  @relation(fields: [idustensile], references: [idustensile], onDelete: Cascade, onUpdate: NoAction, map: "fk_image_ustensile")
 
   @@map("_image")
 }
@@ -157,6 +170,7 @@ model ingredient {
   categorie         categorie_enum      @default(autre)
   dosage            dosage[]
   frigo_composition frigo_composition[]
+  image             image[]
 
   @@map("_ingredient")
 }
@@ -198,6 +212,7 @@ model ustensile {
   idustensile     String            @id @db.VarChar(13)
   nomustensile    String            @unique @db.VarChar(100)
   etape_ustensile etape_ustensile[]
+  image           image[]
 
   @@map("_ustensile")
 }
