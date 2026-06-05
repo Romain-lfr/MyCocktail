@@ -7,17 +7,12 @@ SET search_path TO MyCocktail;
 /* ============================================================
    NETTOYAGE COMPLET
    ============================================================ */
-DELETE FROM _image_compte;
-DELETE FROM _image_ingredient;
-DELETE FROM _image_ustensile;
 DELETE FROM _frigo_composition;
 DELETE FROM _frigo;
 DELETE FROM _signalement;
 DELETE FROM _favori;
 DELETE FROM _reponse;
-DELETE FROM _image_avis;
 DELETE FROM _avis;
-DELETE FROM _image_cocktail;
 DELETE FROM _etape_ustensile;
 DELETE FROM _dosage;
 DELETE FROM _etape;
@@ -63,7 +58,7 @@ DECLARE
 BEGIN
 
 /* ============================================================
-   1. COMPTES (génèrent auto leurs frigos FRG-XXXXX)
+   1. COMPTES 
    ============================================================ */
 PERFORM inscrire_compte('admin',  'admin@mycocktail.com',  'Admin1234',  '1990-04-12', 'admin'); -- CPT-00001
 PERFORM inscrire_compte('romain', 'romain@mycocktail.com', 'Romain1234', '2006-12-04', 'user');  -- CPT-00002
@@ -108,7 +103,7 @@ PERFORM ajouter_ustensile('Grande casserole');    -- UST-00008
 PERFORM ajouter_ustensile('Verre à cocktail');    -- UST-00009
 
 /* ============================================================
-   4. COCKTAILS (via ajouter_cocktail -> génère COK-XXXXX)
+   4. COCKTAILS 
    ============================================================ */
 c_moj := (ajouter_cocktail('Mojito', 'Le grand classique cubain à base de rhum, menthe fraîche et citron vert. Rafraîchissant et incontournable.', 10, 'CPT-00001', 'Facile', TRUE, 'publié')).idCocktail;
 c_gin := (ajouter_cocktail('Gin Tonic', 'Un cocktail sobre et élégant, le mariage parfait entre le gin and le tonic avec une tranche de citron vert.', 5, 'CPT-00001', 'Facile', TRUE, 'publié')).idCocktail;
@@ -119,7 +114,7 @@ c_vmo := (ajouter_cocktail('Virgin Mojito', 'La version sans alcool du célèbre
 c_app := (ajouter_cocktail('Apple Rose', 'Un cocktail sans alcool doux et floral, associant la fraîcheur du jus de pomme au parfum délicat du sirop de rose.', 5, 'CPT-00001', 'Facile', FALSE, 'publié')).idCocktail;
 
 /* ============================================================
-   5. ÉTAPES DYNAMIQUES
+   5. ÉTAPES
    ============================================================ */
 -- Mojito
 e1_moj := (ajouter_etape_cocktail(c_moj, 'Écraser les feuilles de menthe et le citron vert au pilon dans le verre.')).idEtape;
@@ -157,7 +152,7 @@ e2_app := (ajouter_etape_cocktail(c_app, 'Verser le jus de pomme, le jus de citr
 e3_app := (ajouter_etape_cocktail(c_app, 'Filtrer et verser le mélange dans un verre à cocktail.')).idEtape;
 
 /* ============================================================
-   6. DOSAGES (via ajouter_dosage)
+   6. DOSAGES 
    ============================================================ */
 -- Mojito
 PERFORM ajouter_dosage(c_moj, 'ING-00001', 5,  'cl',       e2_moj);
@@ -207,7 +202,7 @@ PERFORM ajouter_dosage(c_app, 'ING-00007', 2,  'cl',       e2_app);
 PERFORM ajouter_dosage(c_app, 'ING-00021', 1.5, 'cl',      e2_app);
 
 /* ============================================================
-   7. ETAPE_USTENSILE (via ajouter_ustensile_etape)
+   7. ETAPE_USTENSILE 
    ============================================================ */
 -- Mojito
 PERFORM ajouter_ustensile_etape(e1_moj, 'UST-00002'); PERFORM ajouter_ustensile_etape(e1_moj, 'UST-00003'); PERFORM ajouter_ustensile_etape(e2_moj, 'UST-00005');
@@ -225,7 +220,7 @@ PERFORM ajouter_ustensile_etape(e1_vmo, 'UST-00002'); PERFORM ajouter_ustensile_
 PERFORM ajouter_ustensile_etape(e1_app, 'UST-00001'); PERFORM ajouter_ustensile_etape(e3_app, 'UST-00006'); PERFORM ajouter_ustensile_etape(e3_app, 'UST-00009');
 
 /* ============================================================
-   8. CONTENU DES FRIGOS (Pas de fonction spécifique, insertion directe)
+   8. CONTENU DES FRIGOS
    ============================================================ */
 INSERT INTO _frigo_composition (idFrigo, idIngredient, quantite, unite) VALUES
    ('FRG-00001', 'ING-00001', 70,  'cl'),       
@@ -243,7 +238,7 @@ INSERT INTO _frigo_composition (idFrigo, idIngredient, quantite, unite) VALUES
    ('FRG-00003', 'ING-00013', 150, 'cl');       
 
 /* ============================================================
-   9. AVIS (via ajouter_avis -> capture des IDs pour les réponses)
+   9. AVIS 
    ============================================================ */
 a1 := (ajouter_avis(c_moj, 'CPT-00002', 5, 'Un incontournable !', 'Recette parfaite, le mojito le plus rafraîchissant que j''aie jamais préparé.')).idAvis;
 a2 := (ajouter_avis(c_gin, 'CPT-00002', 4, 'Simple et efficace', 'Rien de compliqué, c''est exactement ça le charme du Gin Tonic.')).idAvis;
@@ -252,7 +247,7 @@ a4 := (ajouter_avis(c_sex, 'CPT-00002', 5, 'Mon cocktail préféré !', 'Je fais
 a5 := (ajouter_avis(c_pun, 'CPT-00002', 4, 'Parfait pour les soirées', 'Idéal quand on reçoit beaucoup de monde.')).idAvis;
 
 /* ============================================================
-   10. REPONSES (via ajouter_reponse)
+   10. REPONSES
    ============================================================ */
 PERFORM ajouter_reponse(a1, 'CPT-00001', 'Totalement d''accord, la menthe fraîche c''est obligatoire !');
 PERFORM ajouter_reponse(a1, 'CPT-00002', 'Exactement ! Et un bon rhum blanc fait aussi toute la différence.');
@@ -266,30 +261,36 @@ PERFORM ajouter_reponse(a5, 'CPT-00001', 'Le citron vert c''est une super idée,
 PERFORM ajouter_reponse(a5, 'CPT-00002', 'Je vais essayer au prochain repas de famille.');
    
 /* ============================================================
-   11. SIGNALEMENTS (via ajouter_signalement)
+   11. SIGNALEMENTS 
    ============================================================ */
+
 PERFORM ajouter_signalement('CPT-00002', 'spam', c_moj, NULL, NULL);        
 PERFORM ajouter_signalement('CPT-00001', 'hors_sujet', NULL, a3, NULL);
 
 /* ============================================================
-   12. IMAGES DES COCKTAILS (Utilisent déjà des fonctions)
+   12. IMAGES DES COCKTAILS
    ============================================================ */
-PERFORM ajouter_image_cocktail(c_moj, '/public/images/mojito.jpg', 'Mojito');
-PERFORM ajouter_image_cocktail(c_gin, '/public/images/gin_tonic.jpg', 'Gin Tonic');
-PERFORM ajouter_image_cocktail(c_teq, '/public/images/tequila_sunrise.webp', 'Tequila Sunrise');
-PERFORM ajouter_image_cocktail(c_sex, '/public/images/sex_on_the_beach.webp', 'Sex on the Beach');
-PERFORM ajouter_image_cocktail(c_pun, '/public/images/punch.webp', 'Punch');
-PERFORM ajouter_image_cocktail(c_vmo, '/public/images/virgin_mojito.webp', 'Virgin Mojito');
-PERFORM ajouter_image_cocktail(c_app, '/public/images/apple_rose.jpg', 'Apple Rose');
+
+INSERT INTO v_image_cocktail (idImage, urlImage, titleImage, typeImage) VALUES
+('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/mojito.jpg', 'Mojito', 'cocktail'),
+('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/gin_tonic.jpg', 'Gin Tonic', 'cocktail'),
+('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/tequila_sunrise.webp', 'Tequila Sunrise', 'cocktail'),
+('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/sex_on_the_beach.webp', 'Sex on the Beach', 'cocktail'),
+('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/punch.webp', 'Punch', 'cocktail'),
+('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/virgin_mojito.webp', 'Virgin Mojito', 'cocktail'),
+('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/apple_rose.jpg', 'Apple Rose', 'cocktail');
+
 
 /* ============================================================
-   13. IMAGES DES INGRÉDIENTS (Utilisent déjà des fonctions)
+   13. IMAGES DES INGRÉDIENTS (Via la vue sécurisée v_image_ingredient)
    ============================================================ */
-PERFORM modifier_image_ingredient('ING-00001', 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Rhum Blanc');
-PERFORM modifier_image_ingredient('ING-00002', 'https://mon-site.com/uploads/ingredients/gin.jpg', 'Gin');
-PERFORM modifier_image_ingredient('ING-00003', 'https://mon-site.com/uploads/ingredients/tequila.jpg', 'Tequila');
-PERFORM modifier_image_ingredient('ING-00004', 'https://mon-site.com/uploads/ingredients/vodka.jpg', 'Vodka');
-PERFORM modifier_image_ingredient('ING-00007', 'https://mon-site.com/uploads/ingredients/citron_vert.jpg', 'Jus de Citron Vert');
+
+INSERT INTO v_image_ingredient (idImage, urlImage, titleImage, typeImage) VALUES
+('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Rhum Blanc', 'ingrédient'),
+('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), 'https://mon-site.com/uploads/ingredients/gin.jpg', 'Gin', 'ingrédient'),
+('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), 'https://mon-site.com/uploads/ingredients/tequila.jpg', 'Tequila', 'ingrédient'),
+('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), 'https://mon-site.com/uploads/ingredients/vodka.jpg', 'Vodka', 'ingrédient'),
+('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), 'https://mon-site.com/uploads/ingredients/citron_vert.jpg', 'Jus de Citron Vert', 'ingrédient');
 
 END $$;
 
@@ -298,14 +299,14 @@ END $$;
    ============================================================ */
 CREATE OR REPLACE VIEW vue_cocktails_compacte AS
 SELECT
-    c.nomCocktail,
-    e.numeroEtape,
-    e.descriptionEtape,
-    STRING_AGG(
-        d.quantite || ' ' || d.unite || ' de ' || i.nomIngredient,
-        ', '
-        ORDER BY i.nomIngredient
-    ) AS liste_ingredients
+   c.nomCocktail,
+   e.numeroEtape,
+   e.descriptionEtape,
+   STRING_AGG(
+      d.quantite || ' ' || d.unite || ' de ' || i.nomIngredient,
+      ', '
+      ORDER BY i.nomIngredient
+   ) AS liste_ingredients
 FROM      _cocktail   c
 JOIN      _etape      e ON c.idCocktail  = e.idCocktail
 LEFT JOIN _dosage     d ON e.idEtape     = d.idEtape
