@@ -16,10 +16,8 @@ interface Cocktail {
     difficulte: string;
     alcool: boolean;
     duree: number;
-    image_cocktail: Image[];
+    image: { urlimage: string; titleimage: string }[];
 }
-
-
 
 function Home() {
     const [cocktails, setCocktails] = useState<Cocktail[]>([]);
@@ -77,17 +75,17 @@ function Home() {
             <p>Nombre Total : {cocktails.length}</p>
             {cocktails.map((c) => (
                 <div key={c.idcocktail}>
-                    {c.image_cocktail[0] && (
-                        <img
-                        src={`/api${c.image_cocktail[0].image.urlimage}`}
+                    {c.image[0] && (
+                    <img
+                        src={`/api${c.image[0].urlimage}`}
                         alt={c.nomcocktail}
                         width={200}
-                        />
+                    />
                     )}
-                    <h2 
-                        onClick={() => navigate(`/cocktail/${encodeURIComponent(c.nomcocktail)}`)}
-                        style={{ cursor: 'pointer' }}
-                    > {c.nomcocktail} </h2>
+                    <h2
+                    onClick={() => navigate(`/cocktail/${encodeURIComponent(c.nomcocktail)}`)}
+                    style={{ cursor: 'pointer' }}
+                    >{c.nomcocktail}</h2>
                     <p>{c.description}</p>
                     <p>Difficulté : {c.difficulte}</p>
                     <p>Durée : {c.duree} min</p>

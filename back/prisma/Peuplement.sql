@@ -271,28 +271,13 @@ PERFORM ajouter_signalement('CPT-00001', 'hors_sujet', NULL, a3, NULL);
    12. IMAGES DES COCKTAILS
    ============================================================ */
 
-INSERT INTO v_image_cocktail (idImage, urlImage, titleImage, typeImage) VALUES
-('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/mojito.jpg', 'Mojito', 'cocktail'),
-('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/gin_tonic.jpg', 'Gin Tonic', 'cocktail'),
-('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/tequila_sunrise.webp', 'Tequila Sunrise', 'cocktail'),
-('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/sex_on_the_beach.webp', 'Sex on the Beach', 'cocktail'),
-('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/punch.webp', 'Punch', 'cocktail'),
-('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/virgin_mojito.webp', 'Virgin Mojito', 'cocktail'),
-('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), '/public/images/apple_rose.jpg', 'Apple Rose', 'cocktail');
-
-
-/* ============================================================
-   13. IMAGES DES INGRÉDIENTS (Via la vue sécurisée v_image_ingredient)
-   ============================================================ */
-
-INSERT INTO v_image_ingredient (idImage, urlImage, titleImage, typeImage) VALUES
-('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), 'https://mon-site.com/uploads/ingredients/rhum_blanc.jpg', 'Rhum Blanc', 'ingrédient'),
-('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), 'https://mon-site.com/uploads/ingredients/gin.jpg', 'Gin', 'ingrédient'),
-('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), 'https://mon-site.com/uploads/ingredients/tequila.jpg', 'Tequila', 'ingrédient'),
-('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), 'https://mon-site.com/uploads/ingredients/vodka.jpg', 'Vodka', 'ingrédient'),
-('IMG-' || LPAD(nextval('seq_image')::TEXT, 5, '0'), 'https://mon-site.com/uploads/ingredients/citron_vert.jpg', 'Jus de Citron Vert', 'ingrédient');
-
-END $$;
+PERFORM ajouter_image_cocktail('COK-00001', '/public/images/mojito.jpg', 'Mojito');
+PERFORM ajouter_image_cocktail('COK-00002', '/public/images/gin_tonic.jpg', 'Gin Tonic');
+PERFORM ajouter_image_cocktail('COK-00003', '/public/images/tequila_sunrise.webp', 'Tequila Sunrise');
+PERFORM ajouter_image_cocktail('COK-00004', '/public/images/sex_on_the_beach.webp', 'Sex on the Beach');
+PERFORM ajouter_image_cocktail('COK-00005', '/public/images/punch.webp', 'Punch');
+PERFORM ajouter_image_cocktail('COK-00006', '/public/images/virgin_mojito.webp', 'Virgin Mojito');
+PERFORM ajouter_image_cocktail('COK-00007', '/public/images/apple_rose.jpg', 'Apple Rose');
 
 /* ============================================================
    VUES DE CONSULTATION

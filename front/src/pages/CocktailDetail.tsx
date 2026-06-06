@@ -25,17 +25,17 @@ interface Cocktail {
   difficulte: string;
   alcool: boolean;
   duree: number;
-  image_cocktail: { image: { urlimage: string; titleimage: string } }[];
+  image: { urlimage: string; titleimage: string }[];
   etape: {
     idetape: string;
     numeroetape: number;
     descriptionetape: string;
     etape_ustensile: { ustensile: { nomustensile: string } }[];
-  }[];
-  dosage: {
-    quantite: number;
-    unite: string;
-    ingredient: { nomingredient: string };
+    dosage: {
+      quantite: number;
+      unite: string;
+      ingredient: { nomingredient: string };
+    }[];
   }[];
   avis: Avis[];
 }
@@ -68,9 +68,9 @@ function CocktailDetail() {
     
     <div>
         <button onClick={() => navigate(-1)}>← Retour</button>
-      {cocktail.image_cocktail[0] && (
+      {cocktail.image && cocktail.image[0] && (
         <img
-          src={`/api${cocktail.image_cocktail[0].image.urlimage}`}
+          src={`/api${cocktail.image[0].urlimage}`}
           alt={cocktail.nomcocktail}
           width={300}
         />
@@ -81,22 +81,42 @@ function CocktailDetail() {
       <p>Durée : {cocktail.duree} min</p>
       <p>{cocktail.alcool ? "🍸 Avec alcool" : "🥤 Sans alcool"}</p>
 
-      <h2>Ingrédients</h2>
+      <h2>🛒 Ingrédients totaux</h2>
       <ul>
         {cocktail.dosage.map((d, i) => (
           <li key={i}>
-            {d.ingredient.nomingredient} - {d.quantite} {d.unite}
+            {d.ingredient.nomingredient} — {d.quantite} {d.unite}
           </li>
         ))}
       </ul>
 
-      <h2>Étapes</h2>
+      <h2>🍴 Ustensiles nécessaires</h2>
+      <ul>
+        {Array.from(
+          new Set(
+            cocktail.etape.flatMap((e) =>
+              e.etape_ustensile.map((u) => u.ustensile.nomustensile)
+            )
+          )
+        ).map((nom, i) => (
+          <li key={i}>{nom}</li>
+        ))}
+      </ul>
+
+      <h2>📋 Étapes</h2>
       {cocktail.etape.map((e) => (
-        <div key={e.idetape}>
+        <div key={e.idetape} style={{ border: '1px solid #eee', padding: '10px', margin: '10px 0', borderRadius: '8px' }}>
           <h3>Étape {e.numeroetape}</h3>
           <p>{e.descriptionetape}</p>
           {e.etape_ustensile.length > 0 && (
-            <p>Ustensiles : {e.etape_ustensile.map((u) => u.ustensile.nomustensile).join(", ")}</p>
+            <p>🍴 Ustensiles : {e.etape_ustensile.map((u) => u.ustensile.nomustensile).join(", ")}</p>
+          )}
+          {e.dosage && e.dosage.length > 0 && (
+            <ul>
+              {e.dosage.map((d, i) => (
+                <li key={i}>{d.ingredient.nomingredient} — {d.quantite} {d.unite}</li>
+              ))}
+            </ul>
           )}
         </div>
       ))}

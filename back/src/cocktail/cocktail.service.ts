@@ -12,6 +12,9 @@ export class CocktailService {
   async findAll(alcool?: boolean) {
     return this.prisma.cocktail.findMany({
       where: alcool !== undefined ? { alcool } : {},
+      include: {
+        image: true,
+      },
     });
   }
 
@@ -19,9 +22,13 @@ export class CocktailService {
     const cocktail = await this.prisma.cocktail.findFirst({
       where: { nomcocktail: { equals: nom, mode: 'insensitive' } },
       include: {
+        image: true,
         etape: {
           orderBy: { numeroetape: 'asc' },
-          include: { etape_ustensile: { include: { ustensile: true } } },
+          include: { 
+            etape_ustensile: { include: { ustensile: true } },
+            dosage: { include: { ingredient: true } },
+          },
         },
         dosage: { include: { ingredient: true } },
         avis: {
@@ -40,20 +47,20 @@ export class CocktailService {
       throw new ForbiddenException('Accès refusé');
     }
 
-    // Récupère l'image du cocktail
-    if (cocktail) {
-      const image = await this.prisma.image.findFirst({
-        where: { typeimage: 'cocktail', urlimage: { contains: cocktail.idcocktail } },
-      });
-      return { ...cocktail, image };
-    }
-
     return cocktail;
   }
 
   async create(data: CreateCocktailDto, idcompte: string) {
     const result = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM ajouter_cocktail(${data.nomcocktail}, ${data.description}, ${data.duree}, ${idcompte}, ${data.difficulte}::"difficulte_enum", ${data.alcool}, 'brouillon'::"statut_enum")
+      SELECT * FROM ajouter_cocktail(
+        ${data.nomcocktail}::varchar,
+        ${data.description}::text,
+        ${data.duree}::int,
+        ${idcompte}::varchar,
+        ${data.difficulte}::difficulte_enum,
+        ${data.alcool}::boolean,
+        'brouillon'::statut_enum
+      )
     `;
     return result[0];
   }
@@ -67,7 +74,17 @@ export class CocktailService {
 
   async addDosage(idcocktail: string, data: CreateDosageDto) {
     const result = await this.prisma.$queryRaw<any[]>`
-      SELECT * FROM ajouter_dosage(${idcocktail}, ${data.idingredient}, ${data.quantite}::numeric, ${data.unite}, ${data.idetape || null})
+      INSERT INTO _dosage (idcocktail, idingredient, quantite, unite, idetape)
+      VALUES (
+        ${idcocktail}::varchar,
+        ${data.idingredient}::varchar,
+        ${data.quantite}::numeric,
+        ${data.unite}::varchar,
+        ${data.idetape || null}::varchar
+      )
+      ON CONFLICT (idcocktail, idingredient)
+      DO UPDATE SET quantite = _dosage.quantite + EXCLUDED.quantite
+      RETURNING *
     `;
     return result[0];
   }
