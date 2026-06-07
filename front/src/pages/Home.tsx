@@ -24,6 +24,34 @@ function Home() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const location = useLocation();
+    const [favoris, setFavoris] = useState<string[]>([]);
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        axios.get("/api/compte/mes-favoris", {
+            headers: { Authorization: `Bearer ${token}` },
+        }).then((res) => {
+            setFavoris(res.data.map((f: any) => f.idcocktail));
+        });
+        }, []);
+
+        const toggleFavori = async (idcocktail: string) => {
+        const token = localStorage.getItem("token");
+        if (!token) { navigate("/login"); return; }
+
+        if (favoris.includes(idcocktail)) {
+            await axios.delete(`/api/compte/favori/${idcocktail}`, {
+            headers: { Authorization: `Bearer ${token}` },
+            });
+            setFavoris(favoris.filter((id) => id !== idcocktail));
+        } else {
+            await axios.post(`/api/compte/favori/${idcocktail}`, {}, {
+            headers: { Authorization: `Bearer ${token}` },
+            });
+            setFavoris([...favoris, idcocktail]);
+        }
+    };
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -86,6 +114,9 @@ function Home() {
                     onClick={() => navigate(`/cocktail/${encodeURIComponent(c.nomcocktail)}`)}
                     style={{ cursor: 'pointer' }}
                     >{c.nomcocktail}</h2>
+                    <button onClick={(e) => { e.stopPropagation(); toggleFavori(c.idcocktail); }}>
+                        {favoris.includes(c.idcocktail) ? "❤️" : "🤍"}
+                    </button>
                     <p>{c.description}</p>
                     <p>Difficulté : {c.difficulte}</p>
                     <p>Durée : {c.duree} min</p>

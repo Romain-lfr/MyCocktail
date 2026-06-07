@@ -6,7 +6,7 @@ interface Favori {
   cocktail: {
     idcocktail: string;
     nomcocktail: string;
-    image_cocktail: { image: { urlimage: string } }[];
+    image: { urlimage: string }[];
   };
 }
 
@@ -32,7 +32,9 @@ function MesFavoris() {
       {favoris.length === 0 && <p>Aucun favori.</p>}
       {favoris.map((f, i) => (
         <div key={i} onClick={() => navigate(`/cocktail/${encodeURIComponent(f.cocktail.nomcocktail)}`)} style={{ cursor: 'pointer', border: '1px solid #ccc', padding: '10px', margin: '10px 0' }}>
-          {f.cocktail.image_cocktail[0] && <img src={`/api${f.cocktail.image_cocktail[0].image.urlimage}`} width={100} />}
+          {f.cocktail.image && f.cocktail.image[0] && (
+            <img src={`/api${f.cocktail.image[0].urlimage}`} width={100} />
+          )}
           <p>{f.cocktail.nomcocktail}</p>
         </div>
       ))}

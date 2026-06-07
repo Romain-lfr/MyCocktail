@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 interface Cocktail {
   idcocktail: string;
   nomcocktail: string;
-  image_cocktail: { image: { urlimage: string } }[];
+  image: { urlimage: string }[];
 }
 
 function MesCocktails() {
@@ -30,7 +30,9 @@ function MesCocktails() {
       {cocktails.length === 0 && <p>Aucun cocktail créé.</p>}
       {cocktails.map((c) => (
         <div key={c.idcocktail} onClick={() => navigate(`/cocktail/${encodeURIComponent(c.nomcocktail)}`)} style={{ cursor: 'pointer', border: '1px solid #ccc', padding: '10px', margin: '10px 0' }}>
-          {c.image_cocktail[0] && <img src={`/api${c.image_cocktail[0].image.urlimage}`} width={100} />}
+          {c.image && c.image[0] && (
+            <img src={`/api${c.image[0].urlimage}`} width={100} />
+          )}
           <p>{c.nomcocktail}</p>
         </div>
       ))}

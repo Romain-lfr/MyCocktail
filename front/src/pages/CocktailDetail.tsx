@@ -44,6 +44,30 @@ function CocktailDetail() {
   const { nom } = useParams();
   const [cocktail, setCocktail] = useState<Cocktail | null>(null);
   const navigate = useNavigate();
+  const [isFavori, setIsFavori] = useState(false);
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    if (!token || !cocktail) return;
+    axios.get(`/api/compte/favori/${cocktail.idcocktail}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then((res) => setIsFavori(res.data.isFavori));
+  }, [cocktail]);
+
+  const toggleFavori = async () => {
+    if (!token) { navigate("/login"); return; }
+    if (isFavori) {
+      await axios.delete(`/api/compte/favori/${cocktail!.idcocktail}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsFavori(false);
+    } else {
+      await axios.post(`/api/compte/favori/${cocktail!.idcocktail}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsFavori(true);
+    }
+  };
 
   useEffect(() => {
     axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, {
@@ -76,6 +100,9 @@ function CocktailDetail() {
         />
       )}
       <h1>{cocktail.nomcocktail}</h1>
+      <button onClick={toggleFavori}>
+        {isFavori ? "❤️ Retirer des favoris" : "🤍 Ajouter aux favoris"}
+      </button>
       <p>{cocktail.description}</p>
       <p>Difficulté : {cocktail.difficulte}</p>
       <p>Durée : {cocktail.duree} min</p>

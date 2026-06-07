@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, UseGuards, Request } from '@nestjs/common';
 import { CompteService } from './compte.service';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 
@@ -28,5 +28,23 @@ export class CompteController {
   @UseGuards(JwtAuthGuard)
   getMesAvis(@Request() req: any) {
     return this.compteService.getMesAvis(req.user.idcompte);
+  }
+
+  @Get('favori/:idcocktail')
+  @UseGuards(JwtAuthGuard)
+  isFavori(@Param('idcocktail') idcocktail: string, @Request() req: any) {
+    return this.compteService.isFavori(req.user.idcompte, idcocktail);
+  }
+
+  @Post('favori/:idcocktail')
+  @UseGuards(JwtAuthGuard)
+  ajouterFavori(@Param('idcocktail') idcocktail: string, @Request() req: any) {
+    return this.compteService.ajouterFavori(req.user.idcompte, idcocktail);
+  }
+
+  @Delete('favori/:idcocktail')
+  @UseGuards(JwtAuthGuard)
+  supprimerFavori(@Param('idcocktail') idcocktail: string, @Request() req: any) {
+    return this.compteService.supprimerFavori(req.user.idcompte, idcocktail);
   }
 }

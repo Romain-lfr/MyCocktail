@@ -18,7 +18,7 @@ CREATE TYPE statut_enum     AS ENUM ('brouillon', 'publié', 'privé', 'archivé
 CREATE TYPE categorie_enum  AS ENUM ('alcool', 'jus', 'sirop', 'soda', 'eau', 'fruit', 'autre');
 CREATE TYPE motif_enum      AS ENUM ('contenu_inapproprie', 'spam', 'hors_sujet', 'violence', 'autre');
 CREATE TYPE role_enum       AS ENUM ('user', 'moderateur', 'admin');
-CREATE TYPE image_enum AS ENUM ('profil', 'cocktail', 'avis', 'ingrédient', 'ustensile');
+CREATE TYPE image_enum      AS ENUM ('profil', 'cocktail', 'avis', 'ingrédient', 'ustensile');
 
 /* ============================================================
     SEQUENCE - Définition des séquences pour les ID automatiques 

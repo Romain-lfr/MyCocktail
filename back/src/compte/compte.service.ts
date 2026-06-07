@@ -22,6 +22,9 @@ export class CompteService {
   async getMesCocktails(idcompte: string) {
     return this.prisma.cocktail.findMany({
       where: { idcompte },
+      include: {
+        image: true,
+      },
     });
   }
 
@@ -29,7 +32,11 @@ export class CompteService {
     return this.prisma.favori.findMany({
       where: { idcompte },
       include: {
-        cocktail: true,
+        cocktail: {
+          include: {
+            image: true,
+          },
+        },
       },
     });
   }
@@ -42,5 +49,29 @@ export class CompteService {
       },
       orderBy: { dateavis: 'desc' },
     });
+  }
+
+  async ajouterFavori(idcompte: string, idcocktail: string) {
+    const result = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM ajouter_favori(${idcompte}::varchar, ${idcocktail}::varchar)
+    `;
+    return result[0];
+  }
+
+  async supprimerFavori(idcompte: string, idcocktail: string) {
+    return this.prisma.favori.delete({
+      where: {
+        idcompte_idcocktail: { idcompte, idcocktail },
+      },
+    });
+  }
+
+  async isFavori(idcompte: string, idcocktail: string) {
+    const favori = await this.prisma.favori.findUnique({
+      where: {
+        idcompte_idcocktail: { idcompte, idcocktail },
+      },
+    });
+    return { isFavori: !!favori };
   }
 }

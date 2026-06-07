@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { CocktailModule } from './cocktail/cocktail.module';
 import { CompteModule } from './compte/compte.module';
 import { ImageModule } from './image/image.module';
+import { AvisModule } from './avis/avis.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ImageModule } from './image/image.module';
     CocktailModule,
     CompteModule,
     ImageModule,
+    AvisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

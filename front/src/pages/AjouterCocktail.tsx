@@ -46,6 +46,26 @@ function AjouterCocktail() {
       .then((res) => setUstensiles(res.data));
   }, []);
 
+  const getUnites = (idingredient: string): string[] => {
+    const ingredient = ingredients.find((i) => i.idingredient === idingredient);
+    if (!ingredient) return ['cl', 'ml', 'l'];
+
+    switch (ingredient.categorie) {
+      case 'alcool':
+      case 'jus':
+      case 'sirop':
+      case 'soda':
+      case 'eau':
+        return ['cl', 'ml', 'l'];
+      case 'fruit':
+        return ['pièce', 'tranche', 'g'];
+      case 'autre':
+        return ['morceau', 'feuille', 'pincée', 'g'];
+      default:
+        return ['cl', 'ml', 'l'];
+    }
+  };
+
   const ingredientsFiltres = ingredients.filter((ing) =>
     ing.nomingredient.toLowerCase().includes(rechercheIngredient.toLowerCase())
   );
@@ -78,11 +98,14 @@ function AjouterCocktail() {
 
   const ajouterIngredientEtape = (index: number, idingredient?: string) => {
     const copy = [...etapes];
-    copy[index].ingredients.push({
-      idingredient: idingredient || ingredients[0]?.idingredient || "",
-      quantite: 1,
-      unite: "cl",
-    });
+    const id = idingredient || ingredients[0]?.idingredient || "";
+    const ing = ingredients.find((i) => i.idingredient === id);
+    
+    let unite = 'cl';
+    if (ing?.categorie === 'fruit') unite = 'pièce';
+    if (ing?.categorie === 'autre') unite = 'morceau';
+
+    copy[index].ingredients.push({ idingredient: id, quantite: 1, unite });
     setEtapes(copy);
   };
 
@@ -286,7 +309,15 @@ function AjouterCocktail() {
             <div key={j} style={{ display: 'flex', gap: '10px', margin: '5px 0', alignItems: 'center' }}>
               <span style={{ flex: 1 }}>{ingredients.find(x => x.idingredient === ing.idingredient)?.nomingredient}</span>
               <input type="number" value={ing.quantite || ""} onChange={(ev) => updateIngredient(i, j, 'quantite', parseFloat(ev.target.value))} min={0.01} style={{ width: '80px' }} />
-              <input value={ing.unite} onChange={(ev) => updateIngredient(i, j, 'unite', ev.target.value)} placeholder="cl" style={{ width: '60px' }} />
+              <select 
+                value={ing.unite} 
+                onChange={(ev) => updateIngredient(i, j, 'unite', ev.target.value)}
+                style={{ width: '80px' }}
+              >
+                {getUnites(ing.idingredient).map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
               <button onClick={() => supprimerIngredient(i, j)} style={{ color: 'red' }}>✕</button>
             </div>
           ))}
