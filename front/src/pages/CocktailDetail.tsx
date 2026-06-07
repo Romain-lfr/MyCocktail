@@ -148,6 +148,9 @@ function CocktailDetail() {
         </div>
       ))}
 
+      <button onClick={() => navigate(`/cocktail/${nom}/avis`)}>
+        ⭐ Laisser un avis
+      </button>
       <h2>Avis</h2>
       {cocktail.avis.length === 0 && <p>Aucun avis pour le moment.</p>}
       {cocktail.avis.map((a) => (
