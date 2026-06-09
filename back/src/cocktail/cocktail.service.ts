@@ -9,9 +9,12 @@ import { CreateUstensileDto } from './dto/create-ustensile.dto';
 export class CocktailService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(alcool?: boolean) {
+  async findAll(alcool?: boolean, recherche?: string) {
     return this.prisma.cocktail.findMany({
-      where: alcool !== undefined ? { alcool } : {},
+      where: {
+        ...(alcool !== undefined ? { alcool } : {}),
+        ...(recherche ? { nomcocktail: { contains: recherche, mode: 'insensitive' } } : {}),
+      },
       include: {
         image: true,
       },
@@ -63,6 +66,40 @@ export class CocktailService {
       )
     `;
     return result[0];
+  }
+
+  async modifier(idcocktail: string, data: CreateCocktailDto, idcompte: string) {
+  // Vérifier que l'auteur est bien le propriétaire
+  const cocktail = await this.prisma.cocktail.findUnique({
+    where: { idcocktail },
+  });
+
+  if (!cocktail) throw new Error('Cocktail introuvable');
+  if (cocktail.idcompte !== idcompte) throw new Error('Non autorisé');
+
+  return this.prisma.cocktail.update({
+    where: { idcocktail },
+    data: {
+      nomcocktail: data.nomcocktail,
+      description: data.description,
+      difficulte: data.difficulte,
+      alcool: data.alcool,
+      duree: data.duree,
+    },
+  });
+}
+
+  async supprimer(idcocktail: string, idcompte: string) {
+    const cocktail = await this.prisma.cocktail.findUnique({
+      where: { idcocktail },
+    });
+
+    if (!cocktail) throw new Error('Cocktail introuvable');
+    if (cocktail.idcompte !== idcompte) throw new Error('Non autorisé');
+
+    return this.prisma.cocktail.delete({
+      where: { idcocktail },
+    });
   }
 
   async addEtape(idcocktail: string, data: CreateEtapeDto) {

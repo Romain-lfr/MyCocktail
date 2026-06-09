@@ -2,13 +2,6 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 
-interface Image {
-    image: {
-        urlimage: string;
-        titleimage: string;
-    };
-}
-
 interface Cocktail {
     idcocktail: string;
     nomcocktail: string;
@@ -34,33 +27,33 @@ function Home() {
         }).then((res) => {
             setFavoris(res.data.map((f: any) => f.idcocktail));
         });
-        }, []);
+    }, []);
 
-        const toggleFavori = async (idcocktail: string) => {
+    const toggleFavori = async (idcocktail: string) => {
         const token = localStorage.getItem("token");
         if (!token) { navigate("/login"); return; }
 
         if (favoris.includes(idcocktail)) {
             await axios.delete(`/api/compte/favori/${idcocktail}`, {
-            headers: { Authorization: `Bearer ${token}` },
+                headers: { Authorization: `Bearer ${token}` },
             });
             setFavoris(favoris.filter((id) => id !== idcocktail));
         } else {
             await axios.post(`/api/compte/favori/${idcocktail}`, {}, {
-            headers: { Authorization: `Bearer ${token}` },
+                headers: { Authorization: `Bearer ${token}` },
             });
             setFavoris([...favoris, idcocktail]);
         }
     };
 
     useEffect(() => {
+        // Ignore si c'est une recherche globale
+        if (searchParams.get("q")) return;
+
         const token = localStorage.getItem("token");
         const estMineur = localStorage.getItem("estMineur") === "true";
         const alcoolParam = searchParams.get("alcool");
 
-        console.log("search:", location.search);
-        console.log("alcool:", searchParams.get("alcool"));
-        
         let url = "/api/cocktail?alcool=false";
 
         if (alcoolParam === "true") {
@@ -78,44 +71,38 @@ function Home() {
                 : "/api/cocktail?alcool=false";
         }
 
-        console.log("URL finale:", url);
-
         axios.get(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
-        .then((res) => {
-            console.log("cocktails reçus:", res.data.length);
-            setCocktails(res.data);
-        })
+        .then((res) => setCocktails(res.data))
         .catch((err) => {
             console.error(err);
             if (token) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("estMineur");
-            navigate("/login");
+                localStorage.removeItem("token");
+                localStorage.removeItem("estMineur");
+                navigate("/login");
             }
         });
     }, [searchParams, location]);
 
     return (
         <div>
-            <h1>🍹 MyCocktail</h1>
-            <p>Nombre Total : {cocktails.length}</p>
+            <h1>MyCocktail</h1>
             {cocktails.map((c) => (
                 <div key={c.idcocktail}>
                     {c.image[0] && (
-                    <img
-                        src={`/api${c.image[0].urlimage}`}
-                        alt={c.nomcocktail}
-                        width={200}
-                    />
+                        <img
+                            src={`/api${c.image[0].urlimage}`}
+                            alt={c.nomcocktail}
+                            width={200}
+                        />
                     )}
                     <h2
-                    onClick={() => navigate(`/cocktail/${encodeURIComponent(c.nomcocktail)}`)}
-                    style={{ cursor: 'pointer' }}
+                        onClick={() => navigate(`/cocktail/${encodeURIComponent(c.nomcocktail)}`)}
+                        style={{ cursor: 'pointer' }}
                     >{c.nomcocktail}</h2>
                     <button onClick={(e) => { e.stopPropagation(); toggleFavori(c.idcocktail); }}>
-                        {favoris.includes(c.idcocktail) ? "❤️" : "🤍"}
+                        {favoris.includes(c.idcocktail) ? "Favori" : "Ajouter"}
                     </button>
                     <p>{c.description}</p>
                     <p>Difficulté : {c.difficulte}</p>

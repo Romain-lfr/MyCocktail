@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, Param, Body, Request, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Query, Param, Body, Request, UseGuards, UseInterceptors, UploadedFile, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -11,6 +11,7 @@ import { CreateUstensileDto } from './dto/create-ustensile.dto';
 import { CreateEtapeDto } from './dto/create-etape.dto';
 import { CreateCocktailDto } from './dto/create-cocktail.dto';
 
+
 @Controller('cocktail')
 export class CocktailController {
   constructor(
@@ -20,12 +21,12 @@ export class CocktailController {
 
   @Get()
   @UseGuards(OptionalJwtAuthGuard)
-  findAll(@Query('alcool') alcool?: string, @Request() req?: any) {
+  findAll(@Query('alcool') alcool?: string, @Query('recherche') recherche?: string, @Request() req?: any) {
     const user = req.user;
-    if (!user || user.estMineur) return this.cocktailService.findAll(false);
-    if (alcool === 'true') return this.cocktailService.findAll(true);
-    if (alcool === 'false') return this.cocktailService.findAll(false);
-    return this.cocktailService.findAll();
+    if (!user || user.estMineur) return this.cocktailService.findAll(false, recherche);
+    if (alcool === 'true') return this.cocktailService.findAll(true, recherche);
+    if (alcool === 'false') return this.cocktailService.findAll(false, recherche);
+    return this.cocktailService.findAll(undefined, recherche);
   }
 
   @Post()
@@ -55,6 +56,16 @@ export class CocktailController {
     return this.imageService.ajouterImageCocktail(id, file.path, file.originalname);
   }
 
+  @Get('listes/ingredients')
+  getIngredients() {
+    return this.cocktailService.getIngredients();
+  }
+
+  @Get('listes/ustensiles')
+  getUstensiles() {
+    return this.cocktailService.getUstensiles();
+  }
+
   @Get(':nom')
   @UseGuards(OptionalJwtAuthGuard)
   findOne(@Param('nom') nom: string, @Request() req?: any) {
@@ -67,16 +78,6 @@ export class CocktailController {
     return this.cocktailService.addEtape(id, body);
   }
 
-  @Get('listes/ingredients')
-  getIngredients() {
-    return this.cocktailService.getIngredients();
-  }
-
-  @Get('listes/ustensiles')
-  getUstensiles() {
-    return this.cocktailService.getUstensiles();
-  }
-
   @Post(':id/dosage')
   @UseGuards(JwtAuthGuard)
   addDosage(@Param('id') id: string, @Body() body: CreateDosageDto) {
@@ -87,5 +88,29 @@ export class CocktailController {
   @UseGuards(JwtAuthGuard)
   addUstensile(@Body() body: CreateUstensileDto) {
     return this.cocktailService.addUstensile(body);
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  async modifier(@Param('id') id: string, @Body() body: CreateCocktailDto, @Request() req: any) {
+    try {
+      return await this.cocktailService.modifier(id, body, req.user.idcompte);
+    } catch (e: any) {
+      if (e.message === 'Non autorisé') throw new ForbiddenException();
+      if (e.message === 'Cocktail introuvable') throw new NotFoundException();
+      throw e;
+    }
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  async supprimer(@Param('id') id: string, @Request() req: any) {
+    try {
+      return await this.cocktailService.supprimer(id, req.user.idcompte);
+    } catch (e: any) {
+      if (e.message === 'Non autorisé') throw new ForbiddenException();
+      if (e.message === 'Cocktail introuvable') throw new NotFoundException();
+      throw e;
+    }
   }
 }

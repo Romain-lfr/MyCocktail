@@ -47,4 +47,9 @@ export class CompteController {
   supprimerFavori(@Param('idcocktail') idcocktail: string, @Request() req: any) {
     return this.compteService.supprimerFavori(req.user.idcompte, idcocktail);
   }
+
+  @Get('recherche/:pseudo')
+  rechercherComptes(@Param('pseudo') pseudo: string) {
+    return this.compteService.rechercherComptes(pseudo);
+  }
 }

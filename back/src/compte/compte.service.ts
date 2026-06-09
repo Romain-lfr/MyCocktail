@@ -74,4 +74,17 @@ export class CompteService {
     });
     return { isFavori: !!favori };
   }
+
+  async rechercherComptes(recherche: string) {
+    return this.prisma.compte.findMany({
+      where: {
+        pseudo: { contains: recherche, mode: 'insensitive' },
+      },
+      select: {
+        idcompte: true,
+        pseudo: true,
+        dateinscription: true,
+      },
+    });
+  }
 }
