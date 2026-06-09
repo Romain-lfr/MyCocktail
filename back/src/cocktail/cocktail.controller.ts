@@ -113,4 +113,47 @@ export class CocktailController {
       throw e;
     }
   }
+
+  @Put('etape/:idetape')
+  @UseGuards(JwtAuthGuard)
+  async modifierEtape(@Param('idetape') idetape: string, @Body() body: { descriptionetape: string }, @Request() req: any) {
+    try {
+      return await this.cocktailService.modifierEtape(idetape, body.descriptionetape, req.user.idcompte);
+    } catch (e: any) {
+      if (e.message === 'Non autorisé') throw new ForbiddenException();
+      if (e.message === 'Etape introuvable') throw new NotFoundException();
+      throw e;
+    }
+  }
+
+  @Delete('etape/:idetape')
+  @UseGuards(JwtAuthGuard)
+  async supprimerEtape(@Param('idetape') idetape: string, @Request() req: any) {
+    try {
+      return await this.cocktailService.supprimerEtape(idetape, req.user.idcompte);
+    } catch (e: any) {
+      if (e.message === 'Non autorisé') throw new ForbiddenException();
+      if (e.message === 'Etape introuvable') throw new NotFoundException();
+      throw e;
+    }
+  }
+
+  @Put(':id/dosage/:idingredient')
+  @UseGuards(JwtAuthGuard)
+  modifierDosage(
+    @Param('id') id: string,
+    @Param('idingredient') idingredient: string,
+    @Body() body: { quantite: number; unite: string },
+  ) {
+    return this.cocktailService.modifierDosage(id, idingredient, body.quantite, body.unite);
+  }
+
+  @Delete('etape/:idetape/ustensile/:idustensile')
+  @UseGuards(JwtAuthGuard)
+  supprimerUstensileEtape(
+    @Param('idetape') idetape: string,
+    @Param('idustensile') idustensile: string,
+  ) {
+    return this.cocktailService.supprimerUstensileEtape(idetape, idustensile);
+  }
 }

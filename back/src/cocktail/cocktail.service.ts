@@ -144,4 +144,46 @@ export class CocktailService {
       orderBy: { nomustensile: 'asc' },
     });
   }
+
+  async modifierEtape(idetape: string, descriptionetape: string, idcompte: string) {
+    const etape = await this.prisma.etape.findUnique({
+      where: { idetape },
+      include: { cocktail: true },
+    });
+
+    if (!etape) throw new Error('Etape introuvable');
+    if (etape.cocktail.idcompte !== idcompte) throw new Error('Non autorisé');
+
+    return this.prisma.etape.update({
+      where: { idetape },
+      data: { descriptionetape },
+    });
+  }
+
+  async supprimerEtape(idetape: string, idcompte: string) {
+    const etape = await this.prisma.etape.findUnique({
+      where: { idetape },
+      include: { cocktail: true },
+    });
+
+    if (!etape) throw new Error('Etape introuvable');
+    if (etape.cocktail.idcompte !== idcompte) throw new Error('Non autorisé');
+
+    return this.prisma.etape.delete({
+      where: { idetape },
+    });
+  }
+
+  async modifierDosage(idcocktail: string, idingredient: string, quantite: number, unite: string) {
+    return this.prisma.dosage.update({
+      where: { idcocktail_idingredient: { idcocktail, idingredient } },
+      data: { quantite, unite },
+    });
+  }
+
+  async supprimerUstensileEtape(idetape: string, idustensile: string) {
+    return this.prisma.etape_ustensile.delete({
+      where: { idetape_idustensile: { idetape, idustensile } },
+    });
+  }
 }

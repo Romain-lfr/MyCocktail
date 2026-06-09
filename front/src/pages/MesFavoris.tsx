@@ -36,8 +36,22 @@ function MesFavoris() {
             <img src={`/api${f.cocktail.image[0].urlimage}`} width={100} />
           )}
           <p>{f.cocktail.nomcocktail}</p>
+          <button
+            onClick={async (e) => {
+              e.stopPropagation();
+              const token = localStorage.getItem("token");
+              await axios.delete(`/api/compte/favori/${f.cocktail.idcocktail}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              window.location.reload();
+            }}
+            style={{ color: 'red', marginLeft: '10px' }}
+          >
+            Retirer
+          </button>
         </div>
       ))}
+      
     </div>
   );
 }
