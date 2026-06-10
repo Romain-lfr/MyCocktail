@@ -27,6 +27,9 @@ function MesCocktails() {
     <div>
       <button onClick={() => navigate("/compte")}>← Retour</button>
       <h1>Mes cocktails</h1>
+      <button onClick={() => navigate("/cocktail/ajouter")}>
+        Ajouter un cocktail
+      </button>
       {cocktails.length === 0 && <p>Aucun cocktail créé.</p>}
       {cocktails.map((c) => (
         <div key={c.idcocktail} style={{ border: '1px solid #ccc', padding: '10px', margin: '10px 0' }}>

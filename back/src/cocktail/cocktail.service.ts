@@ -17,6 +17,9 @@ export class CocktailService {
       },
       include: {
         image: true,
+        avis: {
+          select: { noteavis: true },
+        },
       },
     });
   }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { CompteService } from './compte.service';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 
@@ -49,7 +49,14 @@ export class CompteController {
   }
 
   @Get('recherche/:pseudo')
+  @UseGuards(JwtAuthGuard)
   rechercherComptes(@Param('pseudo') pseudo: string) {
     return this.compteService.rechercherComptes(pseudo);
+  }
+
+  @Put('me')
+  @UseGuards(JwtAuthGuard)
+  modifierCompte(@Body() body: { pseudo?: string; mailcompte?: string; numtel?: string }, @Request() req: any) {
+    return this.compteService.modifierCompte(req.user.idcompte, body);
   }
 }

@@ -38,10 +38,10 @@ function Compte() {
   return (
     <div>
       <h1>👤 {compte.pseudo}</h1>
-      <p>Email : {compte.mailcompte}</p>
-      <p>Rôle : {compte.role}</p>
-      <p>Inscrit le : {new Date(compte.dateinscription).toLocaleDateString()}</p>
-      <p>Date de naissance : {new Date(compte.datenaissance).toLocaleDateString()}</p>
+      <div onClick={() => navigate("/compte/info")} style={{ cursor: 'pointer', padding: '30px', border: '1px solid #ccc', borderRadius: '10px', width: '150px', textAlign: 'center' }}>
+        <h2>👤</h2>
+        <p>Mon profil</p>
+      </div>
 
       <div style={{ display: 'flex', gap: '20px', marginTop: '30px', flexWrap: 'wrap' }}>
         <div onClick={() => navigate("/compte/cocktails")} style={{ cursor: 'pointer', padding: '30px', border: '1px solid #ccc', borderRadius: '10px', width: '150px', textAlign: 'center' }}>

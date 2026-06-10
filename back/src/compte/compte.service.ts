@@ -87,4 +87,25 @@ export class CompteService {
       },
     });
   }
+
+  async modifierCompte(idcompte: string, data: { pseudo?: string; mailcompte?: string; numtel?: string; datenaissance?: string }) {
+    return this.prisma.compte.update({
+      where: { idcompte },
+      data: {
+        ...(data.pseudo ? { pseudo: data.pseudo } : {}),
+        ...(data.mailcompte ? { mailcompte: data.mailcompte.toLowerCase() } : {}),
+        ...(data.numtel !== undefined ? { numtel: data.numtel } : {}),
+        ...(data.datenaissance ? { datenaissance: new Date(data.datenaissance) } : {}),
+      },
+      select: {
+        idcompte: true,
+        pseudo: true,
+        mailcompte: true,
+        numtel: true,
+        dateinscription: true,
+        datenaissance: true,
+        role: true,
+      },
+    });
+  }
 }

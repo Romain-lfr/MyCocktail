@@ -170,10 +170,6 @@ function CocktailDetail() {
           )}
         </div>
       ))}
-
-      <button onClick={() => navigate(`/cocktail/${nom}/avis`)}>
-        ⭐ Laisser un avis
-      </button>
       <h2>Avis</h2>
       {token && (
         <button onClick={() => navigate(`/cocktail/${nom}/avis`)}>

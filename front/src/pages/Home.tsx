@@ -10,6 +10,7 @@ interface Cocktail {
     alcool: boolean;
     duree: number;
     image: { urlimage: string; titleimage: string }[];
+    avis: { noteavis: number }[];
 }
 
 function Home() {
@@ -107,6 +108,11 @@ function Home() {
                     <p>{c.description}</p>
                     <p>Difficulté : {c.difficulte}</p>
                     <p>Durée : {c.duree} min</p>
+                    <p>
+                        {c.avis.length > 0
+                        ? `${(c.avis.reduce((sum, a) => sum + a.noteavis, 0) / c.avis.length).toFixed(1)}/5 (${c.avis.length} avis)`
+                        : "Aucun avis"}
+                    </p>
                     <p>{c.alcool ? "Avec alcool" : "Sans alcool"}</p>
                     <hr />
                 </div>

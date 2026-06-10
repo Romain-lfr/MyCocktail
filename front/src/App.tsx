@@ -12,7 +12,8 @@ import AjouterCocktail from "./pages/AjouterCocktail";
 import AjouterAvis from "./pages/AjouterAvis";
 import Recherche from "./pages/Recherche";
 import ModifierCocktail from "./pages/ModifierCocktail";
-
+import ModifierCompte from "./pages/ModifierCompte";
+import InfoCompte from "./pages/InfoCompte";
 
 function App() {
   return (
@@ -31,6 +32,8 @@ function App() {
         <Route path="/cocktail/:nom/avis" element={<AjouterAvis />} />
         <Route path="/recherche" element={<Recherche />} />
         <Route path="/cocktail/:nom/modifier" element={<ModifierCocktail />} />
+        <Route path="/compte/modifier" element={<ModifierCompte />} />
+        <Route path="/compte/info" element={<InfoCompte />} />
       </Routes>
     </BrowserRouter>
   );
