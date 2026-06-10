@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-
 import axios from "axios";
 
 interface Avis {
   idavis: string;
+  idcompte: string;
   noteavis: number;
   titreavis: string;
   descriptionavis: string;
@@ -46,6 +46,29 @@ function CocktailDetail() {
   const navigate = useNavigate();
   const [isFavori, setIsFavori] = useState(false);
   const token = localStorage.getItem("token");
+  const userIdcompte = token ? JSON.parse(atob(token.split('.')[1])).sub : null;
+  const [editAvisId, setEditAvisId] = useState<string | null>(null);
+  const [editNote, setEditNote] = useState(5);
+  const [editTitre, setEditTitre] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+
+  const handleSauvegarderAvis = async () => {
+    await axios.put(`/api/avis/${editAvisId}`, {
+      noteavis: editNote,
+      titreavis: editTitre,
+      descriptionavis: editDescription,
+    }, { headers: { Authorization: `Bearer ${token}` } });
+    setEditAvisId(null);
+    window.location.reload();
+  };
+
+  const handleSupprimerAvis = async (idavis: string) => {
+    if (!confirm("Supprimer cet avis ?")) return;
+    await axios.delete(`/api/avis/${idavis}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    window.location.reload();
+  };
 
   useEffect(() => {
     if (!token || !cocktail) return;
@@ -152,22 +175,51 @@ function CocktailDetail() {
         ⭐ Laisser un avis
       </button>
       <h2>Avis</h2>
+      {token && (
+        <button onClick={() => navigate(`/cocktail/${nom}/avis`)}>
+          Laisser un avis
+        </button>
+      )}
       {cocktail.avis.length === 0 && <p>Aucun avis pour le moment.</p>}
       {cocktail.avis.map((a) => (
         <div key={a.idavis} style={{ border: '1px solid #ccc', padding: '10px', margin: '10px 0' }}>
-          <p>⭐ {a.noteavis}/5 — <strong>{a.titreavis}</strong></p>
-          <p>{a.descriptionavis}</p>
-          <p>Par {a.compte.pseudo} — {new Date(a.dateavis).toLocaleDateString()}</p>
-
-          {a.reponse.length > 0 && (
-            <div style={{ marginLeft: '20px', borderLeft: '2px solid #ccc', paddingLeft: '10px' }}>
-              <p><strong>Réponse :</strong></p>
-              {a.reponse.map((r) => (
-                <div key={r.idreponse}>
-                  <p>{r.commentaire}</p>
-                  <p>Par {r.compte.pseudo}</p>
+          {editAvisId === a.idavis ? (
+            <div>
+              <select value={editNote} onChange={(e) => setEditNote(parseInt(e.target.value))}>
+                {[1,2,3,4,5].map((n) => <option key={n} value={n}>{n}/5</option>)}
+              </select>
+              <input value={editTitre} onChange={(e) => setEditTitre(e.target.value)} />
+              <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+              <button onClick={handleSauvegarderAvis}>Sauvegarder</button>
+              <button onClick={() => setEditAvisId(null)} style={{ marginLeft: '10px' }}>Annuler</button>
+            </div>
+          ) : (
+            <div>
+              <p>{a.noteavis}/5 — <strong>{a.titreavis}</strong></p>
+              <p>{a.descriptionavis}</p>
+              <p>Par {a.compte.pseudo} — {new Date(a.dateavis).toLocaleDateString()}</p>
+              {userIdcompte === a.idcompte && (
+                <>
+                  <button onClick={() => {
+                    setEditAvisId(a.idavis);
+                    setEditNote(a.noteavis);
+                    setEditTitre(a.titreavis);
+                    setEditDescription(a.descriptionavis);
+                  }}>Modifier</button>
+                  <button onClick={() => handleSupprimerAvis(a.idavis)} style={{ color: 'red', marginLeft: '10px' }}>Supprimer</button>
+                </>
+              )}
+              {a.reponse.length > 0 && (
+                <div style={{ marginLeft: '20px', borderLeft: '2px solid #ccc', paddingLeft: '10px' }}>
+                  <p><strong>Réponse :</strong></p>
+                  {a.reponse.map((r) => (
+                    <div key={r.idreponse}>
+                      <p>{r.commentaire}</p>
+                      <p>Par {r.compte.pseudo}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>

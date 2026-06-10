@@ -28,4 +28,27 @@ export class AvisService {
       throw e;
     }
   }
+
+  async modifierAvis(idavis: string, idcompte: string, data: CreateAvisDto) {
+    const avis = await this.prisma.avis.findUnique({ where: { idavis } });
+    if (!avis) throw new Error('Avis introuvable');
+    if (avis.idcompte !== idcompte) throw new Error('Non autorisé');
+
+    return this.prisma.avis.update({
+      where: { idavis },
+      data: {
+        noteavis: data.noteavis,
+        titreavis: data.titreavis,
+        descriptionavis: data.descriptionavis,
+      },
+    });
+  }
+
+  async supprimerAvis(idavis: string, idcompte: string) {
+    const avis = await this.prisma.avis.findUnique({ where: { idavis } });
+    if (!avis) throw new Error('Avis introuvable');
+    if (avis.idcompte !== idcompte) throw new Error('Non autorisé');
+
+    return this.prisma.avis.delete({ where: { idavis } });
+  }
 }
