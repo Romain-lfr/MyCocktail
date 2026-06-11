@@ -49,7 +49,6 @@ export class CompteController {
   }
 
   @Get('recherche/:pseudo')
-  @UseGuards(JwtAuthGuard)
   rechercherComptes(@Param('pseudo') pseudo: string) {
     return this.compteService.rechercherComptes(pseudo);
   }

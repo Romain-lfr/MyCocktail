@@ -25,6 +25,7 @@ interface Cocktail {
   difficulte: string;
   alcool: boolean;
   duree: number;
+  idcompte: string;
   image: { urlimage: string; titleimage: string }[];
   etape: {
     idetape: string;
@@ -32,10 +33,17 @@ interface Cocktail {
     descriptionetape: string;
     etape_ustensile: { ustensile: { nomustensile: string } }[];
     dosage: {
+      idingredient: string;
       quantite: number;
       unite: string;
       ingredient: { nomingredient: string };
     }[];
+  }[];
+  dosage: {
+    idingredient: string;
+    quantite: number;
+    unite: string;
+    ingredient: { nomingredient: string };
   }[];
   avis: Avis[];
 }
