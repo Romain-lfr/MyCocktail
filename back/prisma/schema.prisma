@@ -177,15 +177,15 @@ model ingredient {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model reponse {
-  idreponse   String   @id @db.VarChar(13)
-  idavis      String   @db.VarChar(13)
-  idcompte    String   @db.VarChar(13)
-  commentaire String
-  datereponse DateTime @default(now()) @db.Timestamptz(6)
-  avis        avis     @relation(fields: [idavis], references: [idavis], onDelete: Cascade, onUpdate: NoAction, map: "fk_reponse_avis")
-  compte      compte   @relation(fields: [idcompte], references: [idcompte], onDelete: Cascade, onUpdate: NoAction, map: "fk_reponse_compte")
+  idreponse       String   @id @db.VarChar(13)
+  idavis          String   @db.VarChar(13)
+  idcompte        String   @db.VarChar(13)
+  idreponseparent String?  @db.VarChar(13)
+  commentaire     String
+  datereponse     DateTime @default(now()) @db.Timestamptz(6)
+  avis            avis     @relation(fields: [idavis], references: [idavis], onDelete: Cascade, onUpdate: NoAction, map: "fk_reponse_avis")
+  compte          compte   @relation(fields: [idcompte], references: [idcompte], onDelete: Cascade, onUpdate: NoAction, map: "fk_reponse_compte")
 
-  @@unique([idavis, idcompte], map: "uq_reponse_unique")
   @@map("_reponse")
 }
 

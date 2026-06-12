@@ -516,11 +516,13 @@ CREATE TABLE _reponse (
     idReponse       VARCHAR(13)     PRIMARY KEY,
     idAvis          VARCHAR(13)     NOT NULL,
     idCompte        VARCHAR(13)     NOT NULL,
+    idReponseParent VARCHAR(13)     NULL,
     commentaire     TEXT            NOT NULL,
     dateReponse     TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+    
 
     CONSTRAINT chk_reponse_comment_len CHECK (LENGTH(TRIM(commentaire)) >= 2),
-    CONSTRAINT uq_reponse_unique UNIQUE (idAvis, idCompte),
+    CONSTRAINT chk_reponse_self CHECK (idReponse <> idReponseParent),
 
     CONSTRAINT fk_reponse_avis
         FOREIGN KEY (idAvis)   REFERENCES _avis(idAvis)
@@ -528,6 +530,7 @@ CREATE TABLE _reponse (
     CONSTRAINT fk_reponse_compte
         FOREIGN KEY (idCompte) REFERENCES _compte(idCompte)
         ON DELETE CASCADE
+    
 );
 
 -- Vues liées aux discussions et notes
@@ -566,19 +569,22 @@ ORDER BY note_moyenne DESC NULLS LAST;
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION ajouter_reponse(
-    p_idAvis      VARCHAR(13),
-    p_idCompte    VARCHAR(13),
-    p_commentaire TEXT
+    p_idAvis          VARCHAR(13),
+    p_idCompte        VARCHAR(13),
+    p_commentaire     TEXT,
+    p_idReponseParent VARCHAR(13) DEFAULT NULL  -- Nouveau paramètre optionnel
 )
 RETURNS _reponse AS $$
 DECLARE
     v_id     VARCHAR(13);
     v_result _reponse;
 BEGIN
+    -- 1. Génération de l'identifiant unique REP-XXXXX
     v_id := 'REP-' || LPAD(nextval('seq_reponse')::TEXT, 5, '0');
 
-    INSERT INTO _reponse (idReponse, idAvis, idCompte, commentaire)
-    VALUES (v_id, p_idAvis, p_idCompte, TRIM(p_commentaire))
+    -- 2. Insertion avec la gestion du parent
+    INSERT INTO _reponse (idReponse, idAvis, idCompte, idReponseParent, commentaire)
+    VALUES (v_id, p_idAvis, p_idCompte, p_idReponseParent, TRIM(p_commentaire))
     RETURNING * INTO v_result;
 
     RETURN v_result;

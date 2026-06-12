@@ -13,7 +13,10 @@ interface Avis {
   compte: { pseudo: string };
   reponse: {
     idreponse: string;
+    idcompte: string;
     commentaire: string;
+    datereponse: string;
+    idreponse_parent: string | null;
     compte: { pseudo: string };
   }[];
 }
@@ -59,6 +62,11 @@ function CocktailDetail() {
   const [editNote, setEditNote] = useState(5);
   const [editTitre, setEditTitre] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [reponseAvisId, setReponseAvisId] = useState<string | null>(null);
+  const [commentaire, setCommentaire] = useState("");
+  const [reponseParentId, setReponseParentId] = useState<string | null>(null);
+  const [editReponseId, setEditReponseId] = useState<string | null>(null);
+  const [editCommentaire, setEditCommentaire] = useState("");
 
   const handleSauvegarderAvis = async () => {
     await axios.put(`/api/avis/${editAvisId}`, {
@@ -215,14 +223,115 @@ function CocktailDetail() {
               )}
               {a.reponse.length > 0 && (
                 <div style={{ marginLeft: '20px', borderLeft: '2px solid #ccc', paddingLeft: '10px' }}>
-                  <p><strong>Réponse :</strong></p>
-                  {a.reponse.map((r) => (
-                    <div key={r.idreponse}>
-                      <p>{r.commentaire}</p>
-                      <p>Par {r.compte.pseudo}</p>
+                  <p><strong>Réponses :</strong></p>
+                  {a.reponse.filter((r) => !r.idreponse_parent).map((r) => (
+                    <div key={r.idreponse} style={{ margin: '10px 0' }}>
+                      {editReponseId === r.idreponse ? (
+                        <div>
+                          <textarea value={editCommentaire} onChange={(e) => setEditCommentaire(e.target.value)} />
+                          <button onClick={async () => {
+                            await axios.put(`/api/avis/reponse/${r.idreponse}`, { commentaire: editCommentaire }, { headers: { Authorization: `Bearer ${token}` } });
+                            setEditReponseId(null);
+                            window.location.reload();
+                          }}>Sauvegarder</button>
+                          <button onClick={() => setEditReponseId(null)} style={{ marginLeft: '10px' }}>Annuler</button>
+                        </div>
+                      ) : (
+                        <div>
+                          <p>{r.commentaire}</p>
+                          <p>Par {r.compte.pseudo}</p>
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            {token && userIdcompte !== r.idcompte && (
+                              <button onClick={() => { setReponseAvisId(a.idavis); setReponseParentId(r.idreponse); setCommentaire(""); }}>
+                                Répondre
+                              </button>
+                            )}
+                            {userIdcompte === r.idcompte && (
+                              <>
+                                <button onClick={() => { setEditReponseId(r.idreponse); setEditCommentaire(r.commentaire); }}>Modifier</button>
+                                <button onClick={async () => {
+                                  if (!confirm("Supprimer cette réponse ?")) return;
+                                  await axios.delete(`/api/avis/reponse/${r.idreponse}`, { headers: { Authorization: `Bearer ${token}` } });
+                                  window.location.reload();
+                                }} style={{ color: 'red' }}>Supprimer</button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Réponses aux réponses */}
+                      {a.reponse.filter((sr) => sr.idreponse_parent === r.idreponse).map((sr) => (
+                        <div key={sr.idreponse} style={{ marginLeft: '20px', borderLeft: '2px solid #eee', paddingLeft: '10px', marginTop: '5px' }}>
+                          {editReponseId === sr.idreponse ? (
+                            <div>
+                              <textarea value={editCommentaire} onChange={(e) => setEditCommentaire(e.target.value)} />
+                              <button onClick={async () => {
+                                await axios.put(`/api/avis/reponse/${sr.idreponse}`, { commentaire: editCommentaire }, { headers: { Authorization: `Bearer ${token}` } });
+                                setEditReponseId(null);
+                                window.location.reload();
+                              }}>Sauvegarder</button>
+                              <button onClick={() => setEditReponseId(null)} style={{ marginLeft: '10px' }}>Annuler</button>
+                            </div>
+                          ) : (
+                            <div>
+                              <p>{sr.commentaire}</p>
+                              <p>Par {sr.compte.pseudo}</p>
+                              {userIdcompte === sr.idcompte && (
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                  <button onClick={() => { setEditReponseId(sr.idreponse); setEditCommentaire(sr.commentaire); }}>Modifier</button>
+                                  <button onClick={async () => {
+                                    if (!confirm("Supprimer cette réponse ?")) return;
+                                    await axios.delete(`/api/avis/reponse/${sr.idreponse}`, { headers: { Authorization: `Bearer ${token}` } });
+                                    window.location.reload();
+                                  }} style={{ color: 'red' }}>Supprimer</button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+
+                      {/* Formulaire réponse à une réponse */}
+                      {reponseAvisId === a.idavis && reponseParentId === r.idreponse && (
+                        <div style={{ marginTop: '10px', marginLeft: '20px' }}>
+                          <textarea value={commentaire} onChange={(e) => setCommentaire(e.target.value)} placeholder="Votre réponse..." style={{ width: '100%' }} />
+                          <button onClick={async () => {
+                            if (commentaire.trim().length < 2) return;
+                            await axios.post(`/api/avis/${a.idavis}/reponse`, {
+                              commentaire,
+                              idreponse_parent: r.idreponse,
+                            }, { headers: { Authorization: `Bearer ${token}` } });
+                            setReponseAvisId(null);
+                            setReponseParentId(null);
+                            setCommentaire("");
+                            window.location.reload();
+                          }}>Envoyer</button>
+                          <button onClick={() => { setReponseAvisId(null); setReponseParentId(null); setCommentaire(""); }} style={{ marginLeft: '10px' }}>Annuler</button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
+              )}
+
+              {/* Formulaire réponse à un avis */}
+              {token && (
+                reponseAvisId === a.idavis && !reponseParentId ? (
+                  <div style={{ marginTop: '10px' }}>
+                    <textarea value={commentaire} onChange={(e) => setCommentaire(e.target.value)} placeholder="Votre réponse..." style={{ width: '100%' }} />
+                    <button onClick={async () => {
+                      if (commentaire.trim().length < 2) return;
+                      await axios.post(`/api/avis/${a.idavis}/reponse`, { commentaire }, { headers: { Authorization: `Bearer ${token}` } });
+                      setReponseAvisId(null);
+                      setCommentaire("");
+                      window.location.reload();
+                    }}>Envoyer</button>
+                    <button onClick={() => { setReponseAvisId(null); setCommentaire(""); }} style={{ marginLeft: '10px' }}>Annuler</button>
+                  </div>
+                ) : (
+                  !reponseParentId && <button onClick={() => { setReponseAvisId(a.idavis); setReponseParentId(null); }}>Répondre</button>
+                )
               )}
             </div>
           )}

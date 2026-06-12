@@ -44,4 +44,42 @@ export class AvisController {
       throw e;
     }
   }
+
+  @Post(':idavis/reponse')
+  @UseGuards(JwtAuthGuard)
+  ajouterReponse(
+    @Param('idavis') idavis: string,
+    @Body() body: { commentaire: string; idreponse_parent?: string },
+    @Request() req: any,
+  ) {
+    return this.avisService.ajouterReponse(idavis, req.user.idcompte, body.commentaire, body.idreponse_parent);
+  }
+
+  @Put('reponse/:idreponse')
+  @UseGuards(JwtAuthGuard)
+  async modifierReponse(
+    @Param('idreponse') idreponse: string,
+    @Body() body: { commentaire: string },
+    @Request() req: any,
+  ) {
+    try {
+      return await this.avisService.modifierReponse(idreponse, req.user.idcompte, body.commentaire);
+    } catch (e: any) {
+      if (e.message === 'Non autorisé') throw new ForbiddenException();
+      if (e.message === 'Réponse introuvable') throw new NotFoundException();
+      throw e;
+    }
+  }
+
+  @Delete('reponse/:idreponse')
+  @UseGuards(JwtAuthGuard)
+  async supprimerReponse(@Param('idreponse') idreponse: string, @Request() req: any) {
+    try {
+      return await this.avisService.supprimerReponse(idreponse, req.user.idcompte);
+    } catch (e: any) {
+      if (e.message === 'Non autorisé') throw new ForbiddenException();
+      if (e.message === 'Réponse introuvable') throw new NotFoundException();
+      throw e;
+    }
+  }
 }
