@@ -103,6 +103,31 @@ function ModifierCocktail() {
     }
   };
 
+  const ajouterEtape = async () => {
+    const token = localStorage.getItem("token");
+    const description = prompt("Description de la nouvelle étape :");
+    if (!description || description.trim().length < 5) {
+      alert("La description doit faire au moins 5 caractères");
+      return;
+    }
+
+    try {
+      const res = await axios.post(`/api/cocktail/${idcocktail}/etape`, {
+        descriptionetape: description,
+      }, { headers: { Authorization: `Bearer ${token}` } });
+
+      setEtapes([...etapes, {
+        idetape: res.data.idetape,
+        numeroetape: res.data.numeroetape,
+        descriptionetape: res.data.descriptionetape,
+        dosage: [],
+        etape_ustensile: [],
+      }]);
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Erreur lors de l'ajout de l'étape");
+    }
+  };
+
   return (
     <div>
       <button onClick={() => navigate(-1)}>← Retour</button>
@@ -143,6 +168,8 @@ function ModifierCocktail() {
       <button onClick={handleSubmit}>Sauvegarder</button>
       <button onClick={handleSupprimer} style={{ color: 'red', marginLeft: '10px' }}>Supprimer</button>
       {erreurs.global && <p style={{ color: 'red' }}>{erreurs.global}</p>}
+
+      <button onClick={ajouterEtape}>+ Ajouter une étape</button> 
 
       <h2>Étapes</h2>
       {etapes.map((e, i) => (

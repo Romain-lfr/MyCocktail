@@ -178,7 +178,7 @@ function AjouterCocktail() {
       setEtapeFormulaire(2);
     } catch (err: any) {
       setErreurs({ global: err.response?.data?.message || "Erreur lors de l'ajout des étapes" });
-      return; // Stop ici !
+      return;
     }
   };
 
@@ -190,7 +190,6 @@ function AjouterCocktail() {
 
     try {
       for (const e of etapes) {
-        // Vérifier les ingrédients avant de créer l'étape
         const estMineur = localStorage.getItem("estMineur") === "true";
         const ingredientsAlcool = e.ingredients.filter((ing) => {
           const ingredient = ingredients.find((i) => i.idingredient === ing.idingredient);

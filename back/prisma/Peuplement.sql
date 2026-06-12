@@ -279,6 +279,8 @@ PERFORM ajouter_image_cocktail('COK-00005', '/public/images/punch.webp', 'Punch'
 PERFORM ajouter_image_cocktail('COK-00006', '/public/images/virgin_mojito.webp', 'Virgin Mojito');
 PERFORM ajouter_image_cocktail('COK-00007', '/public/images/apple_rose.jpg', 'Apple Rose');
 
+END $$;
+
 /* ============================================================
    VUES DE CONSULTATION
    ============================================================ */
