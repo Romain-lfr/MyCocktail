@@ -7,11 +7,12 @@ function Login() {
     const [mdp, setMdp] = useState("");
     const [erreur, setErreur] = useState("");
     const navigate = useNavigate();
+    const [pseudoOrMail, setPseudoOrMail] = useState("");
 
     const handleLogin = async () => {
         try {
-            const res = await axios.post("/api/auth/login", {
-                pseudo,
+            const res = await axios.post("http://localhost:3000/auth/login", {
+                pseudoOrMail,
                 mdp,
             });
             localStorage.setItem("token", res.data.access_token);
@@ -26,9 +27,9 @@ function Login() {
         <div>
             <h1>Connexion</h1>
             <input
-                placeholder="Pseudo"
-                value={pseudo}
-                onChange={(e) => setPseudo(e.target.value)}
+                placeholder="Pseudo ou Email"
+                value={pseudoOrMail}
+                onChange={(e) => setPseudoOrMail(e.target.value)}
             />
             <input
                 type="password"

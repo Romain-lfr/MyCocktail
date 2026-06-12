@@ -56,7 +56,10 @@ export class CocktailService {
     return cocktail;
   }
 
-  async create(data: CreateCocktailDto, idcompte: string) {
+  async create(data: CreateCocktailDto, idcompte: string, estMineur: boolean) {
+    if (data.alcool && estMineur) {
+      throw new ForbiddenException('Les mineurs ne peuvent pas créer de cocktails alcoolisés');
+    }
     const result = await this.prisma.$queryRaw<any[]>`
       SELECT * FROM ajouter_cocktail(
         ${data.nomcocktail}::varchar,
@@ -71,26 +74,17 @@ export class CocktailService {
     return result[0];
   }
 
-  async modifier(idcocktail: string, data: CreateCocktailDto, idcompte: string) {
-  // Vérifier que l'auteur est bien le propriétaire
-  const cocktail = await this.prisma.cocktail.findUnique({
-    where: { idcocktail },
-  });
+  async modifier(idcocktail: string, data: CreateCocktailDto, idcompte: string, estMineur: boolean) {
+    const cocktail = await this.prisma.cocktail.findUnique({ where: { idcocktail } });
+    if (!cocktail) throw new Error('Cocktail introuvable');
+    if (cocktail.idcompte !== idcompte) throw new Error('Non autorisé');
+    if (data.alcool && estMineur) throw new ForbiddenException('Les mineurs ne peuvent pas créer de cocktails alcoolisés');
 
-  if (!cocktail) throw new Error('Cocktail introuvable');
-  if (cocktail.idcompte !== idcompte) throw new Error('Non autorisé');
-
-  return this.prisma.cocktail.update({
-    where: { idcocktail },
-    data: {
-      nomcocktail: data.nomcocktail,
-      description: data.description,
-      difficulte: data.difficulte,
-      alcool: data.alcool,
-      duree: data.duree,
-    },
-  });
-}
+    return this.prisma.cocktail.update({
+      where: { idcocktail },
+      data: { nomcocktail: data.nomcocktail, description: data.description, difficulte: data.difficulte, alcool: data.alcool, duree: data.duree },
+    });
+  }
 
   async supprimer(idcocktail: string, idcompte: string) {
     const cocktail = await this.prisma.cocktail.findUnique({
@@ -113,15 +107,16 @@ export class CocktailService {
   }
 
   async addDosage(idcocktail: string, data: CreateDosageDto) {
+    const cocktail = await this.prisma.cocktail.findUnique({ where: { idcocktail } });
+    const ingredient = await this.prisma.ingredient.findUnique({ where: { idingredient: data.idingredient } });
+
+    if (!cocktail?.alcool && ingredient?.categorie === 'alcool') {
+      throw new ForbiddenException('Impossible d\'ajouter un ingrédient alcoolisé à un cocktail sans alcool');
+    }
+
     const result = await this.prisma.$queryRaw<any[]>`
       INSERT INTO _dosage (idcocktail, idingredient, quantite, unite, idetape)
-      VALUES (
-        ${idcocktail}::varchar,
-        ${data.idingredient}::varchar,
-        ${data.quantite}::numeric,
-        ${data.unite}::varchar,
-        ${data.idetape || null}::varchar
-      )
+      VALUES (${idcocktail}::varchar, ${data.idingredient}::varchar, ${data.quantite}::numeric, ${data.unite}::varchar, ${data.idetape || null}::varchar)
       ON CONFLICT (idcocktail, idingredient)
       DO UPDATE SET quantite = _dosage.quantite + EXCLUDED.quantite
       RETURNING *

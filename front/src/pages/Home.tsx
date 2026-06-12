@@ -89,9 +89,12 @@ function Home() {
         if (alcoolParam === "true") {
             if (token && !estMineur) {
                 url = "/api/cocktail?alcool=true";
-            } else {
+            } else if (!token) {
                 navigate("/login");
                 return;
+            } else {
+                // Mineur connecté → mocktails uniquement
+                url = "/api/cocktail?alcool=false";
             }
         } else if (alcoolParam === "false") {
             url = "/api/cocktail?alcool=false";

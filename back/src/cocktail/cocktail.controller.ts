@@ -32,7 +32,7 @@ export class CocktailController {
   @Post()
   @UseGuards(JwtAuthGuard)
   create(@Body() body: CreateCocktailDto, @Request() req: any) {
-    return this.cocktailService.create(body, req.user.idcompte);
+    return this.cocktailService.create(body, req.user.idcompte, req.user.estMineur);
   }
 
   @Post(':id/image')
@@ -52,6 +52,7 @@ export class CocktailController {
       }
     },
   }))
+
   async uploadImage(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
     return this.imageService.ajouterImageCocktail(id, file.path, file.originalname);
   }
@@ -94,7 +95,7 @@ export class CocktailController {
   @UseGuards(JwtAuthGuard)
   async modifier(@Param('id') id: string, @Body() body: CreateCocktailDto, @Request() req: any) {
     try {
-      return await this.cocktailService.modifier(id, body, req.user.idcompte);
+      return await this.cocktailService.modifier(id, body, req.user.idcompte, req.user.estMineur);
     } catch (e: any) {
       if (e.message === 'Non autorisé') throw new ForbiddenException();
       if (e.message === 'Cocktail introuvable') throw new NotFoundException();

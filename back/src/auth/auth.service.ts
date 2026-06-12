@@ -11,29 +11,35 @@ export class AuthService {
         private jwt: JwtService,
     ) {}
 
-    async login(pseudo: string, mdp: string) {
-        const compte = await this.prisma.compte.findUnique({
-        where: { pseudo },
-        });
+    async login(pseudoOrMail: string, mdp: string) {
+      const compte = await this.prisma.compte.findFirst({
+        where: {
+          OR: [
+            { pseudo: pseudoOrMail },
+            { mailcompte: pseudoOrMail.toLowerCase() },
+          ],
+        },
+      });
 
-        if (!compte) throw new UnauthorizedException('Compte introuvable');
+      if (!compte) throw new UnauthorizedException('Compte introuvable');
 
-        const mdpValide = await bcrypt.compare(mdp, compte.mdpcompte);
-        if (!mdpValide) throw new UnauthorizedException('Mot de passe incorrect');
+      const mdpValide = await bcrypt.compare(mdp, compte.mdpcompte);
+      if (!mdpValide) throw new UnauthorizedException('Mot de passe incorrect');
 
-        const estMineur = compte.datenaissance > new Date(
+      const estMineur = compte.datenaissance > new Date(
         new Date().setFullYear(new Date().getFullYear() - 18)
-        );
+      );
 
-        const token = this.jwt.sign({
+      const token = this.jwt.sign({
         sub: compte.idcompte,
         pseudo: compte.pseudo,
         role: compte.role,
         estMineur,
-        });
+      });
 
-        return { access_token: token, estMineur };
+      return { access_token: token, estMineur };
     }
+    
     async register(pseudo: string, mail: string, mdp: string, dateNaissance: string) {
     // Vérif pseudo
     const pseudoExiste = await this.prisma.compte.findUnique({

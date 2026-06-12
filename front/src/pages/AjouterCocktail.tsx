@@ -35,6 +35,7 @@ function AjouterCocktail() {
   const [ustensiles, setUstensiles] = useState<Ustensile[]>([]);
   const [rechercheIngredient, setRechercheIngredient] = useState("");
   const [rechercheUstensile, setRechercheUstensile] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [erreurs, setErreurs] = useState<Record<string, string>>({});
   const navigate = useNavigate();
@@ -176,16 +177,32 @@ function AjouterCocktail() {
 
       setEtapeFormulaire(2);
     } catch (err: any) {
-      setErreurs({ global: err.response?.data?.message || "Erreur lors de la création" });
+      setErreurs({ global: err.response?.data?.message || "Erreur lors de l'ajout des étapes" });
+      return; // Stop ici !
     }
   };
 
   const handleEtapesSubmit = async () => {
+    if (loading) return;
+    setLoading(true);
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
 
     try {
       for (const e of etapes) {
+        // Vérifier les ingrédients avant de créer l'étape
+        const estMineur = localStorage.getItem("estMineur") === "true";
+        const ingredientsAlcool = e.ingredients.filter((ing) => {
+          const ingredient = ingredients.find((i) => i.idingredient === ing.idingredient);
+          return ingredient?.categorie === 'alcool';
+        });
+
+        if (estMineur && ingredientsAlcool.length > 0) {
+          setErreurs({ global: `Impossible d'ajouter des ingrédients alcoolisés en tant que mineur` });
+          setLoading(false);
+          return;
+        }
+
         const etapeRes = await axios.post(`/api/cocktail/${idcocktail}/etape`, {
           numeroetape: e.numeroetape,
           descriptionetape: e.descriptionetape,
@@ -209,10 +226,11 @@ function AjouterCocktail() {
           }, { headers: { Authorization: `Bearer ${token}` } });
         }
       }
-
       navigate(`/cocktail/${encodeURIComponent(nomcocktail)}`);
     } catch (err: any) {
-      setErreurs({ global: "Erreur lors de l'ajout des étapes" });
+      setErreurs({ global: err.response?.data?.message || "Erreur lors de l'ajout des étapes" });
+    } finally {
+      setLoading(false);
     }
   };
 
