@@ -21,12 +21,20 @@ export class CocktailController {
 
   @Get()
   @UseGuards(OptionalJwtAuthGuard)
-  findAll(@Query('alcool') alcool?: string, @Query('recherche') recherche?: string, @Request() req?: any) {
+  findAll(
+    @Query('alcool') alcool?: string,
+    @Query('recherche') recherche?: string,
+    @Query('ingredients') ingredients?: string,
+    @Query('ustensiles') ustensiles?: string,
+    @Request() req?: any
+  ) {
     const user = req.user;
-    if (!user || user.estMineur) return this.cocktailService.findAll(false, recherche);
-    if (alcool === 'true') return this.cocktailService.findAll(true, recherche);
-    if (alcool === 'false') return this.cocktailService.findAll(false, recherche);
-    return this.cocktailService.findAll(undefined, recherche);
+    const ingredientsList = ingredients ? ingredients.split(',') : [];
+    const ustensilesList = ustensiles ? ustensiles.split(',') : [];
+    if (!user || user.estMineur) return this.cocktailService.findAll(false, recherche, ingredientsList, ustensilesList);
+    if (alcool === 'true') return this.cocktailService.findAll(true, recherche, ingredientsList, ustensilesList);
+    if (alcool === 'false') return this.cocktailService.findAll(false, recherche, ingredientsList, ustensilesList);
+    return this.cocktailService.findAll(undefined, recherche, ingredientsList, ustensilesList);
   }
 
   @Post()

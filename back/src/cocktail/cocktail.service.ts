@@ -9,17 +9,29 @@ import { CreateUstensileDto } from './dto/create-ustensile.dto';
 export class CocktailService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(alcool?: boolean, recherche?: string) {
+  async findAll(alcool?: boolean, recherche?: string, ingredients?: string[], ustensiles?: string[]) {
     return this.prisma.cocktail.findMany({
       where: {
         ...(alcool !== undefined ? { alcool } : {}),
         ...(recherche ? { nomcocktail: { contains: recherche, mode: 'insensitive' } } : {}),
+        ...(ingredients && ingredients.length > 0 ? {
+          AND: ingredients.map((idingredient) => ({
+            dosage: { some: { idingredient } },
+          })),
+        } : {}),
+        ...(ustensiles && ustensiles.length > 0 ? {
+          AND: ustensiles.map((idustensile) => ({
+            etape: {
+              some: {
+                etape_ustensile: { some: { idustensile } },
+              },
+            },
+          })),
+        } : {}),
       },
       include: {
         image: true,
-        avis: {
-          select: { noteavis: true },
-        },
+        avis: { select: { noteavis: true } },
       },
     });
   }
