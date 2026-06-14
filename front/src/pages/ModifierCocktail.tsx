@@ -37,6 +37,34 @@ function ModifierCocktail() {
   const [erreurs, setErreurs] = useState<Record<string, string>>({});
   const navigate = useNavigate();
 
+  const ingredientsFiltres = ingredients.filter((ing) =>
+    ing.nomingredient.toLowerCase().includes(rechercheIngredient.toLowerCase())
+  );
+
+  const ustensilesFiltres = ustensiles.filter((u) =>
+    u.nomustensile.toLowerCase().includes(rechercheUstensile.toLowerCase())
+  );
+
+  const ajouterIngredientEtape = async (idetape: string, idingredient: string, unite: string) => {
+    const token = localStorage.getItem("token");
+    await axios.post(`/api/cocktail/${idcocktail}/dosage`, {
+      idingredient,
+      quantite: 1,
+      unite,
+      idetape,
+    }, { headers: { Authorization: `Bearer ${token}` } });
+    window.location.reload();
+  };
+
+  const ajouterUstensileEtape = async (idetape: string, idustensile: string) => {
+    const token = localStorage.getItem("token");
+    await axios.post(`/api/cocktail/etape/ustensile`, {
+      idetape,
+      idustensile,
+    }, { headers: { Authorization: `Bearer ${token}` } });
+    window.location.reload();
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
@@ -244,29 +272,48 @@ function ModifierCocktail() {
           />
           {rechercheIngredient && (
             <div style={{ border: '1px solid #ccc', borderRadius: '5px', maxHeight: '150px', overflowY: 'auto' }}>
-              {ingredients
-                .filter((ing) => ing.nomingredient.toLowerCase().includes(rechercheIngredient.toLowerCase()))
-                .map((ing) => (
+              {ingredientsFiltres.length > 0 ? (
+                ingredientsFiltres.map((ing) => (
                   <div
                     key={ing.idingredient}
-                    onClick={async () => {
-                      const token = localStorage.getItem("token");
-                      await axios.post(`/api/cocktail/${idcocktail}/dosage`, {
-                        idingredient: ing.idingredient,
-                        quantite: 1,
-                        unite: getUnites(ing.idingredient)[0],
-                        idetape: e.idetape,
-                      }, { headers: { Authorization: `Bearer ${token}` } });
+                    onClick={() => {
+                      ajouterIngredientEtape(e.idetape, ing.idingredient, getUnites(ing.idingredient)[0]);
                       setRechercheIngredient("");
-                      window.location.reload();
                     }}
                     style={{ padding: '8px', cursor: 'pointer' }}
-                    onMouseEnter={(ev) => (ev.currentTarget.style.background = '#f0f0f0')}
-                    onMouseLeave={(ev) => (ev.currentTarget.style.background = 'white')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f0')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}
                   >
                     {ing.nomingredient}
                   </div>
-                ))}
+                ))
+              ) : (
+                <div style={{ padding: '8px' }}>
+                  <p>Aucun résultat pour "{rechercheIngredient}"</p>
+                  <select
+                    id="nouvelle-categorie"
+                    defaultValue="autre"
+                    style={{ marginRight: '5px' }}
+                  >
+                    {['alcool', 'jus', 'sirop', 'soda', 'eau', 'fruit', 'autre'].map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <button onClick={async () => {
+                    const token = localStorage.getItem("token");
+                    const categorie = (document.getElementById('nouvelle-categorie') as HTMLSelectElement).value;
+                    const res = await axios.post('/api/cocktail/listes/ingredients', {
+                      nomingredient: rechercheIngredient,
+                      categorie,
+                    }, { headers: { Authorization: `Bearer ${token}` } });
+                    setIngredients([...ingredients, res.data]);
+                    ajouterIngredientEtape(e.idetape, res.data.idingredient, getUnites(res.data.idingredient)[0]);
+                    setRechercheIngredient("");
+                  }}>
+                    + Ajouter "{rechercheIngredient}"
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -293,27 +340,37 @@ function ModifierCocktail() {
           />
           {rechercheUstensile && (
             <div style={{ border: '1px solid #ccc', borderRadius: '5px', maxHeight: '150px', overflowY: 'auto' }}>
-              {ustensiles
-                .filter((u) => u.nomustensile.toLowerCase().includes(rechercheUstensile.toLowerCase()))
-                .map((u) => (
+              {ustensilesFiltres.length > 0 ? (
+                ustensilesFiltres.map((u) => (
                   <div
                     key={u.idustensile}
-                    onClick={async () => {
-                      const token = localStorage.getItem("token");
-                      await axios.post(`/api/cocktail/etape/ustensile`, {
-                        idetape: e.idetape,
-                        idustensile: u.idustensile,
-                      }, { headers: { Authorization: `Bearer ${token}` } });
+                    onClick={() => {
+                      ajouterUstensileEtape(e.idetape, u.idustensile);
                       setRechercheUstensile("");
-                      window.location.reload();
                     }}
                     style={{ padding: '8px', cursor: 'pointer' }}
-                    onMouseEnter={(ev) => (ev.currentTarget.style.background = '#f0f0f0')}
-                    onMouseLeave={(ev) => (ev.currentTarget.style.background = 'white')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f0')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}
                   >
                     {u.nomustensile}
                   </div>
-                ))}
+                ))
+              ) : (
+                <div style={{ padding: '8px' }}>
+                  <p>Aucun résultat pour "{rechercheUstensile}"</p>
+                  <button onClick={async () => {
+                    const token = localStorage.getItem("token");
+                    const res = await axios.post('/api/cocktail/listes/ustensiles', {
+                      nomustensile: rechercheUstensile,
+                    }, { headers: { Authorization: `Bearer ${token}` } });
+                    setUstensiles([...ustensiles, res.data]);
+                    ajouterUstensileEtape(e.idetape, res.data.idustensile);
+                    setRechercheUstensile("");
+                  }}>
+                    + Ajouter "{rechercheUstensile}"
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

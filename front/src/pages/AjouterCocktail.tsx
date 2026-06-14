@@ -29,6 +29,7 @@ function AjouterCocktail() {
   const [duree, setDuree] = useState(1);
   const [image, setImage] = useState<File | null>(null);
   const [idcocktail, setIdcocktail] = useState("");
+  const [recherches, setRecherches] = useState<{ ingredient: string; ustensile: string }[]>([]);
 
   const [etapes, setEtapes] = useState<Etape[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -67,12 +68,12 @@ function AjouterCocktail() {
     }
   };
 
-  const ingredientsFiltres = ingredients.filter((ing) =>
-    ing.nomingredient.toLowerCase().includes(rechercheIngredient.toLowerCase())
+  const ingredientsFiltres = (recherche: string) => ingredients.filter((ing) =>
+    ing.nomingredient.toLowerCase().includes(recherche.toLowerCase())
   );
 
-  const ustensilesFiltres = ustensiles.filter((u) =>
-    u.nomustensile.toLowerCase().includes(rechercheUstensile.toLowerCase())
+  const ustensilesFiltres = (recherche: string) => ustensiles.filter((u) =>
+    u.nomustensile.toLowerCase().includes(recherche.toLowerCase())
   );
 
   const ajouterEtape = () => {
@@ -82,13 +83,14 @@ function AjouterCocktail() {
       ingredients: [],
       ustensiles: [],
     }]);
+    setRecherches([...recherches, { ingredient: "", ustensile: "" }]);
   };
 
   const supprimerEtape = (index: number) => {
     const copy = etapes.filter((_, i) => i !== index);
-    // Recalcule les numéros
     const recalcule = copy.map((e, i) => ({ ...e, numeroetape: i + 1 }));
     setEtapes(recalcule);
+    setRecherches(recherches.filter((_, i) => i !== index));
   };
 
   const updateEtapeDesc = (index: number, desc: string) => {
@@ -130,12 +132,6 @@ function AjouterCocktail() {
     copy[index].ustensiles.push({
       idustensile: idustensile || ustensiles[0]?.idustensile || "",
     });
-    setEtapes(copy);
-  };
-
-  const updateUstensile = (etapeIndex: number, ustIndex: number, value: string) => {
-    const copy = [...etapes];
-    copy[etapeIndex].ustensiles[ustIndex].idustensile = value;
     setEtapes(copy);
   };
 
@@ -184,24 +180,28 @@ function AjouterCocktail() {
 
   const handleEtapesSubmit = async () => {
     if (loading) return;
+    const estMineur = localStorage.getItem("estMineur") === "true";
+    for (const e of etapes) {
+      if (e.descriptionetape.trim().length < 5) {
+        setErreurs({ global: `L'étape ${e.numeroetape} doit avoir une description d'au moins 5 caractères` });
+        return;
+      }
+      const ingredientsAlcool = e.ingredients.filter((ing) => {
+        const ingredient = ingredients.find((i) => i.idingredient === ing.idingredient);
+        return ingredient?.categorie === 'alcool';
+      });
+      if (estMineur && ingredientsAlcool.length > 0) {
+        setErreurs({ global: `Impossible d'ajouter des ingrédients alcoolisés en tant que mineur` });
+        return;
+      }
+    }
+
     setLoading(true);
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
 
     try {
       for (const e of etapes) {
-        const estMineur = localStorage.getItem("estMineur") === "true";
-        const ingredientsAlcool = e.ingredients.filter((ing) => {
-          const ingredient = ingredients.find((i) => i.idingredient === ing.idingredient);
-          return ingredient?.categorie === 'alcool';
-        });
-
-        if (estMineur && ingredientsAlcool.length > 0) {
-          setErreurs({ global: `Impossible d'ajouter des ingrédients alcoolisés en tant que mineur` });
-          setLoading(false);
-          return;
-        }
-
         const etapeRes = await axios.post(`/api/cocktail/${idcocktail}/etape`, {
           numeroetape: e.numeroetape,
           descriptionetape: e.descriptionetape,
@@ -300,26 +300,53 @@ function AjouterCocktail() {
 
           <h4>Ingrédients</h4>
           <input
-            placeholder="🔍 Rechercher un ingrédient..."
-            value={rechercheIngredient}
-            onChange={(ev) => setRechercheIngredient(ev.target.value)}
+            placeholder="Rechercher un ingrédient..."
+            value={recherches[i]?.ingredient || ""}
+            onChange={(ev) => {
+              const copy = [...recherches];
+              copy[i] = { ...copy[i], ingredient: ev.target.value };
+              setRecherches(copy);
+            }}
           />
-          {rechercheIngredient && (
+          {recherches[i]?.ingredient && (
             <div style={{ border: '1px solid #ccc', borderRadius: '5px', maxHeight: '150px', overflowY: 'auto' }}>
-              {ingredientsFiltres.map((ing) => (
-                <div
-                  key={ing.idingredient}
-                  onClick={() => {
+              {ingredientsFiltres(recherches[i].ingredient).length > 0 ? (
+                ingredientsFiltres(recherches[i].ingredient).map((ing) => (
+                  <div key={ing.idingredient} onClick={() => {
                     ajouterIngredientEtape(i, ing.idingredient);
-                    setRechercheIngredient("");
+                    const copy = [...recherches];
+                    copy[i] = { ...copy[i], ingredient: "" };
+                    setRecherches(copy);
                   }}
                   style={{ padding: '8px', cursor: 'pointer' }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f0')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}
-                >
-                  {ing.nomingredient}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}>
+                    {ing.nomingredient}
+                  </div>
+                ))
+              ) : (
+                <div style={{ padding: '8px' }}>
+                  <p>Aucun résultat pour "{recherches[i].ingredient}"</p>
+                  <select id={`nouvelle-categorie-${i}`} defaultValue="autre" style={{ marginRight: '5px' }}>
+                    {['alcool', 'jus', 'sirop', 'soda', 'eau', 'fruit', 'autre'].map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <button onClick={async () => {
+                    const token = localStorage.getItem("token");
+                    const categorie = (document.getElementById(`nouvelle-categorie-${i}`) as HTMLSelectElement).value;
+                    const res = await axios.post('/api/cocktail/listes/ingredients', {
+                      nomingredient: recherches[i].ingredient,
+                      categorie,
+                    }, { headers: { Authorization: `Bearer ${token}` } });
+                    setIngredients([...ingredients, res.data]);
+                    ajouterIngredientEtape(i, res.data.idingredient);
+                    const copy = [...recherches];
+                    copy[i] = { ...copy[i], ingredient: "" };
+                    setRecherches(copy);
+                  }}>+ Ajouter "{recherches[i].ingredient}"</button>
                 </div>
-              ))}
+              )}
             </div>
           )}
           {e.ingredients.map((ing, j) => (
@@ -341,26 +368,46 @@ function AjouterCocktail() {
 
           <h4>Ustensiles</h4>
           <input
-            placeholder="🔍 Rechercher un ustensile..."
-            value={rechercheUstensile}
-            onChange={(ev) => setRechercheUstensile(ev.target.value)}
+            placeholder="Rechercher un ustensile..."
+            value={recherches[i]?.ustensile || ""}
+            onChange={(ev) => {
+              const copy = [...recherches];
+              copy[i] = { ...copy[i], ustensile: ev.target.value };
+              setRecherches(copy);
+            }}
           />
-          {rechercheUstensile && (
+          {recherches[i]?.ustensile && (
             <div style={{ border: '1px solid #ccc', borderRadius: '5px', maxHeight: '150px', overflowY: 'auto' }}>
-              {ustensilesFiltres.map((u) => (
-                <div
-                  key={u.idustensile}
-                  onClick={() => {
+              {ustensilesFiltres(recherches[i].ustensile).length > 0 ? (
+                ustensilesFiltres(recherches[i].ustensile).map((u) => (
+                  <div key={u.idustensile} onClick={() => {
                     ajouterUstensileEtape(i, u.idustensile);
-                    setRechercheUstensile("");
+                    const copy = [...recherches];
+                    copy[i] = { ...copy[i], ustensile: "" };
+                    setRecherches(copy);
                   }}
                   style={{ padding: '8px', cursor: 'pointer' }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f0')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}
-                >
-                  {u.nomustensile}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}>
+                    {u.nomustensile}
+                  </div>
+                ))
+              ) : (
+                <div style={{ padding: '8px' }}>
+                  <p>Aucun résultat pour "{recherches[i].ustensile}"</p>
+                  <button onClick={async () => {
+                    const token = localStorage.getItem("token");
+                    const res = await axios.post('/api/cocktail/listes/ustensiles', {
+                      nomustensile: recherches[i].ustensile,
+                    }, { headers: { Authorization: `Bearer ${token}` } });
+                    setUstensiles([...ustensiles, res.data]);
+                    ajouterUstensileEtape(i, res.data.idustensile);
+                    const copy = [...recherches];
+                    copy[i] = { ...copy[i], ustensile: "" };
+                    setRecherches(copy);
+                  }}>+ Ajouter "{recherches[i].ustensile}"</button>
                 </div>
-              ))}
+              )}
             </div>
           )}
           {e.ustensiles.map((ust, j) => (

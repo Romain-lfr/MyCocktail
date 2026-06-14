@@ -20,13 +20,18 @@ export class CocktailService {
           })),
         } : {}),
         ...(ustensiles && ustensiles.length > 0 ? {
-          AND: ustensiles.map((idustensile) => ({
-            etape: {
-              some: {
-                etape_ustensile: { some: { idustensile } },
+          AND: [
+            ...(ingredients && ingredients.length > 0 ? ingredients.map((idingredient) => ({
+              dosage: { some: { idingredient } },
+            })) : []),
+            ...ustensiles.map((idustensile) => ({
+              etape: {
+                some: {
+                  etape_ustensile: { some: { idustensile } },
+                },
               },
-            },
-          })),
+            })),
+          ],
         } : {}),
       },
       include: {
@@ -196,4 +201,19 @@ export class CocktailService {
       where: { idetape_idustensile: { idetape, idustensile } },
     });
   }
+
+  async ajouterIngredient(nomingredient: string, categorie: string) {
+    const result = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM ajouter_ingredient(${nomingredient}::varchar, ${categorie}::categorie_enum)
+    `;
+    return result[0];
+  }
+
+  async ajouterUstensile(nomustensile: string) {
+    const result = await this.prisma.$queryRaw<any[]>`
+      SELECT * FROM ajouter_ustensile(${nomustensile}::varchar)
+    `;
+    return result[0];
+  }
+  
 }

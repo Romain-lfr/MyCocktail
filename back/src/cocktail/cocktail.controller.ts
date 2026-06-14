@@ -165,4 +165,16 @@ export class CocktailController {
   ) {
     return this.cocktailService.supprimerUstensileEtape(idetape, idustensile);
   }
+
+  @Post('listes/ingredients')
+  @UseGuards(JwtAuthGuard)
+  ajouterIngredient(@Body() body: { nomingredient: string; categorie: string }) {
+    return this.cocktailService.ajouterIngredient(body.nomingredient, body.categorie);
+  }
+
+  @Post('listes/ustensiles')
+  @UseGuards(JwtAuthGuard)
+  ajouterUstensile(@Body() body: { nomustensile: string }) {
+    return this.cocktailService.ajouterUstensile(body.nomustensile);
+  }
 }
