@@ -58,4 +58,32 @@ export class CompteController {
   modifierCompte(@Body() body: { pseudo?: string; mailcompte?: string; numtel?: string }, @Request() req: any) {
     return this.compteService.modifierCompte(req.user.idcompte, body);
   }
+
+  @Get('frigo')
+  @UseGuards(JwtAuthGuard)
+  getMonFrigo(@Request() req: any) {
+    return this.compteService.getMonFrigo(req.user.idcompte);
+  }
+
+  @Post('frigo/:idingredient')
+  @UseGuards(JwtAuthGuard)
+  ajouterIngredientFrigo(
+    @Param('idingredient') idingredient: string,
+    @Body() body: { quantite: number; unite: string },
+    @Request() req: any,
+  ) {
+    return this.compteService.ajouterIngredientFrigo(req.user.idcompte, idingredient, body.quantite, body.unite);
+  }
+
+  @Delete('frigo/:idingredient')
+  @UseGuards(JwtAuthGuard)
+  supprimerIngredientFrigo(@Param('idingredient') idingredient: string, @Request() req: any) {
+    return this.compteService.supprimerIngredientFrigo(req.user.idcompte, idingredient);
+  }
+
+  @Get('frigo/cocktails')
+  @UseGuards(JwtAuthGuard)
+  getCocktailsRealisables(@Request() req: any) {
+    return this.compteService.getCocktailsRealisables(req.user.idcompte);
+  }
 }

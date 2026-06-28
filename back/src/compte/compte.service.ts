@@ -108,4 +108,57 @@ export class CompteService {
       },
     });
   }
+
+  async getMonFrigo(idcompte: string) {
+    return this.prisma.frigo.findUnique({
+      where: { idcompte },
+      include: {
+        frigo_composition: {
+          include: { ingredient: true },
+          orderBy: { ingredient: { nomingredient: 'asc' } },
+        },
+      },
+    });
+  }
+
+  async ajouterIngredientFrigo(idcompte: string, idingredient: string, quantite: number, unite: string) {
+    const frigo = await this.prisma.frigo.findUnique({ where: { idcompte } });
+    return this.prisma.frigo_composition.upsert({
+      where: { idfrigo_idingredient: { idfrigo: frigo!.idfrigo, idingredient } },
+      update: { quantite, unite },
+      create: { idfrigo: frigo!.idfrigo, idingredient, quantite, unite },
+    });
+  }
+
+  async supprimerIngredientFrigo(idcompte: string, idingredient: string) {
+    const frigo = await this.prisma.frigo.findUnique({ where: { idcompte } });
+    return this.prisma.frigo_composition.delete({
+      where: { idfrigo_idingredient: { idfrigo: frigo!.idfrigo, idingredient } },
+    });
+  }
+
+  async getCocktailsRealisables(idcompte: string) {
+    const frigo = await this.prisma.frigo.findUnique({
+      where: { idcompte },
+      include: { frigo_composition: true },
+    });
+
+    if (!frigo || frigo.frigo_composition.length === 0) return [];
+
+    const ingredientsFrigo = frigo.frigo_composition.map((f) => f.idingredient);
+
+    const cocktails = await this.prisma.cocktail.findMany({
+      where: { statut: 'publi_' },
+      include: {
+        image: true,
+        avis: { select: { noteavis: true } },
+        dosage: true,
+      },
+    });
+
+    // Filtrer côté Node : tous les ingrédients du cocktail sont dans le frigo
+    return cocktails.filter((c) =>
+      c.dosage.every((d) => ingredientsFrigo.includes(d.idingredient))
+    );
+  }
 }
