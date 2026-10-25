@@ -1,18 +1,29 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Header from "./Header";
+import "./mycocktail.css";
 
-interface Compte {
+interface CompteInfo {
   idcompte: string;
   pseudo: string;
   mailcompte: string;
+  numtel?: string | null;
   dateinscription: string;
   datenaissance: string;
   role: string;
 }
 
-function Compte() {
-  const [compte, setCompte] = useState<Compte | null>(null);
+const libelleRole: Record<string, string> = {
+  user: "Membre",
+  moderateur: "Modérateur",
+  admin: "Administrateur",
+};
+
+const formatDate = (d: string) => new Date(d).toLocaleDateString("fr-FR");
+
+function Profil() {
+  const [compte, setCompte] = useState<CompteInfo | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,36 +44,51 @@ function Compte() {
       });
   }, []);
 
-  if (!compte) return <p>Chargement...</p>;
+  if (!compte) {
+    return (
+      <div className="layout">
+        <Header />
+        <main className="page"><p className="vide">Chargement…</p></main>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h1>👤 {compte.pseudo}</h1>
-      <div onClick={() => navigate("/compte/info")} style={{ cursor: 'pointer', padding: '30px', border: '1px solid #ccc', borderRadius: '10px', width: '150px', textAlign: 'center' }}>
-        <h2>👤</h2>
-        <p>Mon profil</p>
-      </div>
+    <div className="layout">
+      <Header />
+      <main className="profil">
+        <section className="profil__gauche" aria-label="Aperçu du compte">
+          <div className="profil__avatar" aria-hidden="true">{compte.pseudo.charAt(0)}</div>
+          <h1>{compte.pseudo}</h1>
+          <p className="profil__mail">{compte.mailcompte}</p>
+          <span className="profil__role">{libelleRole[compte.role] ?? compte.role}</span>
+        </section>
 
-      <div style={{ display: 'flex', gap: '20px', marginTop: '30px', flexWrap: 'wrap' }}>
-        <div onClick={() => navigate("/compte/cocktails")} style={{ cursor: 'pointer', padding: '30px', border: '1px solid #ccc', borderRadius: '10px', width: '150px', textAlign: 'center' }}>
-          <h2>🍹</h2>
-          <p>Mes cocktails</p>
-        </div>
-        <div onClick={() => navigate("/compte/favoris")} style={{ cursor: 'pointer', padding: '30px', border: '1px solid #ccc', borderRadius: '10px', width: '150px', textAlign: 'center' }}>
-          <h2>❤️</h2>
-          <p>Mes favoris</p>
-        </div>
-        <div onClick={() => navigate("/compte/frigo")} style={{ cursor: 'pointer', padding: '30px', border: '1px solid #ccc', borderRadius: '10px', width: '150px', textAlign: 'center' }}>
-          <h2>🧊</h2>
-          <p>Mon frigo</p>
-        </div>
-        <div onClick={() => navigate("/compte/avis")} style={{ cursor: 'pointer', padding: '30px', border: '1px solid #ccc', borderRadius: '10px', width: '150px', textAlign: 'center' }}>
-          <h2>⭐</h2>
-          <p>Mes avis</p>
-        </div>
-      </div>
+        <section className="profil__droite">
+          <h2>Informations</h2>
+          <dl className="infos">
+            <dt>Pseudo</dt><dd>{compte.pseudo}</dd>
+            <dt>E-mail</dt><dd>{compte.mailcompte}</dd>
+            {compte.numtel && (<><dt>Téléphone</dt><dd>{compte.numtel}</dd></>)}
+            <dt>Date de naissance</dt><dd>{formatDate(compte.datenaissance)}</dd>
+            <dt>Membre depuis le</dt><dd>{formatDate(compte.dateinscription)}</dd>
+          </dl>
+
+          <h2>Mon espace</h2>
+          <ul className="profil__liens">
+            <li><Link to="/compte/cocktails">Mes cocktails <span aria-hidden="true">→</span></Link></li>
+            <li><Link to="/compte/favoris">Mes favoris <span aria-hidden="true">→</span></Link></li>
+            <li><Link to="/compte/frigo">Mon frigo <span aria-hidden="true">→</span></Link></li>
+            <li><Link to="/compte/avis">Mes avis <span aria-hidden="true">→</span></Link></li>
+          </ul>
+
+          <div className="profil__action">
+            <button className="pill" onClick={() => navigate("/compte/info/modifier")}>Modifier les informations</button>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
 
-export default Compte;
+export default Profil;

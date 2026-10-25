@@ -1,7 +1,18 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import Header from "./Header";
+import { GlasseY, GlasseU } from "./Logo";
+import "./mycocktail.css";
+
+interface Reponse {
+  idreponse: string;
+  idcompte: string;
+  commentaire: string;
+  datereponse: string;
+  idreponse_parent: string | null;
+  compte: { pseudo: string };
+}
 
 interface Avis {
   idavis: string;
@@ -11,14 +22,14 @@ interface Avis {
   descriptionavis: string;
   dateavis: string;
   compte: { pseudo: string };
-  reponse: {
-    idreponse: string;
-    idcompte: string;
-    commentaire: string;
-    datereponse: string;
-    idreponse_parent: string | null;
-    compte: { pseudo: string };
-  }[];
+  reponse: Reponse[];
+}
+
+interface Dosage {
+  idingredient: string;
+  quantite: number;
+  unite: string;
+  ingredient: { nomingredient: string };
 }
 
 interface Cocktail {
@@ -35,21 +46,14 @@ interface Cocktail {
     numeroetape: number;
     descriptionetape: string;
     etape_ustensile: { ustensile: { nomustensile: string } }[];
-    dosage: {
-      idingredient: string;
-      quantite: number;
-      unite: string;
-      ingredient: { nomingredient: string };
-    }[];
+    dosage: Dosage[];
   }[];
-  dosage: {
-    idingredient: string;
-    quantite: number;
-    unite: string;
-    ingredient: { nomingredient: string };
-  }[];
+  dosage: Dosage[];
   avis: Avis[];
 }
+
+const formatQuantite = (q: number) => Number(q).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
+const formatDosage = (d: Dosage) => `${formatQuantite(d.quantite)} ${d.unite} ${d.ingredient.nomingredient}`;
 
 function CocktailDetail() {
   const { nom } = useParams();
@@ -57,7 +61,9 @@ function CocktailDetail() {
   const navigate = useNavigate();
   const [isFavori, setIsFavori] = useState(false);
   const token = localStorage.getItem("token");
-  const userIdcompte = token ? JSON.parse(atob(token.split('.')[1])).sub : null;
+  const userIdcompte = token ? JSON.parse(atob(token.split(".")[1])).sub : null;
+  const auth = { headers: { Authorization: `Bearer ${token}` } };
+
   const [editAvisId, setEditAvisId] = useState<string | null>(null);
   const [editNote, setEditNote] = useState(5);
   const [editTitre, setEditTitre] = useState("");
@@ -73,270 +79,284 @@ function CocktailDetail() {
       noteavis: editNote,
       titreavis: editTitre,
       descriptionavis: editDescription,
-    }, { headers: { Authorization: `Bearer ${token}` } });
+    }, auth);
     setEditAvisId(null);
     window.location.reload();
   };
 
   const handleSupprimerAvis = async (idavis: string) => {
     if (!confirm("Supprimer cet avis ?")) return;
-    await axios.delete(`/api/avis/${idavis}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    await axios.delete(`/api/avis/${idavis}`, auth);
     window.location.reload();
+  };
+
+  const sauvegarderReponse = async (idreponse: string) => {
+    await axios.put(`/api/avis/reponse/${idreponse}`, { commentaire: editCommentaire }, auth);
+    setEditReponseId(null);
+    window.location.reload();
+  };
+
+  const supprimerReponse = async (idreponse: string) => {
+    if (!confirm("Supprimer cette réponse ?")) return;
+    await axios.delete(`/api/avis/reponse/${idreponse}`, auth);
+    window.location.reload();
+  };
+
+  const envoyerReponse = async (idavis: string, parent: string | null) => {
+    if (commentaire.trim().length < 2) return;
+    await axios.post(`/api/avis/${idavis}/reponse`,
+      parent ? { commentaire, idreponse_parent: parent } : { commentaire }, auth);
+    setReponseAvisId(null);
+    setReponseParentId(null);
+    setCommentaire("");
+    window.location.reload();
+  };
+
+  const annulerReponse = () => {
+    setReponseAvisId(null);
+    setReponseParentId(null);
+    setCommentaire("");
   };
 
   useEffect(() => {
     if (!token || !cocktail) return;
-    axios.get(`/api/compte/favori/${cocktail.idcocktail}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }).then((res) => setIsFavori(res.data.isFavori));
+    axios.get(`/api/compte/favori/${cocktail.idcocktail}`, auth)
+      .then((res) => setIsFavori(res.data.isFavori));
   }, [cocktail]);
 
   const toggleFavori = async () => {
     if (!token) { navigate("/login"); return; }
     if (isFavori) {
-      await axios.delete(`/api/compte/favori/${cocktail!.idcocktail}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/api/compte/favori/${cocktail!.idcocktail}`, auth);
       setIsFavori(false);
     } else {
-      await axios.post(`/api/compte/favori/${cocktail!.idcocktail}`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.post(`/api/compte/favori/${cocktail!.idcocktail}`, {}, auth);
       setIsFavori(true);
     }
   };
 
   useEffect(() => {
     axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, {
-      headers: localStorage.getItem("token") 
-        ? { Authorization: `Bearer ${localStorage.getItem("token")}` } 
-        : {},
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
-      .then((res) => {
-        setCocktail(res.data);
-      })
+      .then((res) => setCocktail(res.data))
       .catch((err) => {
-        if (err.response?.status === 403) {
-          navigate("/login");
-        }
+        if (err.response?.status === 403) navigate("/login");
         console.error(err);
       });
   }, [nom]);
 
-  if (!cocktail) return <p>Chargement...</p>;
+  if (!cocktail) {
+    return (
+      <div className="layout">
+        <Header />
+        <main className="page"><p className="vide">Chargement…</p></main>
+      </div>
+    );
+  }
+
+  const ustensiles = Array.from(new Set(
+    cocktail.etape.flatMap((e) => e.etape_ustensile.map((u) => u.ustensile.nomustensile))
+  ));
+
+  const moyenne = cocktail.avis.length
+    ? cocktail.avis.reduce((s, a) => s + a.noteavis, 0) / cocktail.avis.length
+    : 0;
+  const moyenneTexte = moyenne.toFixed(1).replace(".", ",");
+
+  const formReponse = (a: Avis, parent: string | null) => (
+    <div className="form-inline">
+      <textarea value={commentaire} onChange={(e) => setCommentaire(e.target.value)} placeholder="Votre réponse…" aria-label="Votre réponse" />
+      <div className="actions">
+        <button className="btn btn--plein" onClick={() => envoyerReponse(a.idavis, parent)}>Envoyer</button>
+        <button className="btn" onClick={annulerReponse}>Annuler</button>
+      </div>
+    </div>
+  );
+
+  const blocReponse = (r: Reponse, a: Avis, peutRepondre: boolean) => (
+    editReponseId === r.idreponse ? (
+      <div className="form-inline">
+        <textarea value={editCommentaire} onChange={(e) => setEditCommentaire(e.target.value)} aria-label="Modifier la réponse" />
+        <div className="actions">
+          <button className="btn btn--plein" onClick={() => sauvegarderReponse(r.idreponse)}>Sauvegarder</button>
+          <button className="btn" onClick={() => setEditReponseId(null)}>Annuler</button>
+        </div>
+      </div>
+    ) : (
+      <>
+        <p>{r.commentaire}</p>
+        <p className="avis__auteur">{r.compte.pseudo}</p>
+        <div className="actions">
+          {peutRepondre && token && userIdcompte !== r.idcompte && (
+            <button className="btn" onClick={() => { setReponseAvisId(a.idavis); setReponseParentId(r.idreponse); setCommentaire(""); }}>Répondre</button>
+          )}
+          {userIdcompte === r.idcompte && (
+            <>
+              <button className="btn" onClick={() => { setEditReponseId(r.idreponse); setEditCommentaire(r.commentaire); }}>Modifier</button>
+              <button className="btn btn--danger" onClick={() => supprimerReponse(r.idreponse)}>Supprimer</button>
+            </>
+          )}
+        </div>
+      </>
+    )
+  );
 
   return (
-    
-    <div>
-        <button onClick={() => navigate(-1)}>← Retour</button>
-      {cocktail.image && cocktail.image[0] && (
-        <img
-          src={`/api${cocktail.image[0].urlimage}`}
-          alt={cocktail.nomcocktail}
-          width={300}
-        />
-      )}
-      <h1>{cocktail.nomcocktail}</h1>
-      <button onClick={toggleFavori}>
-        {isFavori ? "❤️ Retirer des favoris" : "🤍 Ajouter aux favoris"}
-      </button>
-      <p>{cocktail.description}</p>
-      <p>Difficulté : {cocktail.difficulte}</p>
-      <p>Durée : {cocktail.duree} min</p>
-      <p>{cocktail.alcool ? "🍸 Avec alcool" : "🥤 Sans alcool"}</p>
+    <div className="layout">
+      <Header />
+      <main className="page fiche">
+        <div className="fiche__retour">
+          <button className="pill" onClick={() => navigate(-1)}>← Retour</button>
+        </div>
 
-      <h2>🛒 Ingrédients totaux</h2>
-      <ul>
-        {cocktail.dosage.map((d, i) => (
-          <li key={i}>
-            {d.ingredient.nomingredient} — {d.quantite} {d.unite}
-          </li>
-        ))}
-      </ul>
+        <section className="fiche__entete">
+          <div>
+            <h1>{cocktail.nomcocktail}</h1>
+            <div className="fiche__meta">
+              <span className={`statut statut--${cocktail.difficulte}`}>{cocktail.difficulte}</span>
+              <span>{cocktail.duree} min</span>
+              <span>{cocktail.avis.length > 0 ? `${moyenneTexte}/5 (${cocktail.avis.length} avis)` : "Aucun avis"}</span>
+              <span className={`tag ${cocktail.alcool ? "tag--alcool" : ""}`}>{cocktail.alcool ? "Alcool" : "Sans alcool"}</span>
+            </div>
+            <p className="fiche__desc">{cocktail.description}</p>
+            <button className={`pill ${isFavori ? "pill--mangue" : ""}`} aria-pressed={isFavori} onClick={toggleFavori}>
+              {isFavori ? "Dans mes favoris" : "Ajouter aux favoris"}
+            </button>
+          </div>
 
-      <h2>🍴 Ustensiles nécessaires</h2>
-      <ul>
-        {Array.from(
-          new Set(
-            cocktail.etape.flatMap((e) =>
-              e.etape_ustensile.map((u) => u.ustensile.nomustensile)
-            )
-          )
-        ).map((nom, i) => (
-          <li key={i}>{nom}</li>
-        ))}
-      </ul>
-
-      <h2>📋 Étapes</h2>
-      {cocktail.etape.map((e) => (
-        <div key={e.idetape} style={{ border: '1px solid #eee', padding: '10px', margin: '10px 0', borderRadius: '8px' }}>
-          <h3>Étape {e.numeroetape}</h3>
-          <p>{e.descriptionetape}</p>
-          {e.etape_ustensile.length > 0 && (
-            <p>🍴 Ustensiles : {e.etape_ustensile.map((u) => u.ustensile.nomustensile).join(", ")}</p>
+          {cocktail.image?.[0] ? (
+            <img className="fiche__photo" src={`/api${cocktail.image[0].urlimage}`} alt={cocktail.image[0].titleimage || cocktail.nomcocktail} />
+          ) : (
+            <div className={`fiche__photo fiche__photo--vide ${cocktail.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">
+              {cocktail.alcool ? <GlasseY /> : <GlasseU />}
+            </div>
           )}
-          {e.dosage && e.dosage.length > 0 && (
-            <ul>
-              {e.dosage.map((d, i) => (
-                <li key={i}>{d.ingredient.nomingredient} — {d.quantite} {d.unite}</li>
+        </section>
+
+        <section className="fiche__corps">
+          <div className="fiche__ingredients">
+            <h2>Ingrédients</h2>
+            <ul className="dosages">
+              {cocktail.dosage.map((d, i) => (
+                <li key={i}>
+                  <span className="dosages__nom">{d.ingredient.nomingredient}</span>
+                  <span className="dosages__trait" aria-hidden="true" />
+                  <span className="dosages__qte">{formatQuantite(d.quantite)}<small>{d.unite}</small></span>
+                </li>
               ))}
             </ul>
-          )}
-        </div>
-      ))}
-      <h2>Avis</h2>
-      {token && (
-        <button onClick={() => navigate(`/cocktail/${nom}/avis`)}>
-          Laisser un avis
-        </button>
-      )}
-      {cocktail.avis.length === 0 && <p>Aucun avis pour le moment.</p>}
-      {cocktail.avis.map((a) => (
-        <div key={a.idavis} style={{ border: '1px solid #ccc', padding: '10px', margin: '10px 0' }}>
-          {editAvisId === a.idavis ? (
-            <div>
-              <select value={editNote} onChange={(e) => setEditNote(parseInt(e.target.value))}>
-                {[1,2,3,4,5].map((n) => <option key={n} value={n}>{n}/5</option>)}
-              </select>
-              <input value={editTitre} onChange={(e) => setEditTitre(e.target.value)} />
-              <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
-              <button onClick={handleSauvegarderAvis}>Sauvegarder</button>
-              <button onClick={() => setEditAvisId(null)} style={{ marginLeft: '10px' }}>Annuler</button>
-            </div>
-          ) : (
-            <div>
-              <p>{a.noteavis}/5 — <strong>{a.titreavis}</strong></p>
-              <p>{a.descriptionavis}</p>
-              <p>Par {a.compte.pseudo} — {new Date(a.dateavis).toLocaleDateString()}</p>
-              {userIdcompte === a.idcompte && (
-                <>
-                  <button onClick={() => {
-                    setEditAvisId(a.idavis);
-                    setEditNote(a.noteavis);
-                    setEditTitre(a.titreavis);
-                    setEditDescription(a.descriptionavis);
-                  }}>Modifier</button>
-                  <button onClick={() => handleSupprimerAvis(a.idavis)} style={{ color: 'red', marginLeft: '10px' }}>Supprimer</button>
-                </>
-              )}
-              {a.reponse.length > 0 && (
-                <div style={{ marginLeft: '20px', borderLeft: '2px solid #ccc', paddingLeft: '10px' }}>
-                  <p><strong>Réponses :</strong></p>
-                  {a.reponse.filter((r) => !r.idreponse_parent).map((r) => (
-                    <div key={r.idreponse} style={{ margin: '10px 0' }}>
-                      {editReponseId === r.idreponse ? (
-                        <div>
-                          <textarea value={editCommentaire} onChange={(e) => setEditCommentaire(e.target.value)} />
-                          <button onClick={async () => {
-                            await axios.put(`/api/avis/reponse/${r.idreponse}`, { commentaire: editCommentaire }, { headers: { Authorization: `Bearer ${token}` } });
-                            setEditReponseId(null);
-                            window.location.reload();
-                          }}>Sauvegarder</button>
-                          <button onClick={() => setEditReponseId(null)} style={{ marginLeft: '10px' }}>Annuler</button>
-                        </div>
-                      ) : (
-                        <div>
-                          <p>{r.commentaire}</p>
-                          <p>Par {r.compte.pseudo}</p>
-                          <div style={{ display: 'flex', gap: '10px' }}>
-                            {token && userIdcompte !== r.idcompte && (
-                              <button onClick={() => { setReponseAvisId(a.idavis); setReponseParentId(r.idreponse); setCommentaire(""); }}>
-                                Répondre
-                              </button>
-                            )}
-                            {userIdcompte === r.idcompte && (
-                              <>
-                                <button onClick={() => { setEditReponseId(r.idreponse); setEditCommentaire(r.commentaire); }}>Modifier</button>
-                                <button onClick={async () => {
-                                  if (!confirm("Supprimer cette réponse ?")) return;
-                                  await axios.delete(`/api/avis/reponse/${r.idreponse}`, { headers: { Authorization: `Bearer ${token}` } });
-                                  window.location.reload();
-                                }} style={{ color: 'red' }}>Supprimer</button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      )}
+          </div>
 
-                      {/* Réponses aux réponses */}
-                      {a.reponse.filter((sr) => sr.idreponse_parent === r.idreponse).map((sr) => (
-                        <div key={sr.idreponse} style={{ marginLeft: '20px', borderLeft: '2px solid #eee', paddingLeft: '10px', marginTop: '5px' }}>
-                          {editReponseId === sr.idreponse ? (
-                            <div>
-                              <textarea value={editCommentaire} onChange={(e) => setEditCommentaire(e.target.value)} />
-                              <button onClick={async () => {
-                                await axios.put(`/api/avis/reponse/${sr.idreponse}`, { commentaire: editCommentaire }, { headers: { Authorization: `Bearer ${token}` } });
-                                setEditReponseId(null);
-                                window.location.reload();
-                              }}>Sauvegarder</button>
-                              <button onClick={() => setEditReponseId(null)} style={{ marginLeft: '10px' }}>Annuler</button>
-                            </div>
-                          ) : (
-                            <div>
-                              <p>{sr.commentaire}</p>
-                              <p>Par {sr.compte.pseudo}</p>
-                              {userIdcompte === sr.idcompte && (
-                                <div style={{ display: 'flex', gap: '10px' }}>
-                                  <button onClick={() => { setEditReponseId(sr.idreponse); setEditCommentaire(sr.commentaire); }}>Modifier</button>
-                                  <button onClick={async () => {
-                                    if (!confirm("Supprimer cette réponse ?")) return;
-                                    await axios.delete(`/api/avis/reponse/${sr.idreponse}`, { headers: { Authorization: `Bearer ${token}` } });
-                                    window.location.reload();
-                                  }} style={{ color: 'red' }}>Supprimer</button>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+          <div>
+            {ustensiles.length > 0 && (
+              <>
+                <h2>Matériel</h2>
+                <ul className="materiel">
+                  {ustensiles.map((u, i) => <li key={i}>{u}</li>)}
+                </ul>
+              </>
+            )}
 
-                      {/* Formulaire réponse à une réponse */}
-                      {reponseAvisId === a.idavis && reponseParentId === r.idreponse && (
-                        <div style={{ marginTop: '10px', marginLeft: '20px' }}>
-                          <textarea value={commentaire} onChange={(e) => setCommentaire(e.target.value)} placeholder="Votre réponse..." style={{ width: '100%' }} />
-                          <button onClick={async () => {
-                            if (commentaire.trim().length < 2) return;
-                            await axios.post(`/api/avis/${a.idavis}/reponse`, {
-                              commentaire,
-                              idreponse_parent: r.idreponse,
-                            }, { headers: { Authorization: `Bearer ${token}` } });
-                            setReponseAvisId(null);
-                            setReponseParentId(null);
-                            setCommentaire("");
-                            window.location.reload();
-                          }}>Envoyer</button>
-                          <button onClick={() => { setReponseAvisId(null); setReponseParentId(null); setCommentaire(""); }} style={{ marginLeft: '10px' }}>Annuler</button>
-                        </div>
-                      )}
+            <h2>Préparation</h2>
+            <ol className="etapes">
+              {cocktail.etape.map((e) => (
+                <li key={e.idetape} className="etape">
+                  <span className="etape__num" aria-hidden="true">{e.numeroetape}</span>
+                  <div>
+                    <p>{e.descriptionetape}</p>
+                    {e.dosage && e.dosage.length > 0 && (
+                      <p className="etape__ing">Avec {e.dosage.map(formatDosage).join(", ")}</p>
+                    )}
+                    {e.etape_ustensile.length > 0 && (
+                      <p className="etape__ing">Matériel : {e.etape_ustensile.map((u) => u.ustensile.nomustensile).join(", ")}</p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section className="fiche__corps fiche__avis">
+          <div className="fiche__resume">
+            <h2>Avis</h2>
+            {cocktail.avis.length > 0 && (
+              <p className="fiche__moyenne">{moyenneTexte}<small>/5</small></p>
+            )}
+            <p>{cocktail.avis.length > 0 ? `${cocktail.avis.length} avis` : "Aucun avis pour le moment."}</p>
+            {token && (
+              <button className="pill pill--mangue" onClick={() => navigate(`/cocktail/${nom}/avis`)}>Laisser un avis</button>
+            )}
+          </div>
+
+          <ul className="avis-liste">
+            {cocktail.avis.map((a) => (
+              <li key={a.idavis} className="avis">
+                {editAvisId === a.idavis ? (
+                  <div className="form-inline">
+                    <select value={editNote} onChange={(e) => setEditNote(parseInt(e.target.value))} aria-label="Note">
+                      {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}/5</option>)}
+                    </select>
+                    <input value={editTitre} onChange={(e) => setEditTitre(e.target.value)} aria-label="Titre" />
+                    <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} aria-label="Description" />
+                    <div className="actions">
+                      <button className="btn btn--plein" onClick={handleSauvegarderAvis}>Sauvegarder</button>
+                      <button className="btn" onClick={() => setEditAvisId(null)}>Annuler</button>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Formulaire réponse à un avis */}
-              {token && (
-                reponseAvisId === a.idavis && !reponseParentId ? (
-                  <div style={{ marginTop: '10px' }}>
-                    <textarea value={commentaire} onChange={(e) => setCommentaire(e.target.value)} placeholder="Votre réponse..." style={{ width: '100%' }} />
-                    <button onClick={async () => {
-                      if (commentaire.trim().length < 2) return;
-                      await axios.post(`/api/avis/${a.idavis}/reponse`, { commentaire }, { headers: { Authorization: `Bearer ${token}` } });
-                      setReponseAvisId(null);
-                      setCommentaire("");
-                      window.location.reload();
-                    }}>Envoyer</button>
-                    <button onClick={() => { setReponseAvisId(null); setCommentaire(""); }} style={{ marginLeft: '10px' }}>Annuler</button>
                   </div>
                 ) : (
-                  !reponseParentId && <button onClick={() => { setReponseAvisId(a.idavis); setReponseParentId(null); }}>Répondre</button>
-                )
-              )}
-            </div>
-          )}
-        </div>
-      ))}
+                  <>
+                    <div className="avis__ligne">
+                      <span className="avis__note">{a.noteavis}/5</span>
+                      <span className="avis__titre">{a.titreavis}</span>
+                    </div>
+                    <p className="avis__auteur">{a.compte.pseudo}, le {new Date(a.dateavis).toLocaleDateString("fr-FR")}</p>
+                    <p>{a.descriptionavis}</p>
+
+                    <div className="actions">
+                      {userIdcompte === a.idcompte && (
+                        <>
+                          <button className="btn" onClick={() => {
+                            setEditAvisId(a.idavis);
+                            setEditNote(a.noteavis);
+                            setEditTitre(a.titreavis);
+                            setEditDescription(a.descriptionavis);
+                          }}>Modifier</button>
+                          <button className="btn btn--danger" onClick={() => handleSupprimerAvis(a.idavis)}>Supprimer</button>
+                        </>
+                      )}
+                      {token && !reponseParentId && reponseAvisId !== a.idavis && (
+                        <button className="btn" onClick={() => { setReponseAvisId(a.idavis); setReponseParentId(null); setCommentaire(""); }}>Répondre</button>
+                      )}
+                    </div>
+
+                    {a.reponse.length > 0 && (
+                      <div className="fil">
+                        {a.reponse.filter((r) => !r.idreponse_parent).map((r) => (
+                          <div key={r.idreponse} className="reponse">
+                            {blocReponse(r, a, true)}
+
+                            {a.reponse.filter((sr) => sr.idreponse_parent === r.idreponse).map((sr) => (
+                              <div key={sr.idreponse} className="fil reponse">
+                                {blocReponse(sr, a, false)}
+                              </div>
+                            ))}
+
+                            {reponseAvisId === a.idavis && reponseParentId === r.idreponse && formReponse(a, r.idreponse)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {token && reponseAvisId === a.idavis && !reponseParentId && formReponse(a, null)}
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      </main>
     </div>
   );
 }

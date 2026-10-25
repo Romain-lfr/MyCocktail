@@ -1,6 +1,10 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import Header from "./Header";
+import { GlasseY, GlasseU } from "./Logo";
+import AdSlot, { pubAutorisee } from "./Adslot";
+import "./mycocktail.css";
 
 interface Cocktail {
     idcocktail: string;
@@ -14,12 +18,72 @@ interface Cocktail {
     avis: { noteavis: number }[];
 }
 
+interface Option { id: string; nom: string }
+
+const SLOT_LISTE = import.meta.env.VITE_ADSENSE_SLOT_LISTE as string | undefined;
+
+/* Champ de recherche avec puces : sert pour les ingrédients et les ustensiles */
+function SelecteurMultiple({ id, placeholder, options, selection, onChange }: {
+    id: string;
+    placeholder: string;
+    options: Option[];
+    selection: string[];
+    onChange: (s: string[]) => void;
+}) {
+    const [texte, setTexte] = useState("");
+    const propositions = texte
+        ? options.filter((o) => !selection.includes(o.id) && o.nom.toLowerCase().includes(texte.toLowerCase())).slice(0, 8)
+        : [];
+
+    const ajouter = (optionId: string) => {
+        onChange([...selection, optionId]);
+        setTexte("");
+    };
+
+    return (
+        <div className="selecteur">
+            {selection.map((sid) => {
+                const nom = options.find((o) => o.id === sid)?.nom;
+                return (
+                    <span key={sid} className="puce">
+                        {nom}
+                        <button type="button" aria-label={`Retirer ${nom}`} onClick={() => onChange(selection.filter((f) => f !== sid))}>×</button>
+                    </span>
+                );
+            })}
+            <div className="selecteur__champ">
+                <input
+                    id={id}
+                    aria-label={placeholder}
+                    placeholder={placeholder}
+                    value={texte}
+                    onChange={(e) => setTexte(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" && propositions[0]) {
+                            e.preventDefault();
+                            ajouter(propositions[0].id);
+                        }
+                    }}
+                />
+                {propositions.length > 0 && (
+                    <ul className="suggestions">
+                        {propositions.map((p) => (
+                            <li key={p.id}><button type="button" onClick={() => ajouter(p.id)}>{p.nom}</button></li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function Home() {
     const [cocktails, setCocktails] = useState<Cocktail[]>([]);
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const location = useLocation();
     const [favoris, setFavoris] = useState<string[]>([]);
+    const [affiner, setAffiner] = useState(false);
     const [tri, setTri] = useState(() => sessionStorage.getItem("tri") || "date_desc");
     const [filtreDifficulte, setFiltreDifficulte] = useState(() => sessionStorage.getItem("filtreDifficulte") || "");
     const [filtreDureeMin, setFiltreDureeMin] = useState(() => parseInt(sessionStorage.getItem("filtreDureeMin") || "0"));
@@ -28,10 +92,12 @@ function Home() {
     const [filtreNoteMax, setFiltreNoteMax] = useState(() => parseInt(sessionStorage.getItem("filtreNoteMax") || "0"));
     const [filtreIngredients, setFiltreIngredients] = useState<string[]>(() => JSON.parse(sessionStorage.getItem("filtreIngredients") || "[]"));
     const [filtreUstensiles, setFiltreUstensiles] = useState<string[]>(() => JSON.parse(sessionStorage.getItem("filtreUstensiles") || "[]"));
-    const [rechercheIngredient, setRechercheIngredient] = useState("");
     const [listeIngredients, setListeIngredients] = useState<{ idingredient: string; nomingredient: string }[]>([]);
-    const [rechercheUstensile, setRechercheUstensile] = useState("");
     const [listeUstensiles, setListeUstensiles] = useState<{ idustensile: string; nomustensile: string }[]>([]);
+
+    const token = localStorage.getItem("token");
+    const estMineur = localStorage.getItem("estMineur") === "true";
+    const alcoolParam = searchParams.get("alcool");
 
     useEffect(() => {
         sessionStorage.setItem("tri", tri);
@@ -50,7 +116,6 @@ function Home() {
     }, []);
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
         if (!token) return;
         axios.get("/api/compte/mes-favoris", {
             headers: { Authorization: `Bearer ${token}` },
@@ -60,33 +125,20 @@ function Home() {
     useEffect(() => {
         if (searchParams.get("q")) return;
 
-        const token = localStorage.getItem("token");
-        const estMineur = localStorage.getItem("estMineur") === "true";
-        const alcoolParam = searchParams.get("alcool");
-
-        let url = "/api/cocktail?alcool=false";
+        const params = new URLSearchParams();
 
         if (alcoolParam === "true") {
-            if (token && !estMineur) {
-                url = "/api/cocktail?alcool=true";
-            } else if (!token) {
-                navigate("/login");
-                return;
-            } else {
-                url = "/api/cocktail?alcool=false";
-            }
-        } else if (alcoolParam === "false") {
-            url = "/api/cocktail?alcool=false";
-        } else {
-            url = token && !estMineur ? "/api/cocktail" : "/api/cocktail?alcool=false";
+            if (!token) { navigate("/login"); return; }
+            params.set("alcool", estMineur ? "false" : "true");
+        } else if (alcoolParam === "false" || !token || estMineur) {
+            params.set("alcool", "false");
         }
 
-        if (filtreIngredients.length > 0) {
-            url += `&ingredients=${filtreIngredients.join(',')}`;
-        }
-        if (filtreUstensiles.length > 0) {
-            url += `&ustensiles=${filtreUstensiles.join(',')}`;
-        }
+        if (filtreIngredients.length > 0) params.set("ingredients", filtreIngredients.join(","));
+        if (filtreUstensiles.length > 0) params.set("ustensiles", filtreUstensiles.join(","));
+
+        const query = params.toString();
+        const url = `/api/cocktail${query ? `?${query}` : ""}`;
 
         axios.get(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
             .then((res) => setCocktails(res.data))
@@ -101,7 +153,6 @@ function Home() {
     }, [searchParams, location, filtreIngredients, filtreUstensiles]);
 
     const toggleFavori = async (idcocktail: string) => {
-        const token = localStorage.getItem("token");
         if (!token) { navigate("/login"); return; }
         if (favoris.includes(idcocktail)) {
             await axios.delete(`/api/compte/favori/${idcocktail}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -110,6 +161,19 @@ function Home() {
             await axios.post(`/api/compte/favori/${idcocktail}`, {}, { headers: { Authorization: `Bearer ${token}` } });
             setFavoris([...favoris, idcocktail]);
         }
+    };
+
+    const reinitialiser = () => {
+        ["tri", "filtreDifficulte", "filtreDureeMin", "filtreDureeMax", "filtreNoteMin", "filtreNoteMax", "filtreIngredients", "filtreUstensiles"]
+            .forEach((k) => sessionStorage.removeItem(k));
+        setTri("date_desc");
+        setFiltreDifficulte("");
+        setFiltreDureeMin(0);
+        setFiltreDureeMax(0);
+        setFiltreNoteMin(0);
+        setFiltreNoteMax(0);
+        setFiltreIngredients([]);
+        setFiltreUstensiles([]);
     };
 
     const getMoyenne = (c: Cocktail) =>
@@ -135,169 +199,183 @@ function Home() {
             }
         });
 
+    // Recette mise en avant : la mieux notée parmi les résultats, retirée de la liste
+    const vedette = cocktailsTries.length === 0 ? null : [...cocktailsTries].sort((a, b) =>
+        getMoyenne(b) - getMoyenne(a) || new Date(b.datecreation).getTime() - new Date(a.datecreation).getTime()
+    )[0];
+    const liste = cocktailsTries.filter((c) => c.idcocktail !== vedette?.idcocktail);
+
+    const n = cocktailsTries.length;
+    const portee = alcoolParam === "false" ? " sans alcool" : alcoolParam === "true" ? " avec alcool" : "";
+
     return (
-        <div>
-            <h1>MyCocktail</h1>
+        <div className="layout">
+            <Header />
+            <main className="page">
+                <section className="frigo">
+                    <div>
+                        <h1>Qu'est-ce qu'on a dans le frigo ?</h1>
+                        <div className="frigo__ligne">
+                            <span className="frigo__label">J'ai</span>
+                            <SelecteurMultiple
+                                id="ingredients"
+                                placeholder="Ajouter un ingrédient"
+                                options={listeIngredients.map((i) => ({ id: i.idingredient, nom: i.nomingredient }))}
+                                selection={filtreIngredients}
+                                onChange={setFiltreIngredients}
+                            />
+                        </div>
+                    </div>
 
-            <div style={{ display: 'flex', gap: '10px', margin: '10px 0', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-
-                <select value={tri} onChange={(e) => setTri(e.target.value)}>
-                    <option value="date_desc">Plus récents</option>
-                    <option value="date_asc">Plus anciens</option>
-                    <option value="note_desc">Mieux notés</option>
-                    <option value="note_asc">Moins bien notés</option>
-                    <option value="duree_asc">Durée croissante</option>
-                    <option value="duree_desc">Durée décroissante</option>
-                    <option value="diff_asc">Moins difficile</option>
-                    <option value="diff_desc">Plus difficile</option>
-                </select>
-
-                <select value={filtreDifficulte} onChange={(e) => setFiltreDifficulte(e.target.value)}>
-                    <option value="">Toutes difficultés</option>
-                    <option value="Facile">Facile</option>
-                    <option value="Moyen">Moyen</option>
-                    <option value="Difficile">Difficile</option>
-                </select>
-
-                <div>
-                    <label>Durée min</label>
-                    <input type="number" min={0} value={filtreDureeMin || ""} onChange={(e) => setFiltreDureeMin(parseInt(e.target.value) || 0)} style={{ width: '60px' }} />
-                </div>
-
-                <div>
-                    <label>Durée max</label>
-                    <input type="number" min={0} value={filtreDureeMax || ""} onChange={(e) => setFiltreDureeMax(parseInt(e.target.value) || 0)} style={{ width: '60px' }} />
-                    {filtreDureeMax > 0 && filtreDureeMax < filtreDureeMin && (
-                        <p style={{ color: 'red' }}>Max doit être supérieure à min</p>
+                    {vedette && (
+                        <button className="vedette" onClick={() => navigate(`/cocktail/${encodeURIComponent(vedette.nomcocktail)}`)}>
+                            {vedette.image[0] ? (
+                                <img className="vedette__visuel" src={`/api${vedette.image[0].urlimage}`} alt="" />
+                            ) : (
+                                <span className={`vedette__visuel vedette__visuel--vide ${vedette.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">
+                                    {vedette.alcool ? <GlasseY /> : <GlasseU />}
+                                </span>
+                            )}
+                            <span className="vedette__legende">
+                                {vedette.avis.length > 0 ? "Le mieux noté" : "Dernière recette"}
+                            </span>
+                            <span className="vedette__nom">{vedette.nomcocktail}</span>
+                            <span className="vedette__desc">{vedette.description}</span>
+                            <span className="vedette__meta">
+                                <span className={`statut statut--${vedette.difficulte}`}>{vedette.difficulte}</span>
+                                <span>{vedette.duree} min</span>
+                                <span>{vedette.avis.length > 0 ? `${getMoyenne(vedette).toFixed(1).replace(".", ",")}/5 (${vedette.avis.length} avis)` : "Aucun avis"}</span>
+                                <span className={`tag ${vedette.alcool ? "tag--alcool" : ""}`}>{vedette.alcool ? "Alcool" : "Sans alcool"}</span>
+                            </span>
+                        </button>
                     )}
-                </div>
+                </section>
 
-                <div>
-                    <label>Note min</label>
-                    <select value={filtreNoteMin} onChange={(e) => setFiltreNoteMin(parseInt(e.target.value))}>
-                        <option value={0}>-</option>
-                        {[1,2,3,4,5].map((n) => <option key={n} value={n}>{n}</option>)}
-                    </select>
-                </div>
-
-                <div>
-                    <label>Note max</label>
-                    <select value={filtreNoteMax} onChange={(e) => setFiltreNoteMax(parseInt(e.target.value))}>
-                        <option value={0}>-</option>
-                        {[1,2,3,4,5].map((n) => <option key={n} value={n}>{n}</option>)}
-                    </select>
-                    {filtreNoteMax > 0 && filtreNoteMax < filtreNoteMin && (
-                        <p style={{ color: 'red' }}>Max doit être supérieure à min</p>
-                    )}
-                </div>
-
-                {/* Filtre ingrédients */}
-                <div>
-                    <label>Ingrédients</label>
-                    <input
-                        placeholder="Rechercher..."
-                        value={rechercheIngredient}
-                        onChange={(e) => setRechercheIngredient(e.target.value)}
-                    />
-                    {rechercheIngredient && (
-                        <div style={{ border: '1px solid #ccc', borderRadius: '5px', maxHeight: '150px', overflowY: 'auto', position: 'absolute', background: 'white', zIndex: 10 }}>
-                            {listeIngredients
-                                .filter((i) => i.nomingredient.toLowerCase().includes(rechercheIngredient.toLowerCase()))
-                                .map((i) => (
-                                <div key={i.idingredient} onClick={() => {
-                                    if (!filtreIngredients.includes(i.idingredient)) setFiltreIngredients([...filtreIngredients, i.idingredient]);
-                                    setRechercheIngredient("");
-                                }} style={{ padding: '8px', cursor: 'pointer' }}
-                                onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f0')}
-                                onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}>
-                                    {i.nomingredient}
-                                </div>
+                <div className="barre">
+                    <p className="barre__compte">{n} recette{n > 1 ? "s" : ""}{portee}</p>
+                    <div className="barre__outils">
+                        <div className="barre__difficulte" role="group" aria-label="Difficulté">
+                            {["Facile", "Moyen", "Difficile"].map((d) => (
+                                <button key={d} className={`pill pill--${d.toLowerCase()} ${filtreDifficulte === d ? "pill--active" : ""}`} aria-pressed={filtreDifficulte === d}
+                                    onClick={() => setFiltreDifficulte(filtreDifficulte === d ? "" : d)}>{d}</button>
                             ))}
                         </div>
-                    )}
-                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '5px' }}>
-                        {filtreIngredients.map((id) => {
-                            const ing = listeIngredients.find((i) => i.idingredient === id);
-                            return (
-                                <span key={id} style={{ background: '#eee', padding: '3px 8px', borderRadius: '12px', fontSize: '14px' }}>
-                                    {ing?.nomingredient}
-                                    <button onClick={() => setFiltreIngredients(filtreIngredients.filter((f) => f !== id))} style={{ marginLeft: '5px', border: 'none', background: 'none', cursor: 'pointer' }}>x</button>
-                                </span>
-                            );
-                        })}
+                        <select className="select-pill" aria-label="Trier par" value={tri} onChange={(e) => setTri(e.target.value)}>
+                            <option value="date_desc">Plus récentes</option>
+                            <option value="date_asc">Plus anciennes</option>
+                            <option value="note_desc">Mieux notées</option>
+                            <option value="note_asc">Moins bien notées</option>
+                            <option value="duree_asc">Plus rapides</option>
+                            <option value="duree_desc">Plus longues</option>
+                            <option value="diff_asc">Plus faciles</option>
+                            <option value="diff_desc">Plus difficiles</option>
+                        </select>
+                        <button className={`pill ${affiner ? "pill--active" : ""}`} aria-expanded={affiner} onClick={() => setAffiner(!affiner)}>
+                            Affiner
+                        </button>
                     </div>
                 </div>
 
-                {/* Filtre ustensiles */}
-                <div>
-                    <label>Ustensiles</label>
-                    <input
-                        placeholder="Rechercher..."
-                        value={rechercheUstensile}
-                        onChange={(e) => setRechercheUstensile(e.target.value)}
-                    />
-                    {rechercheUstensile && (
-                        <div style={{ border: '1px solid #ccc', borderRadius: '5px', maxHeight: '150px', overflowY: 'auto', position: 'absolute', background: 'white', zIndex: 10 }}>
-                            {listeUstensiles
-                                .filter((u) => u.nomustensile.toLowerCase().includes(rechercheUstensile.toLowerCase()))
-                                .map((u) => (
-                                <div key={u.idustensile} onClick={() => {
-                                    if (!filtreUstensiles.includes(u.idustensile)) setFiltreUstensiles([...filtreUstensiles, u.idustensile]);
-                                    setRechercheUstensile("");
-                                }} style={{ padding: '8px', cursor: 'pointer' }}
-                                onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f0')}
-                                onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}>
-                                    {u.nomustensile}
-                                </div>
-                            ))}
+                {affiner && (
+                    <div className="affiner">
+                        <div className="champ">
+                            <label htmlFor="dmin">Durée min (min)</label>
+                            <input id="dmin" type="number" min={0} value={filtreDureeMin || ""} onChange={(e) => setFiltreDureeMin(parseInt(e.target.value) || 0)} />
                         </div>
-                    )}
-                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '5px' }}>
-                        {filtreUstensiles.map((id) => {
-                            const ust = listeUstensiles.find((u) => u.idustensile === id);
-                            return (
-                                <span key={id} style={{ background: '#eee', padding: '3px 8px', borderRadius: '12px', fontSize: '14px' }}>
-                                    {ust?.nomustensile}
-                                    <button onClick={() => setFiltreUstensiles(filtreUstensiles.filter((f) => f !== id))} style={{ marginLeft: '5px', border: 'none', background: 'none', cursor: 'pointer' }}>x</button>
-                                </span>
-                            );
-                        })}
+
+                        <div className="champ">
+                            <label htmlFor="dmax">Durée max (min)</label>
+                            <input id="dmax" type="number" min={0} value={filtreDureeMax || ""} onChange={(e) => setFiltreDureeMax(parseInt(e.target.value) || 0)} />
+                            {filtreDureeMax > 0 && filtreDureeMax < filtreDureeMin && (
+                                <p className="champ__erreur">Le max doit dépasser le min</p>
+                            )}
+                        </div>
+
+                        <div className="champ">
+                            <label htmlFor="nmin">Note min</label>
+                            <select id="nmin" value={filtreNoteMin} onChange={(e) => setFiltreNoteMin(parseInt(e.target.value))}>
+                                <option value={0}>-</option>
+                                {[1, 2, 3, 4, 5].map((v) => <option key={v} value={v}>{v}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="champ">
+                            <label htmlFor="nmax">Note max</label>
+                            <select id="nmax" value={filtreNoteMax} onChange={(e) => setFiltreNoteMax(parseInt(e.target.value))}>
+                                <option value={0}>-</option>
+                                {[1, 2, 3, 4, 5].map((v) => <option key={v} value={v}>{v}</option>)}
+                            </select>
+                            {filtreNoteMax > 0 && filtreNoteMax < filtreNoteMin && (
+                                <p className="champ__erreur">Le max doit dépasser le min</p>
+                            )}
+                        </div>
+
+                        <div className="champ">
+                            <label htmlFor="ustensiles">Ustensiles</label>
+                            <SelecteurMultiple
+                                id="ustensiles"
+                                placeholder="Ajouter un ustensile"
+                                options={listeUstensiles.map((u) => ({ id: u.idustensile, nom: u.nomustensile }))}
+                                selection={filtreUstensiles}
+                                onChange={setFiltreUstensiles}
+                            />
+                        </div>
+
+                        <div className="champ">
+                            <span aria-hidden="true">&nbsp;</span>
+                            <button className="pill" onClick={reinitialiser}>Réinitialiser</button>
+                        </div>
                     </div>
-                </div>
+                )}
 
-                <button onClick={() => {
-                    sessionStorage.removeItem("tri");
-                    sessionStorage.removeItem("filtreDifficulte");
-                    sessionStorage.removeItem("filtreDureeMin");
-                    sessionStorage.removeItem("filtreDureeMax");
-                    sessionStorage.removeItem("filtreNoteMin");
-                    sessionStorage.removeItem("filtreNoteMax");
-                    sessionStorage.removeItem("filtreIngredients");
-                    sessionStorage.removeItem("filtreUstensiles");
-                }}>
-                    Réinitialiser
-                </button>
-            </div>
+                {n === 0 ? (
+                    <div className="vide">
+                        <p>Aucune recette ne correspond à ces ingrédients et filtres. Retirez un ingrédient ou réinitialisez.</p>
+                        <button className="pill pill--mangue" onClick={reinitialiser}>Réinitialiser</button>
+                    </div>
+                ) : (
+                    <ul className="recettes">
+                        {liste.map((c, i) => (
+                            <Fragment key={c.idcocktail}>
+                            <li className="recette">
+                                <div className="recette__corps">
+                                    <h2>
+                                        <button className="recette__nom" onClick={() => navigate(`/cocktail/${encodeURIComponent(c.nomcocktail)}`)}>
+                                            {c.nomcocktail}
+                                        </button>
+                                    </h2>
+                                    <p className="recette__desc">{c.description}</p>
+                                    <div className="recette__meta">
+                                        <span className={`statut statut--${c.difficulte}`}>{c.difficulte}</span>
+                                        <span>{c.duree} min</span>
+                                        <span>{c.avis.length > 0 ? `${getMoyenne(c).toFixed(1).replace(".", ",")}/5 (${c.avis.length} avis)` : "Aucun avis"}</span>
+                                        <span className={`tag ${c.alcool ? "tag--alcool" : ""}`}>{c.alcool ? "Alcool" : "Sans alcool"}</span>
+                                    </div>
+                                </div>
 
-            {cocktailsTries.map((c) => (
-                <div key={c.idcocktail}>
-                    {c.image[0] && (
-                        <img src={`/api${c.image[0].urlimage}`} alt={c.nomcocktail} width={200} />
-                    )}
-                    <h2 onClick={() => navigate(`/cocktail/${encodeURIComponent(c.nomcocktail)}`)} style={{ cursor: 'pointer' }}>
-                        {c.nomcocktail}
-                    </h2>
-                    <button onClick={(e) => { e.stopPropagation(); toggleFavori(c.idcocktail); }}>
-                        {favoris.includes(c.idcocktail) ? "Favori" : "Ajouter"}
-                    </button>
-                    <p>{c.description}</p>
-                    <p>Difficulté : {c.difficulte}</p>
-                    <p>Durée : {c.duree} min</p>
-                    <p>{c.avis.length > 0 ? `${getMoyenne(c).toFixed(1)}/5 (${c.avis.length} avis)` : "Aucun avis"}</p>
-                    <p>{c.alcool ? "Avec alcool" : "Sans alcool"}</p>
-                    <hr />
-                </div>
-            ))}
+                                <div className="recette__actions">
+                                    <button className={`pill ${favoris.includes(c.idcocktail) ? "pill--mangue" : ""}`} aria-pressed={favoris.includes(c.idcocktail)}
+                                        onClick={() => toggleFavori(c.idcocktail)}>
+                                        {favoris.includes(c.idcocktail) ? "Dans mes favoris" : "Ajouter aux favoris"}
+                                    </button>
+                                </div>
+
+                                {c.image[0] ? (
+                                    <img className="recette__visuel" src={`/api${c.image[0].urlimage}`} alt={c.image[0].titleimage || c.nomcocktail} />
+                                ) : (
+                                    <div className={`recette__visuel recette__visuel--vide ${c.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">
+                                        {c.alcool ? <GlasseY /> : <GlasseU />}
+                                    </div>
+                                )}
+                            </li>
+                            {(i + 1) % 2 === 0 && i < 18 && i < liste.length - 1 && pubAutorisee(SLOT_LISTE) && (
+                                <li className="pub"><AdSlot slot={SLOT_LISTE} /></li>
+                            )}
+                            </Fragment>
+                        ))}
+                    </ul>
+                )}
+            </main>
         </div>
     );
 }
