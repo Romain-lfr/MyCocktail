@@ -18,4 +18,13 @@ describe('Logo', () => {
     expect(svg).toHaveAttribute('aria-hidden', 'true');
     expect(svg).toHaveClass('test');
   });
+
+  it.each([
+    ['GlasseY', GlasseY],
+    ['GlasseU', GlasseU],
+  ])('%s n’a aucune couleur en dur : uniquement des tokens surchargeables', (_nom, Verre) => {
+    const { container } = render(<Verre />);
+    expect(container.innerHTML).not.toMatch(/#[0-9a-f]{3,6}\b/i);
+    expect(container.innerHTML).toMatch(/var\(--verre-/);
+  });
 });

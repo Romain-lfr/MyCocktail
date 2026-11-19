@@ -111,9 +111,39 @@ describe('CocktailDetail', () => {
       const materiel = screen.getByRole('heading', { name: 'Matériel' }).nextElementSibling!;
       expect(Array.from(materiel.querySelectorAll('li')).map((li) => li.textContent)).toEqual(['Shaker', 'Passoire']);
 
-      expect(screen.getByText('Avec 1,5 cl Rhum')).toBeInTheDocument();
+      expect(screen.getByText('Avec : Rhum (1,5 cl)')).toBeInTheDocument();
+      expect(ingredients.getByText('2 ingrédients')).toBeInTheDocument();
       expect(screen.getByText('Matériel : Shaker, Passoire')).toBeInTheDocument();
       expect(screen.getByText('Secouer fort')).toBeInTheDocument();
+    });
+
+    it('coche une étape faite, compte la progression et la décoche', async () => {
+      const { user } = await ouvrir();
+      expect(screen.getByText('0/2 étapes faites')).toBeInTheDocument();
+      expect(screen.getByText('Coche chaque étape au fur et à mesure de ta préparation.')).toBeInTheDocument();
+      const etape1 = screen.getByRole('button', { name: 'Étape 1 faite' });
+      expect(etape1).toHaveAttribute('aria-pressed', 'false');
+
+      await user.click(etape1);
+      expect(etape1).toHaveAttribute('aria-pressed', 'true');
+      expect(etape1.closest('li')).toHaveClass('etape--faite');
+      expect(screen.getByText('1/2 étapes faites')).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: 'Étape 2 faite' }));
+      expect(screen.getByText('2/2 étapes faites')).toBeInTheDocument();
+      expect(screen.getByText('Santé ! Tout est prêt.')).toBeInTheDocument();
+
+      await user.click(etape1);
+      expect(etape1).toHaveAttribute('aria-pressed', 'false');
+      expect(etape1.closest('li')).not.toHaveClass('etape--faite');
+      expect(screen.getByText('1/2 étapes faites')).toBeInTheDocument();
+    });
+
+    it('accorde au singulier avec une seule étape et un seul ingrédient', async () => {
+      const c = cocktail();
+      await ouvrir({ ...c, etape: [c.etape[0]], dosage: [c.dosage[0]] });
+      expect(screen.getByText('0/1 étape faite')).toBeInTheDocument();
+      expect(screen.getByText('1 ingrédient')).toBeInTheDocument();
     });
 
     it('cache la section Matériel sans ustensile', async () => {
@@ -169,7 +199,7 @@ describe('CocktailDetail', () => {
       expect(screen.getByText('Aucun avis pour le moment.')).toBeInTheDocument();
       expect(screen.getByText('Aucun avis')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Laisser un avis' })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Répondre' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Répondre' })).not.toBeInTheDocument();      expect(screen.getByRole('link', { name: 'Connecte-toi' })).toHaveAttribute('href', '/login');
     });
 
     it('affiche la moyenne et les avis', async () => {

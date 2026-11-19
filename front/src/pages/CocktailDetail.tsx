@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { GlasseY, GlasseU } from "./Logo";
 import { idCompteDuToken } from "../utils/token";
@@ -53,7 +53,8 @@ interface Cocktail {
 }
 
 const formatQuantite = (q: number) => Number(q).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
-const formatDosage = (d: Dosage) => `${formatQuantite(d.quantite)} ${d.unite} ${d.ingredient.nomingredient}`;
+// « Feuilles de menthe (6 feuilles) » : évite « 6 feuilles Feuilles de menthe »
+const formatDosage = (d: Dosage) => `${d.ingredient.nomingredient} (${formatQuantite(d.quantite)} ${d.unite})`;
 
 function CocktailDetail() {
   const { nom } = useParams();
@@ -74,6 +75,10 @@ function CocktailDetail() {
   const [reponseParentId, setReponseParentId] = useState<string | null>(null);
   const [editReponseId, setEditReponseId] = useState<string | null>(null);
   const [editCommentaire, setEditCommentaire] = useState("");
+  // Étapes cochées pendant la préparation (local, non enregistré)
+  const [faites, setFaites] = useState<string[]>([]);
+  const basculerEtape = (id: string) =>
+    setFaites((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id]));
 
   const handleSauvegarderAvis = async () => {
     await axios.put(`/api/avis/${editAvisId}`, {
@@ -239,6 +244,7 @@ function CocktailDetail() {
         <section className="fiche__corps">
           <div className="fiche__ingredients">
             <h2>Ingrédients</h2>
+            <p className="fiche__compte">{cocktail.dosage.length} ingrédient{cocktail.dosage.length > 1 ? "s" : ""}</p>
             <ul className="dosages">
               {cocktail.dosage.map((d, i) => (
                 <li key={i}>
@@ -260,20 +266,39 @@ function CocktailDetail() {
               </>
             )}
 
-            <h2>Préparation</h2>
+            <div className="etapes__entete">
+              <h2>Préparation</h2>
+              {cocktail.etape.length > 0 && (
+                <p className="etapes__progression" aria-live="polite">{faites.length}/{cocktail.etape.length} étape{cocktail.etape.length > 1 ? "s" : ""} faite{cocktail.etape.length > 1 ? "s" : ""}</p>
+              )}
+            </div>
+            {cocktail.etape.length > 0 && (
+              <>
+                <div className="etapes__barre" aria-hidden="true">
+                  <span style={{ width: `${(faites.length / cocktail.etape.length) * 100}%` }} />
+                </div>
+                <p className="etapes__aide">
+                  {faites.length === cocktail.etape.length ? "Santé ! Tout est prêt." : "Coche chaque étape au fur et à mesure de ta préparation."}
+                </p>
+              </>
+            )}
             <ol className="etapes">
               {cocktail.etape.map((e) => (
-                <li key={e.idetape} className="etape">
+                <li key={e.idetape} className={`etape ${faites.includes(e.idetape) ? "etape--faite" : ""}`}>
                   <span className="etape__num" aria-hidden="true">{e.numeroetape}</span>
                   <div>
                     <p>{e.descriptionetape}</p>
                     {e.dosage && e.dosage.length > 0 && (
-                      <p className="etape__ing">Avec {e.dosage.map(formatDosage).join(", ")}</p>
+                      <p className="etape__ing">Avec : {e.dosage.map(formatDosage).join(", ")}</p>
                     )}
                     {e.etape_ustensile.length > 0 && (
                       <p className="etape__ing">Matériel : {e.etape_ustensile.map((u) => u.ustensile.nomustensile).join(", ")}</p>
                     )}
                   </div>
+                  <button type="button" className="etape__case" aria-pressed={faites.includes(e.idetape)}
+                    aria-label={`Étape ${e.numeroetape} faite`} onClick={() => basculerEtape(e.idetape)}>
+                    <span aria-hidden="true">✓</span>
+                  </button>
                 </li>
               ))}
             </ol>
@@ -287,8 +312,10 @@ function CocktailDetail() {
               <p className="fiche__moyenne">{moyenneTexte}<small>/5</small></p>
             )}
             <p>{cocktail.avis.length > 0 ? `${cocktail.avis.length} avis` : "Aucun avis pour le moment."}</p>
-            {token && (
+            {token ? (
               <button className="pill pill--mangue" onClick={() => navigate(`/cocktail/${encodeURIComponent(nom!)}/avis`)}>Laisser un avis</button>
+            ) : (
+              <p className="fiche__connexion"><Link to="/login">Connecte-toi</Link> pour laisser un avis.</p>
             )}
           </div>
 

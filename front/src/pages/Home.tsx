@@ -118,7 +118,7 @@ function Home() {
         if (!token) return;
         axios.get("/api/compte/mes-favoris", {
             headers: { Authorization: `Bearer ${token}` },
-        }).then((res) => setFavoris(res.data.map((f: any) => f.idcocktail)));
+        }).then((res) => setFavoris(res.data.map((f: { idcocktail: string }) => f.idcocktail)));
     }, []);
 
     useEffect(() => {
@@ -162,18 +162,39 @@ function Home() {
         }
     };
 
-    const reinitialiser = () => {
-        ["tri", "filtreDifficulte", "filtreDureeMin", "filtreDureeMax", "filtreNoteMin", "filtreNoteMax", "filtreIngredients", "filtreUstensiles"]
-            .forEach((k) => sessionStorage.removeItem(k));
-        setTri("date_desc");
+    // Filtres de la barre et du panneau « Affiner » (pas les ingrédients du frigo ni le tri)
+    const effacerFiltres = () => {
         setFiltreDifficulte("");
         setFiltreDureeMin(0);
         setFiltreDureeMax(0);
         setFiltreNoteMin(0);
         setFiltreNoteMax(0);
-        setFiltreIngredients([]);
         setFiltreUstensiles([]);
     };
+
+    const reinitialiser = () => {
+        ["tri", "filtreDifficulte", "filtreDureeMin", "filtreDureeMax", "filtreNoteMin", "filtreNoteMax", "filtreIngredients", "filtreUstensiles"]
+            .forEach((k) => sessionStorage.removeItem(k));
+        effacerFiltres();
+        setTri("date_desc");
+        setFiltreIngredients([]);
+    };
+
+    const filtresActifs: { cle: string; libelle: string; retirer: () => void }[] = [
+        ...(filtreDifficulte ? [{ cle: "diff", libelle: filtreDifficulte, retirer: () => setFiltreDifficulte("") }] : []),
+        ...(filtreDureeMin ? [{ cle: "dmin", libelle: `≥ ${filtreDureeMin} min`, retirer: () => setFiltreDureeMin(0) }] : []),
+        ...(filtreDureeMax ? [{ cle: "dmax", libelle: `≤ ${filtreDureeMax} min`, retirer: () => setFiltreDureeMax(0) }] : []),
+        ...(filtreNoteMin ? [{ cle: "nmin", libelle: `Note ≥ ${filtreNoteMin}`, retirer: () => setFiltreNoteMin(0) }] : []),
+        ...(filtreNoteMax ? [{ cle: "nmax", libelle: `Note ≤ ${filtreNoteMax}`, retirer: () => setFiltreNoteMax(0) }] : []),
+        ...filtreUstensiles.map((id) => ({
+            cle: id,
+            libelle: listeUstensiles.find((u) => u.idustensile === id)?.nomustensile ?? id,
+            retirer: () => setFiltreUstensiles(filtreUstensiles.filter((u) => u !== id)),
+        })),
+    ];
+
+    // Quelques ingrédients proposés en un clic tant que le frigo est vide
+    const idees = filtreIngredients.length === 0 ? listeIngredients.slice(0, 5) : [];
 
     const getMoyenne = (c: Cocktail) =>
         c.avis.length ? c.avis.reduce((s, av) => s + av.noteavis, 0) / c.avis.length : 0;
@@ -212,7 +233,9 @@ function Home() {
             <main className="page">
                 <section className="frigo">
                     <div>
-                        <h1>Qu'est-ce qu'on a dans le frigo ?</h1>
+                        <p className="surtitre">Le bar à la maison</p>
+                        <h1>Qu'est-ce qu'on a dans le <em>frigo</em> ?</h1>
+                        <p className="frigo__intro">Dis-nous ce que tu as sous la main, on te dit quoi secouer.</p>
                         <div className="frigo__ligne">
                             <span className="frigo__label">J'ai</span>
                             <SelecteurMultiple
@@ -223,6 +246,17 @@ function Home() {
                                 onChange={setFiltreIngredients}
                             />
                         </div>
+                        {idees.length > 0 && (
+                            <div className="frigo__idees">
+                                <span>Pour commencer :</span>
+                                {idees.map((i) => (
+                                    <button key={i.idingredient} type="button" className="pill pill--petite" aria-label={`Ajouter ${i.nomingredient}`}
+                                        onClick={() => setFiltreIngredients([i.idingredient])}>
+                                        <span aria-hidden="true">+</span> {i.nomingredient}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {vedette && (
@@ -326,10 +360,26 @@ function Home() {
                     </div>
                 )}
 
+                {filtresActifs.length > 0 && (
+                    <div className="actifs" role="group" aria-label="Filtres actifs">
+                        {filtresActifs.map((f) => (
+                            <span key={f.cle} className="puce">
+                                {f.libelle}
+                                <button type="button" aria-label={`Retirer le filtre ${f.libelle}`} onClick={f.retirer}>×</button>
+                            </span>
+                        ))}
+                        <button type="button" className="actifs__effacer" onClick={effacerFiltres}>Effacer les filtres</button>
+                    </div>
+                )}
+
                 {n === 0 ? (
                     <div className="vide">
-                        <p>Aucune recette ne correspond à ces ingrédients et filtres. Retirez un ingrédient ou réinitialisez.</p>
-                        <button className="pill pill--mangue" onClick={reinitialiser}>Réinitialiser</button>
+                        <span className="vide__verre" aria-hidden="true"><GlasseU /></span>
+                        <div>
+                            <p className="vide__titre">Le shaker est vide…</p>
+                            <p>Aucune recette ne correspond à ces ingrédients et filtres. Retirez un ingrédient ou réinitialisez.</p>
+                            <button className="pill pill--mangue" onClick={reinitialiser}>Réinitialiser</button>
+                        </div>
                     </div>
                 ) : (
                     <ul className="recettes">

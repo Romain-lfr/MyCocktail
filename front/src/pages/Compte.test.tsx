@@ -65,6 +65,14 @@ describe('Compte (profil)', () => {
     expect(espace.getByRole('link', { name: /Mes favoris/ })).toHaveAttribute('href', '/compte/favoris');
     expect(espace.getByRole('link', { name: /Mon frigo/ })).toHaveAttribute('href', '/compte/frigo');
     expect(espace.getByRole('link', { name: /Mes avis/ })).toHaveAttribute('href', '/compte/avis');
+    expect(espace.getByRole('link', { name: /Mon frigo/ })).toHaveTextContent('Tes ingrédients et ce qu\'ils permettent');
+  });
+
+  it('affiche depuis quand le membre est inscrit (mois et année)', async () => {
+    connecter();
+    api.get.mockResolvedValue({ data: compte });
+    rendre(<Compte />, { route: '/compte' });
+    expect(await screen.findByText('Au bar depuis janvier 2024')).toBeInTheDocument();
   });
 
   it('« Modifier les informations » mène à /compte/modifier (route existante)', async () => {

@@ -143,9 +143,41 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .form-inline select option { color: var(--encre); }
 .form-inline textarea { min-height: 90px; resize: vertical; }
 
+/* Photo penchée avec ombre paprika, comme la recette mise en avant de l'accueil */
+.fiche__photo { box-shadow: 14px 14px 0 var(--paprika); transform: rotate(-2deg); }
+/* Ingrédients toujours visibles pendant la lecture des étapes (ordinateur) */
+.fiche__ingredients { position: sticky; top: 96px; }
+.fiche__compte { margin: -10px 0 8px; font-size: 14px; opacity: .7; }
+
+/* Étapes à cocher pendant la préparation */
+.etapes__entete { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.etapes__progression { margin: 0; font-size: 14px; opacity: .8; }
+.etapes__barre { height: 8px; border-radius: 999px; background: rgba(252, 235, 209, .15); overflow: hidden; margin: 4px 0 10px; }
+.etapes__barre span { display: block; height: 100%; background: var(--citron); border-radius: 999px; transition: width .3s; }
+.etapes__aide { margin: 0 0 16px; font-size: 14px; opacity: .8; }
+.etape { grid-template-columns: 56px minmax(0, 1fr) auto; }
+/* Case ronde bien visible à droite de chaque étape */
+.etape__case {
+  width: 44px; height: 44px; border-radius: 50%; align-self: center; cursor: pointer;
+  border: 2.5px solid var(--encre); background: transparent; color: transparent;
+  display: grid; place-items: center; font: 700 22px var(--font-texte);
+  transition: background .15s, color .15s, transform .15s;
+}
+.etape__case:hover { color: rgba(18, 58, 58, .35); }
+.etape__case:focus-visible { outline: 3px solid var(--encre); outline-offset: 3px; }
+.etape__case[aria-pressed="true"] { background: var(--citron); border-color: var(--citron); color: var(--encre); }
+/* Étape faite : la carte reste sable, seuls le numéro et le texte s'estompent */
+.etape--faite .etape__num, .etape--faite p { opacity: .45; }
+.etape--faite p { text-decoration: line-through; text-decoration-color: var(--paprika); }
+@media (prefers-reduced-motion: reduce) { .etapes__barre span, .etape__case { transition: none; } }
+.fiche__connexion { margin: 0; }
+.fiche__connexion a { color: var(--mangue); }
+
 @media (max-width: 900px) {
   .fiche__entete { grid-template-columns: 1fr; }
   .fiche__corps { grid-template-columns: 1fr; gap: 32px; }
+  .fiche__ingredients { position: static; }
+  .fiche__photo { transform: none; box-shadow: 8px 8px 0 var(--paprika); width: calc(100% - 8px); }
 }
 
 /* Boutons et champs à l'intérieur des tuiles claires (avis) */
@@ -187,7 +219,8 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 @media (prefers-reduced-motion: reduce) { .menu__lien, .menu__fleche { transition: none; } }
 
 /* ============ Mise en page avec footer ============ */
-.layout { min-height: 100vh; display: flex; flex-direction: column; }
+/* overflow-x: clip (et non hidden) : coupe tout débordement horizontal sans casser le header sticky */
+.layout { min-height: 100vh; display: flex; flex-direction: column; overflow-x: clip; }
 .layout > main { flex: 1; }
 
 /* ============ Footer ============ */
@@ -221,10 +254,28 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .infos { display: grid; grid-template-columns: 170px 1fr; gap: 14px 16px; margin: 0; max-width: 560px; }
 .infos dt { font-weight: 600; }
 .infos dd { margin: 0; }
-.profil__liens { list-style: none; margin: 0; padding: 0; max-width: 560px; }
-.profil__liens li { border-bottom: 1px solid rgba(18, 58, 58, .2); }
-.profil__liens a { display: flex; justify-content: space-between; padding: 12px 0; color: var(--encre); text-decoration: none; font-weight: 500; }
-.profil__liens a:hover { color: var(--paprika); }
+.profil__surtitre { color: var(--encre); opacity: .75; margin: 0; }
+.profil__avatar { box-shadow: 0 0 0 8px var(--mangue), 0 0 0 11px var(--encre); }
+.profil__role { padding: 4px 14px; border-radius: 999px; background: var(--encre); color: var(--mangue); }
+.profil__depuis { margin: 0; font: italic 500 18px var(--font-titre); }
+
+/* Mon espace : tuiles numérotées */
+.espace { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 720px; }
+.espace a {
+  position: relative; display: flex; flex-direction: column; gap: 4px; height: 100%;
+  padding: 20px 22px 22px; border-radius: var(--radius-card);
+  background: var(--encre); color: var(--sable); text-decoration: none;
+  transition: transform .2s, box-shadow .2s;
+}
+.espace a:hover { transform: translateY(-4px); box-shadow: 8px 8px 0 var(--paprika); }
+.espace a:focus-visible { outline: 3px solid var(--encre); outline-offset: 4px; }
+.espace__num { font: italic 700 36px var(--font-titre); color: var(--mangue); line-height: 1; margin-bottom: 8px; }
+.espace__titre { font: italic 700 24px var(--font-titre); }
+.espace__texte { font-size: 14px; opacity: .8; padding-right: 28px; }
+.espace__fleche { position: absolute; right: 20px; bottom: 18px; font-size: 22px; color: var(--mangue); transition: transform .2s; }
+.espace a:hover .espace__fleche { transform: translateX(4px); }
+@media (max-width: 520px) { .espace { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .espace a, .espace a:hover, .espace a:hover .espace__fleche { transition: none; transform: none; } }
 .profil__action { margin-top: 40px; }
 .profil__action .pill { background: var(--encre); border-color: var(--encre); color: var(--sable); padding: 12px 28px; font-weight: 600; }
 .profil__action .pill:hover { background: #1b5252; }
@@ -288,6 +339,10 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .recette__visuel--vide svg { width: 56px; height: 56px; }
 .recette__visuel--alcool { background: var(--mangue); }
 .recette__visuel--moktail { background: var(--citron); }
+
+/* Couleurs des verres (Logo.tsx) selon le fond : jamais la couleur du fond dans le dessin */
+.recette__visuel--alcool, .connexion__gauche { --verre-deco: var(--paprika); }          /* fond mangue */
+.recette__visuel--moktail, .connexion__gauche--citron, .vide__verre { --verre-liquide: var(--mangue); } /* fond citron */
 .recette__corps { grid-column: 1; grid-row: 1; }
 .recette__actions { grid-column: 1; grid-row: 2; display: flex; }
 
@@ -301,7 +356,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 }
 
 /* ============ Publicité ============ */
-.pub { grid-column: 1 / -1; padding: 8px 0; }
+.pub { grid-column: 1 / -1; padding: 8px 0; min-width: 0; max-width: 100%; overflow: hidden; }
 .pub__label { display: block; font-size: 12px; opacity: .6; margin-bottom: 6px; }
 .pub__contenu { min-height: 100px; }
 .pub__dev { padding: 28px; border: 1.5px dashed rgba(252, 235, 209, .5); border-radius: var(--radius-card); font-size: 14px; opacity: .8; }
@@ -324,6 +379,40 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .frigo__label { font: italic 500 clamp(20px, 2.4vw, 26px) var(--font-titre); margin-right: 6px; }
 @media (max-width: 900px) {
   .frigo { grid-template-columns: 1fr; padding-top: 40px; }
+}
+.surtitre { margin: 0 0 14px; font: 600 12px var(--font-texte); letter-spacing: .14em; text-transform: uppercase; color: var(--citron); }
+.frigo h1 em { color: var(--sable); text-decoration: underline wavy var(--paprika); text-decoration-thickness: 3px; text-underline-offset: 10px; }
+.frigo__intro { margin: 20px 0 0; font-size: 18px; max-width: 42ch; opacity: .85; }
+.frigo__idees { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
+.frigo__idees > span { opacity: .7; margin-right: 4px; }
+.pill--petite { padding: 5px 14px; font-size: 13px; border-color: rgba(252, 235, 209, .5); }
+.pill:active, .btn:active { transform: scale(.97); }
+
+/* Filtres actifs, retirables un par un */
+.actifs { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 0 24px; }
+.actifs__effacer { border: 0; background: none; color: var(--mangue); font: 500 14px var(--font-texte); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 6px 8px; border-radius: 999px; }
+.actifs__effacer:hover { background: rgba(252, 235, 209, .12); }
+
+/* État vide */
+.vide { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; padding: 48px 0; }
+.vide p { margin: 0 0 16px; max-width: 52ch; }
+.vide .vide__titre { margin-bottom: 8px; font: italic 700 clamp(28px, 3.4vw, 40px) var(--font-titre); color: var(--mangue); }
+.vide__verre { width: 120px; height: 120px; border-radius: 28px; background: var(--citron); color: var(--encre); display: grid; place-items: center; transform: rotate(-6deg); }
+.vide__verre svg { width: 64px; height: 64px; }
+
+/* Cartes vivantes */
+.recette { transition: transform .2s, box-shadow .2s; }
+.recette:hover { transform: translateY(-4px); box-shadow: 8px 8px 0 var(--paprika); }
+.recette__visuel { transition: transform .2s; }
+.recette:hover .recette__visuel { transform: rotate(-4deg); }
+.vedette__visuel { box-shadow: 12px 12px 0 var(--paprika); transform: rotate(-2deg); transition: transform .2s; }
+.vedette:hover .vedette__visuel { transform: rotate(0); }
+@media (max-width: 520px) {
+  /* Photo en pleine largeur : pas d'inclinaison et ombre gardée dans l'écran */
+  .vedette__visuel { transform: none; box-shadow: 8px 8px 0 var(--paprika); width: calc(100% - 8px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recette, .recette:hover, .recette:hover .recette__visuel, .vedette__visuel, .pill:active, .btn:active { transform: none; }
 }
 
 
@@ -369,6 +458,18 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .connexion__envoi:disabled { opacity: .5; cursor: not-allowed; }
 .connexion__alt { margin: 24px 0 0; font-size: 15px; }
 .connexion__alt a { color: var(--mangue); }
+.connexion__droite .surtitre { margin-bottom: 10px; }
+.connexion__gauche--citron { background: var(--citron); }
+.connexion__verre { transform: rotate(-8deg); }
+.connexion__aide { margin: 0; font-size: 13px; opacity: .7; }
+.connexion__champ input[type="date"] { color-scheme: dark; }
+
+/* Règles du mot de passe, cochées en direct */
+.regles { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; opacity: .75; }
+.regles__ok { color: var(--citron); opacity: 1; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+@media (prefers-reduced-motion: reduce) { .connexion__verre { transform: none; } }
 
 @media (max-width: 800px) {
   .connexion { grid-template-columns: 1fr; }

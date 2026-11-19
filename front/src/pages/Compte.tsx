@@ -20,6 +20,14 @@ const libelleRole: Record<string, string> = {
 };
 
 const formatDate = (d: string) => new Date(d).toLocaleDateString("fr-FR");
+const moisAnnee = (d: string) => new Date(d).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+
+const ESPACE = [
+  { to: "/compte/cocktails", titre: "Mes cocktails", texte: "Tes créations, brouillons compris" },
+  { to: "/compte/favoris", titre: "Mes favoris", texte: "Les recettes gardées sous le coude" },
+  { to: "/compte/frigo", titre: "Mon frigo", texte: "Tes ingrédients et ce qu'ils permettent" },
+  { to: "/compte/avis", titre: "Mes avis", texte: "Tes notes et commentaires" },
+];
 
 function Profil() {
   const [compte, setCompte] = useState<CompteInfo | null>(null);
@@ -55,13 +63,29 @@ function Profil() {
     <>
       <main className="profil">
         <section className="profil__gauche" aria-label="Aperçu du compte">
+          <p className="surtitre profil__surtitre">Mon compte</p>
           <div className="profil__avatar" aria-hidden="true">{compte.pseudo.charAt(0)}</div>
           <h1>{compte.pseudo}</h1>
           <p className="profil__mail">{compte.mailcompte}</p>
           <span className="profil__role">{libelleRole[compte.role] ?? compte.role}</span>
+          <p className="profil__depuis">Au bar depuis {moisAnnee(compte.dateinscription)}</p>
         </section>
 
         <section className="profil__droite">
+          <h2>Mon espace</h2>
+          <ul className="espace">
+            {ESPACE.map((e, i) => (
+              <li key={e.to}>
+                <Link to={e.to}>
+                  <span className="espace__num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="espace__titre">{e.titre}</span>
+                  <span className="espace__texte">{e.texte}</span>
+                  <span className="espace__fleche" aria-hidden="true">→</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+
           <h2>Informations</h2>
           <dl className="infos">
             <dt>Pseudo</dt><dd>{compte.pseudo}</dd>
@@ -70,14 +94,6 @@ function Profil() {
             <dt>Date de naissance</dt><dd>{formatDate(compte.datenaissance)}</dd>
             <dt>Membre depuis le</dt><dd>{formatDate(compte.dateinscription)}</dd>
           </dl>
-
-          <h2>Mon espace</h2>
-          <ul className="profil__liens">
-            <li><Link to="/compte/cocktails">Mes cocktails <span aria-hidden="true">→</span></Link></li>
-            <li><Link to="/compte/favoris">Mes favoris <span aria-hidden="true">→</span></Link></li>
-            <li><Link to="/compte/frigo">Mon frigo <span aria-hidden="true">→</span></Link></li>
-            <li><Link to="/compte/avis">Mes avis <span aria-hidden="true">→</span></Link></li>
-          </ul>
 
           <div className="profil__action">
             <button className="pill" onClick={() => navigate("/compte/modifier")}>Modifier les informations</button>

@@ -324,6 +324,42 @@ describe('Home', () => {
       expect(sessionStorage.getItem('filtreDureeMin')).toBe('0');
     });
 
+    it('affiche les filtres actifs et les retire un par un', async () => {
+      sessionStorage.setItem('filtreDifficulte', 'Moyen');
+      sessionStorage.setItem('filtreDureeMin', '5');
+      sessionStorage.setItem('filtreDureeMax', '15');
+      sessionStorage.setItem('filtreNoteMin', '1');
+      sessionStorage.setItem('filtreNoteMax', '4');
+      sessionStorage.setItem('filtreUstensiles', JSON.stringify(['UST-00001']));
+      repondre({ cocktails: quatre() });
+      const { user } = rendre(<Home />);
+      const actifs = await screen.findByRole('group', { name: 'Filtres actifs' });
+      for (const libelle of ['Moyen', '≥ 5 min', '≤ 15 min', 'Note ≥ 1', 'Note ≤ 4']) {
+        expect(within(actifs).getByText(libelle)).toBeInTheDocument();
+      }
+      expect(await within(actifs).findByText('Shaker')).toBeInTheDocument();
+
+      await user.click(within(actifs).getByRole('button', { name: 'Retirer le filtre Moyen' }));
+      expect(screen.getByRole('button', { name: 'Moyen' })).toHaveAttribute('aria-pressed', 'false');
+      for (const libelle of ['≥ 5 min', '≤ 15 min', 'Note ≥ 1', 'Note ≤ 4', 'Shaker']) {
+        await user.click(within(actifs).getByRole('button', { name: `Retirer le filtre ${libelle}` }));
+      }
+      expect(screen.queryByRole('group', { name: 'Filtres actifs' })).not.toBeInTheDocument();
+      expect(sessionStorage.getItem('filtreUstensiles')).toBe('[]');
+    });
+
+    it('« Effacer les filtres » garde les ingrédients du frigo et le tri', async () => {
+      sessionStorage.setItem('filtreDifficulte', 'Facile');
+      sessionStorage.setItem('tri', 'duree_asc');
+      sessionStorage.setItem('filtreIngredients', JSON.stringify(['ING-00001']));
+      repondre({ cocktails: quatre() });
+      const { user } = rendre(<Home />);
+      await user.click(await screen.findByRole('button', { name: 'Effacer les filtres' }));
+      expect(screen.queryByRole('group', { name: 'Filtres actifs' })).not.toBeInTheDocument();
+      expect(nomsListe()).toEqual(['Cocktail 2', 'Cocktail 3', 'Cocktail 1']);
+      expect(screen.getByRole('button', { name: 'Retirer Menthe' })).toBeInTheDocument();
+    });
+
     it('« Réinitialiser » dans le panneau Affiner', async () => {
       sessionStorage.setItem('filtreDifficulte', 'Moyen');
       repondre({ cocktails: quatre() });
@@ -378,6 +414,15 @@ describe('Home', () => {
       await user.click(await screen.findByRole('button', { name: 'Retirer Menthe' }));
       expect(screen.queryByRole('button', { name: 'Retirer Menthe' })).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Retirer Mangue' })).toBeInTheDocument();
+    });
+
+    it('propose des idées d’ingrédients en un clic tant que le frigo est vide', async () => {
+      repondre();
+      const { user } = rendre(<Home />);
+      await user.click(await screen.findByRole('button', { name: 'Ajouter Citron vert' }));
+      expect(screen.getByRole('button', { name: 'Retirer Citron vert' })).toBeInTheDocument();
+      await waitFor(() => expect(urlCocktails()).toBe('/api/cocktail?alcool=false&ingredients=ING-00003'));
+      expect(screen.queryByText('Pour commencer :')).not.toBeInTheDocument();
     });
 
     it('filtre par ustensile depuis « Affiner »', async () => {

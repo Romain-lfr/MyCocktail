@@ -51,6 +51,7 @@ function Login() {
         </section>
 
         <section className="connexion__droite">
+          <p className="surtitre">Bon retour</p>
           <h1>Connexion</h1>
           <form onSubmit={envoyer} noValidate>
             <div className="connexion__champ">
