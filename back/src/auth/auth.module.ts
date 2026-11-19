@@ -5,14 +5,17 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { getJwtSecret } from './jwt-secret';
 
 @Module({
   imports: [
     PrismaModule,
     PassportModule,
-    JwtModule.register({
-      secret: 'secret_mycocktail',
-      signOptions: { expiresIn: '7d' },
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: getJwtSecret(),
+        signOptions: { expiresIn: '7d' },
+      }),
     }),
   ],
   providers: [AuthService, JwtStrategy],

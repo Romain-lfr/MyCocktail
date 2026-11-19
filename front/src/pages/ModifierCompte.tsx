@@ -30,8 +30,6 @@ function ModifierCompte() {
     if (pseudo.trim().length < 3) err.pseudo = "Le pseudo doit faire au moins 3 caractères";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mailcompte)) err.mail = "Email invalide";
     if (numtel && !/^\+?[\d\s\-]{7,20}$/.test(numtel)) err.numtel = "Numéro de téléphone invalide";
-    if (!datenaissance) err.datenaissance = "Date de naissance obligatoire";
-    else if (new Date(datenaissance) >= new Date()) err.datenaissance = "La date doit être dans le passé";
     return err;
   };
 
@@ -47,7 +45,6 @@ function ModifierCompte() {
         pseudo,
         mailcompte,
         numtel: numtel || null,
-        datenaissance,
       }, { headers: { Authorization: `Bearer ${token}` } });
 
       setSucces("Profil mis à jour !");
@@ -82,8 +79,8 @@ function ModifierCompte() {
 
       <div>
         <label>Date de naissance</label>
-        <input type="date" value={datenaissance} onChange={(e) => setDatenaissance(e.target.value)} />
-        {erreurs.datenaissance && <p style={{ color: 'red' }}>{erreurs.datenaissance}</p>}
+        <input type="date" value={datenaissance} disabled />
+        <p>La date de naissance n'est pas modifiable.</p>
       </div>
 
       <button onClick={handleSubmit}>Sauvegarder</button>

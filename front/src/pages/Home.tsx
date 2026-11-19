@@ -1,7 +1,6 @@
 import { Fragment, useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import Header from "./Header";
 import { GlasseY, GlasseU } from "./Logo";
 import AdSlot, { pubAutorisee } from "./Adslot";
 import "./mycocktail.css";
@@ -209,8 +208,7 @@ function Home() {
     const portee = alcoolParam === "false" ? " sans alcool" : alcoolParam === "true" ? " avec alcool" : "";
 
     return (
-        <div className="layout">
-            <Header />
+        <>
             <main className="page">
                 <section className="frigo">
                     <div>
@@ -376,7 +374,7 @@ function Home() {
                     </ul>
                 )}
             </main>
-        </div>
+        </>
     );
 }
 

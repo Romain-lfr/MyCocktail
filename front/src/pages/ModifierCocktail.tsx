@@ -28,32 +28,39 @@ function ModifierCocktail() {
   const [difficulte, setDifficulte] = useState("Facile");
   const [alcool, setAlcool] = useState(false);
   const [duree, setDuree] = useState(1);
+  const [statut, setStatut] = useState("brouillon");
   const [idcocktail, setIdcocktail] = useState("");
   const [etapes, setEtapes] = useState<Etape[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [ustensiles, setUstensiles] = useState<Ustensile[]>([]);
-  const [rechercheIngredient, setRechercheIngredient] = useState("");
-  const [rechercheUstensile, setRechercheUstensile] = useState("");
+  // Une recherche par étape (clé = idetape), sinon taper dans une étape ouvre la liste dans toutes
+  const [recherchesIngredient, setRecherchesIngredient] = useState<Record<string, string>>({});
+  const [recherchesUstensile, setRecherchesUstensile] = useState<Record<string, string>>({});
   const [erreurs, setErreurs] = useState<Record<string, string>>({});
   const navigate = useNavigate();
 
-  const ingredientsFiltres = ingredients.filter((ing) =>
-    ing.nomingredient.toLowerCase().includes(rechercheIngredient.toLowerCase())
+  const ingredientsFiltres = (recherche: string) => ingredients.filter((ing) =>
+    ing.nomingredient.toLowerCase().includes(recherche.toLowerCase())
   );
 
-  const ustensilesFiltres = ustensiles.filter((u) =>
-    u.nomustensile.toLowerCase().includes(rechercheUstensile.toLowerCase())
+  const ustensilesFiltres = (recherche: string) => ustensiles.filter((u) =>
+    u.nomustensile.toLowerCase().includes(recherche.toLowerCase())
   );
 
   const ajouterIngredientEtape = async (idetape: string, idingredient: string, unite: string) => {
     const token = localStorage.getItem("token");
-    await axios.post(`/api/cocktail/${idcocktail}/dosage`, {
-      idingredient,
-      quantite: 1,
-      unite,
-      idetape,
-    }, { headers: { Authorization: `Bearer ${token}` } });
-    window.location.reload();
+    try {
+      await axios.post(`/api/cocktail/${idcocktail}/dosage`, {
+        idingredient,
+        quantite: 1,
+        unite,
+        idetape,
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      window.location.reload();
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
+      setErreurs({ global: message || "Erreur lors de l'ajout de l'ingrédient" });
+    }
   };
 
   const ajouterUstensileEtape = async (idetape: string, idustensile: string) => {
@@ -77,6 +84,7 @@ function ModifierCocktail() {
       setDifficulte(res.data.difficulte);
       setAlcool(res.data.alcool);
       setDuree(res.data.duree);
+      setStatut(res.data.statut);
       setIdcocktail(res.data.idcocktail);
       setEtapes(res.data.etape || []);
     }).catch(() => navigate("/"));
@@ -101,7 +109,7 @@ function ModifierCocktail() {
     const err: Record<string, string> = {};
     if (nomcocktail.trim().length < 2) err.nom = "Le nom doit faire au moins 2 caractères";
     if (description.trim().length < 10) err.description = "La description doit faire au moins 10 caractères";
-    if (duree < 1) err.duree = "La durée doit être positive";
+    if (!(duree >= 1)) err.duree = "La durée doit être positive"; // attrape aussi NaN (champ vidé)
     if (Object.keys(err).length > 0) { setErreurs(err); return; }
 
     const token = localStorage.getItem("token");
@@ -109,7 +117,7 @@ function ModifierCocktail() {
 
     try {
       await axios.put(`/api/cocktail/${idcocktail}`, {
-        nomcocktail, description, difficulte, alcool, duree,
+        nomcocktail, description, difficulte, alcool, duree, statut,
       }, { headers: { Authorization: `Bearer ${token}` } });
       navigate("/compte/cocktails");
     } catch (err: any) {
@@ -183,6 +191,17 @@ function ModifierCocktail() {
       </div>
 
       <div>
+        <label>Statut</label>
+        {/* valeurs du client Prisma : publi_ = publié, priv_ = privé, archiv_ = archivé */}
+        <select value={statut} onChange={(e) => setStatut(e.target.value)}>
+          <option value="brouillon">Brouillon (visible par moi seul)</option>
+          <option value="publi_">Publié (visible par tous)</option>
+          <option value="priv_">Privé</option>
+          <option value="archiv_">Archivé</option>
+        </select>
+      </div>
+
+      <div>
         <label>Avec alcool ?</label>
         <input type="checkbox" checked={alcool} onChange={(e) => setAlcool(e.target.checked)} />
       </div>
@@ -200,7 +219,12 @@ function ModifierCocktail() {
       <button onClick={ajouterEtape}>+ Ajouter une étape</button> 
 
       <h2>Étapes</h2>
-      {etapes.map((e, i) => (
+      {etapes.map((e, i) => {
+        const rechercheIngredient = recherchesIngredient[e.idetape] || "";
+        const rechercheUstensile = recherchesUstensile[e.idetape] || "";
+        const setRechercheIngredient = (v: string) => setRecherchesIngredient({ ...recherchesIngredient, [e.idetape]: v });
+        const setRechercheUstensile = (v: string) => setRecherchesUstensile({ ...recherchesUstensile, [e.idetape]: v });
+        return (
         <div key={e.idetape} style={{ border: '1px solid #eee', padding: '10px', margin: '10px 0', borderRadius: '8px' }}>
           <p>Étape {e.numeroetape}</p>
           <textarea
@@ -272,8 +296,8 @@ function ModifierCocktail() {
           />
           {rechercheIngredient && (
             <div style={{ border: '1px solid #ccc', borderRadius: '5px', maxHeight: '150px', overflowY: 'auto' }}>
-              {ingredientsFiltres.length > 0 ? (
-                ingredientsFiltres.map((ing) => (
+              {ingredientsFiltres(rechercheIngredient).length > 0 ? (
+                ingredientsFiltres(rechercheIngredient).map((ing) => (
                   <div
                     key={ing.idingredient}
                     onClick={() => {
@@ -291,7 +315,7 @@ function ModifierCocktail() {
                 <div style={{ padding: '8px' }}>
                   <p>Aucun résultat pour "{rechercheIngredient}"</p>
                   <select
-                    id="nouvelle-categorie"
+                    id={`nouvelle-categorie-${e.idetape}`}
                     defaultValue="autre"
                     style={{ marginRight: '5px' }}
                   >
@@ -301,7 +325,7 @@ function ModifierCocktail() {
                   </select>
                   <button onClick={async () => {
                     const token = localStorage.getItem("token");
-                    const categorie = (document.getElementById('nouvelle-categorie') as HTMLSelectElement).value;
+                    const categorie = (document.getElementById(`nouvelle-categorie-${e.idetape}`) as HTMLSelectElement).value;
                     const res = await axios.post('/api/cocktail/listes/ingredients', {
                       nomingredient: rechercheIngredient,
                       categorie,
@@ -340,8 +364,8 @@ function ModifierCocktail() {
           />
           {rechercheUstensile && (
             <div style={{ border: '1px solid #ccc', borderRadius: '5px', maxHeight: '150px', overflowY: 'auto' }}>
-              {ustensilesFiltres.length > 0 ? (
-                ustensilesFiltres.map((u) => (
+              {ustensilesFiltres(rechercheUstensile).length > 0 ? (
+                ustensilesFiltres(rechercheUstensile).map((u) => (
                   <div
                     key={u.idustensile}
                     onClick={() => {
@@ -374,7 +398,8 @@ function ModifierCocktail() {
             </div>
           )}
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

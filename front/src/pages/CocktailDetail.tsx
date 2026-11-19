@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import Header from "./Header";
 import { GlasseY, GlasseU } from "./Logo";
+import { idCompteDuToken } from "../utils/token";
 import "./mycocktail.css";
 
 interface Reponse {
@@ -61,7 +61,8 @@ function CocktailDetail() {
   const navigate = useNavigate();
   const [isFavori, setIsFavori] = useState(false);
   const token = localStorage.getItem("token");
-  const userIdcompte = token ? JSON.parse(atob(token.split(".")[1])).sub : null;
+  const userIdcompte = idCompteDuToken(token);
+  const [introuvable, setIntrouvable] = useState(false);
   const auth = { headers: { Authorization: `Bearer ${token}` } };
 
   const [editAvisId, setEditAvisId] = useState<string | null>(null);
@@ -139,19 +140,21 @@ function CocktailDetail() {
     axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
-      .then((res) => setCocktail(res.data))
+      .then((res) => {
+        if (res.data) setCocktail(res.data);
+        else setIntrouvable(true);
+      })
       .catch((err) => {
         if (err.response?.status === 403) navigate("/login");
-        console.error(err);
+        else setIntrouvable(true);
       });
   }, [nom]);
 
   if (!cocktail) {
     return (
-      <div className="layout">
-        <Header />
-        <main className="page"><p className="vide">Chargement…</p></main>
-      </div>
+      <>
+        <main className="page"><p className="vide">{introuvable ? "Cocktail introuvable." : "Chargement…"}</p></main>
+      </>
     );
   }
 
@@ -203,8 +206,7 @@ function CocktailDetail() {
   );
 
   return (
-    <div className="layout">
-      <Header />
+    <>
       <main className="page fiche">
         <div className="fiche__retour">
           <button className="pill" onClick={() => navigate(-1)}>← Retour</button>
@@ -286,7 +288,7 @@ function CocktailDetail() {
             )}
             <p>{cocktail.avis.length > 0 ? `${cocktail.avis.length} avis` : "Aucun avis pour le moment."}</p>
             {token && (
-              <button className="pill pill--mangue" onClick={() => navigate(`/cocktail/${nom}/avis`)}>Laisser un avis</button>
+              <button className="pill pill--mangue" onClick={() => navigate(`/cocktail/${encodeURIComponent(nom!)}/avis`)}>Laisser un avis</button>
             )}
           </div>
 
@@ -357,7 +359,7 @@ function CocktailDetail() {
           </ul>
         </section>
       </main>
-    </div>
+    </>
   );
 }
 

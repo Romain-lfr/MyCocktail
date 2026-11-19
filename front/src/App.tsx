@@ -3,7 +3,7 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import CocktailDetail from "./pages/CocktailDetail";
-import Header from "./components/Header";
+import Header from "./pages/Header";
 import Compte from "./pages/Compte";
 import MesCocktails from "./pages/MesCocktails";
 import MesFavoris from "./pages/MesFavoris";
@@ -19,7 +19,8 @@ import MonFrigo from "./pages/MonFrigo";
 function App() {
   return (
     <BrowserRouter>
-      <Header/>
+      <div className="layout">
+      <Header />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -37,6 +38,7 @@ function App() {
         <Route path="/compte/info" element={<InfoCompte />} />
         <Route path="/compte/frigo" element={<MonFrigo />} />
       </Routes>
+      </div>
     </BrowserRouter>
   );
 }

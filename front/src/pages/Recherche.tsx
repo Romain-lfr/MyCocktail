@@ -29,12 +29,9 @@ function Recherche() {
       ? `/api/cocktail?recherche=${encodeURIComponent(recherche)}`
       : `/api/cocktail?alcool=false&recherche=${encodeURIComponent(recherche)}`;
 
-    console.log("URL recherche:", url);
-
     axios.get(url, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     }).then((res) => {
-      console.log("cocktails reçus:", res.data.length);
       setCocktails(res.data);
     });
 

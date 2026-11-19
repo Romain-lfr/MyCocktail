@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Logo from "./Logo.tsx";
 import "./mycocktail.css";
 
@@ -30,7 +30,8 @@ export default function Header() {
         <Link to="/" className="logo" aria-label="MyCocktail, accueil"><Logo /></Link>
 
         <nav className="nav" aria-label="Navigation principale">
-          <NavLink to="/" end aria-current={!alcool && location.pathname === "/" ? "page" : undefined}>Tous</NavLink>
+          {/* Link et non NavLink : NavLink marquerait « Tous » actif même sur /?alcool=… */}
+          <Link to="/" aria-current={!alcool && location.pathname === "/" ? "page" : undefined}>Tous</Link>
           <Link to="/?alcool=false" aria-current={alcool === "false" ? "page" : undefined}>Sans alcool</Link>
           {!estMineur && <Link to="/?alcool=true" aria-current={alcool === "true" ? "page" : undefined}>Avec alcool</Link>}
           {connecte && <Link to="/compte/frigo">Mon frigo</Link>}

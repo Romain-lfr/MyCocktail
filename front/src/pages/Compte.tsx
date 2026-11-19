@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import Header from "./Header";
 import "./mycocktail.css";
 
 interface CompteInfo {
@@ -46,16 +45,14 @@ function Profil() {
 
   if (!compte) {
     return (
-      <div className="layout">
-        <Header />
+      <>
         <main className="page"><p className="vide">Chargement…</p></main>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="layout">
-      <Header />
+    <>
       <main className="profil">
         <section className="profil__gauche" aria-label="Aperçu du compte">
           <div className="profil__avatar" aria-hidden="true">{compte.pseudo.charAt(0)}</div>
@@ -83,11 +80,11 @@ function Profil() {
           </ul>
 
           <div className="profil__action">
-            <button className="pill" onClick={() => navigate("/compte/info/modifier")}>Modifier les informations</button>
+            <button className="pill" onClick={() => navigate("/compte/modifier")}>Modifier les informations</button>
           </div>
         </section>
       </main>
-    </div>
+    </>
   );
 }
 

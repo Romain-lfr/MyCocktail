@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Query, Param, Body, Request, UseGuards, UseInterceptors, UploadedFile, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Query, Param, Body, Request, UseGuards, UseInterceptors, UploadedFile, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
+import * as fs from 'fs';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -10,7 +11,32 @@ import { CreateDosageDto } from './dto/create-dosage.dto';
 import { CreateUstensileDto } from './dto/create-ustensile.dto';
 import { CreateEtapeDto } from './dto/create-etape.dto';
 import { CreateCocktailDto } from './dto/create-cocktail.dto';
+import { UpdateCocktailDto } from './dto/update-cocktail.dto';
 
+
+export const TAILLE_MAX_IMAGE = 5 * 1024 * 1024; // 5 Mo
+
+// Nom du fichier sur le disque : horodatage + extension d'origine
+export function nomFichierUpload(
+  req: unknown,
+  file: Express.Multer.File,
+  cb: (erreur: Error | null, nom: string) => void,
+) {
+  cb(null, Date.now() + extname(file.originalname));
+}
+
+// N'accepte que les images jpg, png ou webp
+export function filtreImage(
+  req: unknown,
+  file: Express.Multer.File,
+  cb: (erreur: Error | null, accepte: boolean) => void,
+) {
+  if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+    cb(new BadRequestException('Format non supporté (jpg, png ou webp)'), false);
+  } else {
+    cb(null, true);
+  }
+}
 
 @Controller('cocktail')
 export class CocktailController {
@@ -48,20 +74,20 @@ export class CocktailController {
   @UseInterceptors(FileInterceptor('image', {
     storage: diskStorage({
       destination: './public/images',
-      filename: (req, file, cb) => {
-        cb(null, Date.now() + extname(file.originalname));
-      },
+      filename: nomFichierUpload,
     }),
-    fileFilter: (req, file, cb) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
-        cb(new Error('Format non supporté'), false);
-      } else {
-        cb(null, true);
-      }
-    },
+    limits: { fileSize: TAILLE_MAX_IMAGE },
+    fileFilter: filtreImage,
   }))
 
-  async uploadImage(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+  async uploadImage(@Param('id') id: string, @UploadedFile() file: Express.Multer.File, @Request() req: any) {
+    if (!file) throw new BadRequestException('Aucune image reçue');
+    try {
+      await this.cocktailService.verifierAuteur(id, req.user.idcompte);
+    } catch (e) {
+      fs.unlinkSync(file.path); // multer a déjà écrit le fichier : on le supprime
+      throw e;
+    }
     return this.imageService.ajouterImageCocktail(id, file.path, file.originalname);
   }
 
@@ -83,25 +109,25 @@ export class CocktailController {
 
   @Post(':id/etape')
   @UseGuards(JwtAuthGuard)
-  addEtape(@Param('id') id: string, @Body() body: CreateEtapeDto) {
-    return this.cocktailService.addEtape(id, body);
+  addEtape(@Param('id') id: string, @Body() body: CreateEtapeDto, @Request() req: any) {
+    return this.cocktailService.addEtape(id, body, req.user.idcompte);
   }
 
   @Post(':id/dosage')
   @UseGuards(JwtAuthGuard)
-  addDosage(@Param('id') id: string, @Body() body: CreateDosageDto) {
-    return this.cocktailService.addDosage(id, body);
+  addDosage(@Param('id') id: string, @Body() body: CreateDosageDto, @Request() req: any) {
+    return this.cocktailService.addDosage(id, body, req.user.idcompte);
   }
 
   @Post('etape/ustensile')
   @UseGuards(JwtAuthGuard)
-  addUstensile(@Body() body: CreateUstensileDto) {
-    return this.cocktailService.addUstensile(body);
+  addUstensile(@Body() body: CreateUstensileDto, @Request() req: any) {
+    return this.cocktailService.addUstensile(body, req.user.idcompte);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
-  async modifier(@Param('id') id: string, @Body() body: CreateCocktailDto, @Request() req: any) {
+  async modifier(@Param('id') id: string, @Body() body: UpdateCocktailDto, @Request() req: any) {
     try {
       return await this.cocktailService.modifier(id, body, req.user.idcompte, req.user.estMineur);
     } catch (e: any) {
@@ -153,8 +179,9 @@ export class CocktailController {
     @Param('id') id: string,
     @Param('idingredient') idingredient: string,
     @Body() body: { quantite: number; unite: string },
+    @Request() req: any,
   ) {
-    return this.cocktailService.modifierDosage(id, idingredient, body.quantite, body.unite);
+    return this.cocktailService.modifierDosage(id, idingredient, body.quantite, body.unite, req.user.idcompte);
   }
 
   @Delete('etape/:idetape/ustensile/:idustensile')
@@ -162,8 +189,9 @@ export class CocktailController {
   supprimerUstensileEtape(
     @Param('idetape') idetape: string,
     @Param('idustensile') idustensile: string,
+    @Request() req: any,
   ) {
-    return this.cocktailService.supprimerUstensileEtape(idetape, idustensile);
+    return this.cocktailService.supprimerUstensileEtape(idetape, idustensile, req.user.idcompte);
   }
 
   @Post('listes/ingredients')

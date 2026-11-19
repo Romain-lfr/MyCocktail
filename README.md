@@ -64,7 +64,7 @@ npm install
 
 # Configurer les variables d'environnement
 cp .env.example .env
-# Modifier DATABASE_URL dans .env
+# Modifier DATABASE_URL et JWT_SECRET dans .env
 
 # Synchroniser Prisma
 npx prisma db pull
@@ -90,11 +90,14 @@ L'application démarre sur `http://localhost:5173`
 
 ## Variables d'environnement
 
-Créer un fichier `.env` dans le dossier `back/` :
+Créer un fichier `.env` dans le dossier `back/` (à partir de `back/.env.example`) :
 
 ```env
 DATABASE_URL="postgresql://postgres:motdepasse@localhost:5432/mycocktail?schema=mycocktail"
+JWT_SECRET="une-longue-chaine-aleatoire"
 ```
+
+`JWT_SECRET` est obligatoire : le serveur refuse de démarrer sans. Pour en générer un : `openssl rand -hex 48`.
 
 ---
 

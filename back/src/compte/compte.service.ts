@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { UpdateCompteDto } from './dto/update-compte.dto';
 
 @Injectable()
 export class CompteService {
@@ -88,25 +89,31 @@ export class CompteService {
     });
   }
 
-  async modifierCompte(idcompte: string, data: { pseudo?: string; mailcompte?: string; numtel?: string; datenaissance?: string }) {
-    return this.prisma.compte.update({
-      where: { idcompte },
-      data: {
-        ...(data.pseudo ? { pseudo: data.pseudo } : {}),
-        ...(data.mailcompte ? { mailcompte: data.mailcompte.toLowerCase() } : {}),
-        ...(data.numtel !== undefined ? { numtel: data.numtel } : {}),
-        ...(data.datenaissance ? { datenaissance: new Date(data.datenaissance) } : {}),
-      },
-      select: {
-        idcompte: true,
-        pseudo: true,
-        mailcompte: true,
-        numtel: true,
-        dateinscription: true,
-        datenaissance: true,
-        role: true,
-      },
-    });
+  async modifierCompte(idcompte: string, data: UpdateCompteDto) {
+    try {
+      return await this.prisma.compte.update({
+        where: { idcompte },
+        data: {
+          ...(data.pseudo ? { pseudo: data.pseudo } : {}),
+          ...(data.mailcompte ? { mailcompte: data.mailcompte.toLowerCase() } : {}),
+          ...(data.numtel !== undefined ? { numtel: data.numtel } : {}),
+        },
+        select: {
+          idcompte: true,
+          pseudo: true,
+          mailcompte: true,
+          numtel: true,
+          dateinscription: true,
+          datenaissance: true,
+          role: true,
+        },
+      });
+    } catch (e: any) {
+      if (e?.code === 'P2002') {
+        throw new ConflictException('Ce pseudo ou cet email est déjà utilisé');
+      }
+      throw e;
+    }
   }
 
   async getMonFrigo(idcompte: string) {
@@ -137,7 +144,7 @@ export class CompteService {
     });
   }
 
-  async getCocktailsRealisables(idcompte: string) {
+  async getCocktailsRealisables(idcompte: string, estMineur: boolean) {
     const frigo = await this.prisma.frigo.findUnique({
       where: { idcompte },
       include: { frigo_composition: true },
@@ -148,7 +155,11 @@ export class CompteService {
     const ingredientsFrigo = frigo.frigo_composition.map((f) => f.idingredient);
 
     const cocktails = await this.prisma.cocktail.findMany({
-      where: { statut: 'publi_' },
+      where: {
+        statut: 'publi_',
+        dosage: { some: {} }, // un cocktail sans ingrédient n'est pas « réalisable »
+        ...(estMineur ? { alcool: false } : {}),
+      },
       include: {
         image: true,
         avis: { select: { noteavis: true } },

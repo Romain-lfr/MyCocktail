@@ -12,7 +12,10 @@ describe('PrismaService', () => {
     service = module.get<PrismaService>(PrismaService);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  it('se connecte à la base au démarrage du module', async () => {
+    // on remplace $connect : aucun accès réel à la base pendant les tests
+    const connect = jest.spyOn(service, '$connect').mockResolvedValue();
+    await service.onModuleInit();
+    expect(connect).toHaveBeenCalledTimes(1);
   });
 });

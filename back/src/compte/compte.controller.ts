@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { CompteService } from './compte.service';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { UpdateCompteDto } from './dto/update-compte.dto';
 
 @Controller('compte')
 export class CompteController {
@@ -55,7 +56,7 @@ export class CompteController {
 
   @Put('me')
   @UseGuards(JwtAuthGuard)
-  modifierCompte(@Body() body: { pseudo?: string; mailcompte?: string; numtel?: string }, @Request() req: any) {
+  modifierCompte(@Body() body: UpdateCompteDto, @Request() req: any) {
     return this.compteService.modifierCompte(req.user.idcompte, body);
   }
 
@@ -84,6 +85,6 @@ export class CompteController {
   @Get('frigo/cocktails')
   @UseGuards(JwtAuthGuard)
   getCocktailsRealisables(@Request() req: any) {
-    return this.compteService.getCocktailsRealisables(req.user.idcompte);
+    return this.compteService.getCocktailsRealisables(req.user.idcompte, req.user.estMineur);
   }
 }

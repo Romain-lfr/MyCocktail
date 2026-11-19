@@ -347,3 +347,32 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
   .vedette__visuel { grid-row: auto; width: 100%; height: 200px; }
   .vedette__legende, .vedette__nom, .vedette__desc, .vedette__meta { grid-column: 1; }
 }
+
+/* ============ Page connexion ============ */
+.connexion { display: grid; grid-template-columns: minmax(280px, 42%) 1fr; min-height: 560px; }
+.connexion__gauche { background: var(--mangue); color: var(--encre); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 48px 32px; text-align: center; }
+.connexion__verre { width: 180px; height: auto; color: var(--encre); }
+.connexion__slogan { margin: 0; font: italic 700 clamp(26px, 3vw, 38px) var(--font-titre); line-height: 1.15; max-width: 16ch; }
+.connexion__droite { padding: 56px var(--marge); display: flex; flex-direction: column; justify-content: center; max-width: 640px; }
+.connexion__droite h1 { font-size: clamp(38px, 5vw, 60px); color: var(--mangue); margin-bottom: 32px; }
+.connexion form { display: flex; flex-direction: column; gap: 20px; max-width: 420px; }
+.connexion__champ { display: flex; flex-direction: column; gap: 8px; }
+.connexion__champ label { font-size: 14px; opacity: .85; }
+.connexion__champ input { width: 100%; padding: 13px 20px; border-radius: 999px; border: 1.5px solid rgba(252, 235, 209, .6); background: transparent; color: var(--sable); font: 400 16px var(--font-texte); }
+.connexion__champ input[aria-invalid="true"] { border-color: var(--mangue); }
+.connexion__mdp { position: relative; }
+.connexion__mdp input { padding-right: 104px; }
+.connexion__voir { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 0; background: none; color: var(--sable); font: 500 13px var(--font-texte); padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.connexion__voir:hover { background: rgba(252, 235, 209, .12); }
+.connexion__erreur { margin: 0; padding: 10px 16px; border-radius: 12px; background: var(--paprika); color: var(--sable); font-size: 14px; }
+.connexion__envoi { justify-content: center; padding: 13px 28px; font-size: 16px; font-weight: 600; }
+.connexion__envoi:disabled { opacity: .5; cursor: not-allowed; }
+.connexion__alt { margin: 24px 0 0; font-size: 15px; }
+.connexion__alt a { color: var(--mangue); }
+
+@media (max-width: 800px) {
+  .connexion { grid-template-columns: 1fr; }
+  .connexion__gauche { padding: 32px; flex-direction: row; text-align: left; }
+  .connexion__verre { width: 72px; }
+  .connexion__slogan { font-size: 22px; max-width: none; }
+}

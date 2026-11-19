@@ -15,16 +15,15 @@ export class AuthService {
       const compte = await this.prisma.compte.findFirst({
         where: {
           OR: [
-            { pseudo: pseudoOrMail },
+            { pseudo: { equals: pseudoOrMail, mode: 'insensitive' } },
             { mailcompte: pseudoOrMail.toLowerCase() },
           ],
         },
       });
 
-      if (!compte) throw new UnauthorizedException('Compte introuvable');
-
-      const mdpValide = await bcrypt.compare(mdp, compte.mdpcompte);
-      if (!mdpValide) throw new UnauthorizedException('Mot de passe incorrect');
+      // Même message dans les deux cas : on ne révèle pas si le compte existe
+      const mdpValide = compte ? await bcrypt.compare(mdp, compte.mdpcompte) : false;
+      if (!compte || !mdpValide) throw new UnauthorizedException('Identifiants incorrects');
 
       const estMineur = compte.datenaissance > new Date(
         new Date().setFullYear(new Date().getFullYear() - 18)

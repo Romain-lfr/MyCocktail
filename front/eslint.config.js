@@ -19,4 +19,10 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Fichiers de test : pas concernés par le rechargement à chaud de Vite
+    files: ['src/test/**', '**/*.test.{ts,tsx}'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  globalIgnores(['coverage']),
 ])

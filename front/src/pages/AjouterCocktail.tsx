@@ -34,8 +34,6 @@ function AjouterCocktail() {
   const [etapes, setEtapes] = useState<Etape[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [ustensiles, setUstensiles] = useState<Ustensile[]>([]);
-  const [rechercheIngredient, setRechercheIngredient] = useState("");
-  const [rechercheUstensile, setRechercheUstensile] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [erreurs, setErreurs] = useState<Record<string, string>>({});
@@ -145,7 +143,7 @@ function AjouterCocktail() {
     const err: Record<string, string> = {};
     if (nomcocktail.trim().length < 2) err.nom = "Le nom doit faire au moins 2 caractères";
     if (description.trim().length < 10) err.description = "La description doit faire au moins 10 caractères";
-    if (duree < 1) err.duree = "La durée doit être positive";
+    if (!(duree >= 1)) err.duree = "La durée doit être positive"; // attrape aussi NaN (champ vidé)
     return err;
   };
 

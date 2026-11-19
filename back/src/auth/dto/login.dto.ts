@@ -1,11 +1,11 @@
-import { IsString, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty } from 'class-validator';
 
 export class LoginDto {
   @IsString()
-  @MinLength(3, { message: 'Le pseudo doit faire au moins 3 caractères' })
-  pseudo: string;
+  @IsNotEmpty({ message: 'Pseudo ou email obligatoire' })
+  pseudoOrMail: string;
 
   @IsString()
-  @MinLength(8, { message: 'Le mot de passe doit faire au moins 8 caractères' })
+  @IsNotEmpty({ message: 'Mot de passe obligatoire' })
   mdp: string;
 }
