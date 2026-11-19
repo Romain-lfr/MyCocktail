@@ -1,73 +1,133 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import { GlasseY, GlasseU } from "./Logo";
+import NoteEtoiles from "./NoteEtoiles";
+import { idCompteDuToken } from "../utils/token";
+import "./mycocktail.css";
+import { avecToken, tokenSiConnecte, messageApi } from "../utils/api";
+
+interface CocktailResume {
+  idcocktail: string;
+  nomcocktail: string;
+  idcompte: string;
+  alcool: boolean;
+  image?: { urlimage: string; titleimage?: string }[];
+}
+
+const MIN_DESCRIPTION = 10;
 
 function AjouterAvis() {
   const { nom } = useParams();
+  const [cocktail, setCocktail] = useState<CocktailResume | null>(null);
   const [note, setNote] = useState(5);
   const [titre, setTitre] = useState("");
   const [description, setDescription] = useState("");
   const [erreurs, setErreurs] = useState<Record<string, string>>({});
+  const [chargement, setChargement] = useState(false);
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+  const estAuteur = !!cocktail && idCompteDuToken(token) === cocktail.idcompte;
 
-  const handleSubmit = async () => {
+  // Le cocktail est chargé dès l'ouverture : photo, id pour l'envoi, et vérification « c'est ma recette »
+  useEffect(() => {
+    axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, tokenSiConnecte())
+      .then((res) => setCocktail(res.data))
+      .catch(() => setErreurs({ global: "Cocktail introuvable." }));
+  }, [nom, token]);
+
+  const envoyer = async (e: FormEvent) => {
+    e.preventDefault();
     const err: Record<string, string> = {};
     if (titre.trim().length < 3) err.titre = "Le titre doit faire au moins 3 caractères";
-    if (description.trim().length < 10) err.description = "La description doit faire au moins 10 caractères";
-    if (Object.keys(err).length > 0) { setErreurs(err); return; }
+    if (description.trim().length < MIN_DESCRIPTION) err.description = "La description doit faire au moins 10 caractères";
+    setErreurs(err);
+    if (Object.keys(err).length > 0) return;
 
-    const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
+    if (!cocktail) return;
 
+    setChargement(true);
     try {
-      // On a besoin de l'idcocktail, on récupère le cocktail par son nom
-      const cocktail = await axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      await axios.post(`/api/avis/${cocktail.data.idcocktail}`, {
+      await axios.post(`/api/avis/${cocktail.idcocktail}`, {
         noteavis: note,
         titreavis: titre,
         descriptionavis: description,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      }, avecToken());
       navigate(`/cocktail/${encodeURIComponent(nom!)}`);
-    } catch (err: any) {
-      setErreurs({ global: err.response?.data?.message || "Erreur lors de l'ajout de l'avis" });
+    } catch (err: unknown) {
+      setErreurs({ global: messageApi(err) || "Erreur lors de l'ajout de l'avis" });
+    } finally {
+      setChargement(false);
     }
   };
 
+  const etat = (champ: string) => ({
+    "aria-invalid": !!erreurs[champ],
+    "aria-describedby": [erreurs[champ] ? `erreur-${champ}` : "", champ === "description" ? "aide-description" : ""].filter(Boolean).join(" ") || undefined,
+  });
+  const message = (champ: string) =>
+    erreurs[champ] && <p id={`erreur-${champ}`} className="champ__erreur">{erreurs[champ]}</p>;
+
+  const image = cocktail?.image?.[0];
+  const restant = Math.max(0, MIN_DESCRIPTION - description.trim().length);
+
   return (
-    <div>
-      <button onClick={() => navigate(-1)}>← Retour</button>
-      <h1>⭐ Laisser un avis sur {nom}</h1>
+    <main className="connexion avis-page">
+      <section className={`connexion__gauche ${cocktail && !cocktail.alcool ? "connexion__gauche--citron" : ""}`} aria-label="Recette notée">
+        {image ? (
+          <img className="avis-page__photo" src={`/api${image.urlimage}`} alt={image.titleimage || nom} />
+        ) : cocktail?.alcool === false ? (
+          <GlasseU className="connexion__verre" />
+        ) : (
+          <GlasseY className="connexion__verre" />
+        )}
+        <p className="connexion__slogan">{nom}</p>
+      </section>
 
-      <div>
-        <label>Note</label>
-        <select value={note} onChange={(e) => setNote(parseInt(e.target.value))}>
-          {[1, 2, 3, 4, 5].map((n) => (
-            <option key={n} value={n}>{n} ⭐</option>
-          ))}
-        </select>
-      </div>
+      <section className="connexion__droite">
+        <div className="fiche__retour avis-page__retour">
+          <button className="pill" onClick={() => navigate(-1)}>← Retour</button>
+        </div>
+        <p className="surtitre">Ton avis</p>
+        <h1>Laisser un avis sur {nom}</h1>
 
-      <div>
-        <label>Titre</label>
-        <input value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Titre de votre avis" />
-        {erreurs.titre && <p style={{ color: 'red' }}>{erreurs.titre}</p>}
-      </div>
+        {estAuteur ? (
+          <div className="fiche__auteur">
+            <p className="fiche__auteur-titre">C'est ta recette</p>
+            <p>Tu ne peux pas la noter toi-même, mais tu peux répondre aux avis depuis sa fiche.</p>
+            <button className="pill" onClick={() => navigate(`/cocktail/${encodeURIComponent(nom!)}`)}>Voir la fiche</button>
+          </div>
+        ) : (
+          <form onSubmit={envoyer} noValidate>
+            <NoteEtoiles valeur={note} onChange={setNote} />
 
-      <div>
-        <label>Description</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Votre avis..." />
-        {erreurs.description && <p style={{ color: 'red' }}>{erreurs.description}</p>}
-      </div>
+            <div className="connexion__champ">
+              <label htmlFor="titre">Titre</label>
+              <input id="titre" value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="En quelques mots…" {...etat("titre")} />
+              {message("titre")}
+            </div>
 
-      <button onClick={handleSubmit}>Publier l'avis</button>
-      {erreurs.global && <p style={{ color: 'red' }}>{erreurs.global}</p>}
-    </div>
+            <div className="connexion__champ">
+              <label htmlFor="description">Ton avis</label>
+              <textarea id="description" className="creation__texte" value={description} onChange={(e) => setDescription(e.target.value)}
+                placeholder="Le goût, l'équilibre, la difficulté réelle, ce que tu changerais…" {...etat("description")} />
+              <p id="aide-description" className="connexion__aide">
+                {restant > 0 ? `Encore ${restant} caractère${restant > 1 ? "s" : ""} minimum` : "C'est parfait."}
+              </p>
+              {message("description")}
+            </div>
+
+            {erreurs.global && <p role="alert" className="connexion__erreur">{erreurs.global}</p>}
+
+            <button type="submit" className="pill pill--mangue connexion__envoi" disabled={chargement || !cocktail}>
+              {chargement ? "Publication…" : "Publier l'avis"}
+            </button>
+          </form>
+        )}
+      </section>
+    </main>
   );
 }
 

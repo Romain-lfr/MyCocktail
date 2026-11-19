@@ -1,6 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { GlasseY, GlasseU } from "./Logo";
+import "./mycocktail.css";
+import { avecToken, messageApi } from "../utils/api";
+import { unitesPourCategorie } from "../utils/unites";
 
 interface Ingredient {
   idingredient: string;
@@ -20,6 +24,7 @@ interface Etape {
   ustensiles: { idustensile: string }[];
 }
 
+
 function AjouterCocktail() {
   const [etapeFormulaire, setEtapeFormulaire] = useState(1);
   const [nomcocktail, setNom] = useState("");
@@ -37,7 +42,18 @@ function AjouterCocktail() {
   const [loading, setLoading] = useState(false);
 
   const [erreurs, setErreurs] = useState<Record<string, string>>({});
+  // Catégorie choisie pour créer un ingrédient inconnu, par étape
+  const [nouvelleCategorie, setNouvelleCategorie] = useState<Record<number, string>>({});
   const navigate = useNavigate();
+
+  // Aperçu de la photo choisie (URL locale, libérée au changement)
+  const apercuImage = useMemo(
+    () => (image && typeof URL.createObjectURL === "function" ? URL.createObjectURL(image) : null),
+    [image],
+  );
+  useEffect(() => () => { if (apercuImage) URL.revokeObjectURL(apercuImage); }, [apercuImage]);
+  // Photo déjà envoyée : évite de la renvoyer après « Précédent »
+  const [imageEnvoyee, setImageEnvoyee] = useState<File | null>(null);
 
   useEffect(() => {
     axios.get("/api/cocktail/listes/ingredients")
@@ -45,26 +61,6 @@ function AjouterCocktail() {
     axios.get("/api/cocktail/listes/ustensiles")
       .then((res) => setUstensiles(res.data));
   }, []);
-
-  const getUnites = (idingredient: string): string[] => {
-    const ingredient = ingredients.find((i) => i.idingredient === idingredient);
-    if (!ingredient) return ['cl', 'ml', 'l'];
-
-    switch (ingredient.categorie) {
-      case 'alcool':
-      case 'jus':
-      case 'sirop':
-      case 'soda':
-      case 'eau':
-        return ['cl', 'ml', 'l'];
-      case 'fruit':
-        return ['pièce', 'tranche', 'g'];
-      case 'autre':
-        return ['morceau', 'feuille', 'pincée', 'g'];
-      default:
-        return ['cl', 'ml', 'l'];
-    }
-  };
 
   const ingredientsFiltres = (recherche: string) => ingredients.filter((ing) =>
     ing.nomingredient.toLowerCase().includes(recherche.toLowerCase())
@@ -91,53 +87,39 @@ function AjouterCocktail() {
     setRecherches(recherches.filter((_, i) => i !== index));
   };
 
-  const updateEtapeDesc = (index: number, desc: string) => {
-    const copy = [...etapes];
-    copy[index].descriptionetape = desc;
-    setEtapes(copy);
-  };
+  // Modifie une étape sans jamais toucher à l'état en place : nouvelle liste, nouvelle étape, nouvelles sous-listes
+  const modifierEtape = (index: number, changement: (e: Etape) => Etape) =>
+    setEtapes((liste) => liste.map((e, i) => (i === index ? changement(e) : e)));
 
-  const ajouterIngredientEtape = (index: number, idingredient?: string) => {
-    const copy = [...etapes];
+  const updateEtapeDesc = (index: number, desc: string) =>
+    modifierEtape(index, (e) => ({ ...e, descriptionetape: desc }));
+
+  // `categorie` est passée quand l'ingrédient vient d'être créé : il n'est pas encore dans `ingredients`
+  const ajouterIngredientEtape = (index: number, idingredient?: string, categorie?: string) => {
     const id = idingredient || ingredients[0]?.idingredient || "";
-    const ing = ingredients.find((i) => i.idingredient === id);
-    
-    let unite = 'cl';
-    if (ing?.categorie === 'fruit') unite = 'pièce';
-    if (ing?.categorie === 'autre') unite = 'morceau';
-
-    copy[index].ingredients.push({ idingredient: id, quantite: 1, unite });
-    setEtapes(copy);
+    const unite = unitesPourCategorie(categorie ?? ingredients.find((i) => i.idingredient === id)?.categorie)[0];
+    modifierEtape(index, (e) => ({ ...e, ingredients: [...e.ingredients, { idingredient: id, quantite: 1, unite }] }));
   };
 
-  const updateIngredient = (etapeIndex: number, ingIndex: number, field: string, value: any) => {
-    const copy = [...etapes];
-    copy[etapeIndex].ingredients[ingIndex] = {
-      ...copy[etapeIndex].ingredients[ingIndex],
-      [field]: field === 'quantite' ? (isNaN(value) ? 0 : value) : value,
-    };
-    setEtapes(copy);
-  };
+  const updateIngredient = (etapeIndex: number, ingIndex: number, field: string, value: string | number) =>
+    modifierEtape(etapeIndex, (e) => ({
+      ...e,
+      ingredients: e.ingredients.map((ing, j) => (j === ingIndex
+        ? { ...ing, [field]: field === 'quantite' ? (Number.isNaN(value) ? 0 : value) : value }
+        : ing)),
+    }));
 
-  const supprimerIngredient = (etapeIndex: number, ingIndex: number) => {
-    const copy = [...etapes];
-    copy[etapeIndex].ingredients.splice(ingIndex, 1);
-    setEtapes(copy);
-  };
+  const supprimerIngredient = (etapeIndex: number, ingIndex: number) =>
+    modifierEtape(etapeIndex, (e) => ({ ...e, ingredients: e.ingredients.filter((_, j) => j !== ingIndex) }));
 
-  const ajouterUstensileEtape = (index: number, idustensile?: string) => {
-    const copy = [...etapes];
-    copy[index].ustensiles.push({
-      idustensile: idustensile || ustensiles[0]?.idustensile || "",
-    });
-    setEtapes(copy);
-  };
+  const ajouterUstensileEtape = (index: number, idustensile?: string) =>
+    modifierEtape(index, (e) => ({
+      ...e,
+      ustensiles: [...e.ustensiles, { idustensile: idustensile || ustensiles[0]?.idustensile || "" }],
+    }));
 
-  const supprimerUstensile = (etapeIndex: number, ustIndex: number) => {
-    const copy = [...etapes];
-    copy[etapeIndex].ustensiles.splice(ustIndex, 1);
-    setEtapes(copy);
-  };
+  const supprimerUstensile = (etapeIndex: number, ustIndex: number) =>
+    modifierEtape(etapeIndex, (e) => ({ ...e, ustensiles: e.ustensiles.filter((_, j) => j !== ustIndex) }));
 
   const validerInfos = () => {
     const err: Record<string, string> = {};
@@ -155,30 +137,41 @@ function AjouterCocktail() {
     if (!token) { navigate("/login"); return; }
 
     try {
-      const res = await axios.post("/api/cocktail", {
-        nomcocktail, description, difficulte, alcool, duree,
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      const infos = { nomcocktail, description, difficulte, alcool, duree };
+      const auth = avecToken();
+      // Retour par « Précédent » : le cocktail existe déjà, on le met à jour au lieu d'en créer un second
+      let id = idcocktail;
+      if (id) {
+        await axios.put(`/api/cocktail/${id}`, infos, auth);
+      } else {
+        const res = await axios.post("/api/cocktail", infos, auth);
+        id = res.data.idcocktail;
+        setIdcocktail(id);
+      }
 
-      setIdcocktail(res.data.idcocktail);
-
-      if (image) {
+      if (image && image !== imageEnvoyee) {
         const formData = new FormData();
         formData.append("image", image);
-        await axios.post(`/api/cocktail/${res.data.idcocktail}/image`, formData, {
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+        await axios.post(`/api/cocktail/${id}/image`, formData, {
+          headers: { ...avecToken().headers, "Content-Type": "multipart/form-data" },
         });
+        setImageEnvoyee(image);
       }
 
       setEtapeFormulaire(2);
-    } catch (err: any) {
-      setErreurs({ global: err.response?.data?.message || "Erreur lors de l'ajout des étapes" });
+    } catch (err: unknown) {
+      setErreurs({ global: messageApi(err) || "Erreur lors de l'ajout des étapes" });
       return;
     }
   };
 
-  const handleEtapesSubmit = async () => {
+  /**
+   * Enregistre les étapes puis :
+   * - "brouillon" : reste en brouillon (le cocktail est créé ainsi) → Mes cocktails
+   * - "priv_" / "publi_" : change le statut → fiche du cocktail
+   */
+  const handleEtapesSubmit = async (statut: "brouillon" | "priv_" | "publi_") => {
     if (loading) return;
-    const estMineur = localStorage.getItem("estMineur") === "true";
     for (const e of etapes) {
       if (e.descriptionetape.trim().length < 5) {
         setErreurs({ global: `L'étape ${e.numeroetape} doit avoir une description d'au moins 5 caractères` });
@@ -203,7 +196,7 @@ function AjouterCocktail() {
         const etapeRes = await axios.post(`/api/cocktail/${idcocktail}/etape`, {
           numeroetape: e.numeroetape,
           descriptionetape: e.descriptionetape,
-        }, { headers: { Authorization: `Bearer ${token}` } });
+        }, avecToken());
 
         const idetape = etapeRes.data.idetape;
 
@@ -213,215 +206,317 @@ function AjouterCocktail() {
             quantite: ing.quantite,
             unite: ing.unite,
             idetape,
-          }, { headers: { Authorization: `Bearer ${token}` } });
+          }, avecToken());
         }
 
         for (const ust of e.ustensiles) {
           await axios.post(`/api/cocktail/etape/ustensile`, {
             idetape,
             idustensile: ust.idustensile,
-          }, { headers: { Authorization: `Bearer ${token}` } });
+          }, avecToken());
         }
       }
+      if (statut === "brouillon") {
+        navigate("/compte/cocktails");
+        return;
+      }
+      await axios.put(`/api/cocktail/${idcocktail}`, { nomcocktail, description, difficulte, alcool, duree, statut },
+        avecToken());
       navigate(`/cocktail/${encodeURIComponent(nomcocktail)}`);
-    } catch (err: any) {
-      setErreurs({ global: err.response?.data?.message || "Erreur lors de l'ajout des étapes" });
+    } catch (err: unknown) {
+      setErreurs({ global: messageApi(err) || "Erreur lors de l'ajout des étapes" });
     } finally {
       setLoading(false);
     }
   };
 
+  const estMineur = localStorage.getItem("estMineur") === "true";
+
+  const setRecherche = (i: number, champ: "ingredient" | "ustensile", valeur: string) => {
+    const copy = [...recherches];
+    copy[i] = { ...copy[i], [champ]: valeur };
+    setRecherches(copy);
+  };
+
+  const creerIngredient = async (i: number) => {
+    const res = await axios.post('/api/cocktail/listes/ingredients', {
+      nomingredient: recherches[i].ingredient,
+      categorie: nouvelleCategorie[i] || "autre",
+    }, avecToken());
+    setIngredients([...ingredients, res.data]);
+    ajouterIngredientEtape(i, res.data.idingredient, res.data.categorie);
+    setRecherche(i, "ingredient", "");
+  };
+
+  const creerUstensile = async (i: number) => {
+    const res = await axios.post('/api/cocktail/listes/ustensiles', {
+      nomustensile: recherches[i].ustensile,
+    }, avecToken());
+    setUstensiles([...ustensiles, res.data]);
+    ajouterUstensileEtape(i, res.data.idustensile);
+    setRecherche(i, "ustensile", "");
+  };
+
+  // Champ invalide relié à son message d'erreur
+  const etat = (champ: string) => ({
+    "aria-invalid": !!erreurs[champ],
+    "aria-describedby": erreurs[champ] ? `erreur-${champ}` : undefined,
+  });
+  const message = (champ: string) =>
+    erreurs[champ] && <p id={`erreur-${champ}`} className="champ__erreur">{erreurs[champ]}</p>;
+
+  const nomIngredient = (id: string) => ingredients.find((x) => x.idingredient === id)?.nomingredient ?? "";
+  const nomUstensile = (id: string) => ustensiles.find((x) => x.idustensile === id)?.nomustensile ?? "";
+
+  const progression = (
+    <ol className="progression" aria-label="Progression">
+      <li aria-current={etapeFormulaire === 1 ? "step" : undefined} className={etapeFormulaire > 1 ? "progression__faite" : ""}>
+        <span aria-hidden="true">{etapeFormulaire > 1 ? "✓" : "1"}</span> Informations
+      </li>
+      <li aria-current={etapeFormulaire === 2 ? "step" : undefined}><span aria-hidden="true">2</span> Étapes</li>
+    </ol>
+  );
+
   if (etapeFormulaire === 1) return (
-    <div>
-      <button onClick={() => navigate(-1)}>← Retour</button>
-      <h1>🍹 Ajouter un cocktail</h1>
-
-      <div>
-        <label>Nom</label>
-        <input value={nomcocktail} onChange={(e) => setNom(e.target.value)} placeholder="Nom du cocktail" />
-        {erreurs.nom && <p style={{ color: 'red' }}>{erreurs.nom}</p>}
+    <main className="page creation">
+      <div className="fiche__retour">
+        <button className="pill" onClick={() => navigate(-1)}>← Retour</button>
       </div>
+      <p className="surtitre">Nouvelle recette</p>
+      <h1>Ajouter un cocktail</h1>
+      {progression}
 
-      <div>
-        <label>Description</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description" />
-        {erreurs.description && <p style={{ color: 'red' }}>{erreurs.description}</p>}
+      <div className="creation__grille">
+      <form className="creation__form" noValidate onSubmit={(e) => { e.preventDefault(); handleInfosSubmit(); }}>
+        <div className="connexion__champ">
+          <label htmlFor="nom">Nom du cocktail</label>
+          <input id="nom" value={nomcocktail} onChange={(e) => setNom(e.target.value)} {...etat("nom")} />
+          {message("nom")}
+        </div>
+
+        <div className="connexion__champ">
+          <label htmlFor="description">Description</label>
+          <textarea id="description" className="creation__texte" value={description} onChange={(e) => setDescription(e.target.value)}
+            placeholder="Ce qui le rend unique, son goût, l'occasion…" {...etat("description")} />
+          {message("description")}
+        </div>
+
+        <div className="creation__ligne">
+          <div className="connexion__champ">
+            <span className="creation__label" id="label-difficulte">Difficulté</span>
+            <div className="champ__pills" role="group" aria-labelledby="label-difficulte">
+              {["Facile", "Moyen", "Difficile"].map((d) => (
+                <button key={d} type="button" className={`pill pill--${d.toLowerCase()} ${difficulte === d ? "pill--active" : ""}`}
+                  aria-pressed={difficulte === d} onClick={() => setDifficulte(d)}>{d}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="connexion__champ">
+            <span className="creation__label" id="label-alcool">Alcool</span>
+            <div className="champ__pills" role="group" aria-labelledby="label-alcool">
+              <button type="button" className={`pill ${!alcool ? "pill--active" : ""}`} aria-pressed={!alcool} onClick={() => setAlcool(false)}>Sans alcool</button>
+              <button type="button" className={`pill ${alcool ? "pill--active" : ""}`} aria-pressed={alcool} onClick={() => setAlcool(true)}
+                disabled={estMineur} aria-describedby={estMineur ? "aide-alcool" : undefined}>Avec alcool</button>
+            </div>
+            {estMineur && <p id="aide-alcool" className="connexion__aide">Réservé aux majeurs.</p>}
+          </div>
+
+          <div className="connexion__champ">
+            <label htmlFor="duree">Durée</label>
+            <div className="creation__duree">
+              <input id="duree" type="number" value={duree} onChange={(e) => setDuree(parseInt(e.target.value))} min={1} {...etat("duree")} />
+              <span aria-hidden="true">min</span>
+            </div>
+            {message("duree")}
+          </div>
+        </div>
+
+        <div className="connexion__champ">
+          <span className="creation__label">Photo <small>(facultative)</small></span>
+          <label className="depot">
+            <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] || null)} aria-label="Choisir une photo" />
+            <span className="depot__texte">{image ? image.name : "Choisir une photo"}</span>
+            <span className="depot__aide">{image ? "Cliquer pour en choisir une autre" : "JPG, PNG ou WebP"}</span>
+          </label>
+        </div>
+
+        {erreurs.global && <p role="alert" className="connexion__erreur">{erreurs.global}</p>}
+
+        <button type="submit" className="pill pill--mangue connexion__envoi">Suivant → Ajouter les étapes</button>
+      </form>
+
+      <aside className="apercu" aria-label="Aperçu de la carte">
+        <p className="apercu__titre">Aperçu sur l'accueil</p>
+        <div className="recette">
+          <div className="recette__corps">
+            <p className="recette__nom apercu__nom">{nomcocktail.trim() || "Nom du cocktail"}</p>
+            <p className="recette__desc">{description.trim() || "La description apparaîtra ici."}</p>
+            <div className="recette__meta">
+              <span className={`statut statut--${difficulte}`}>{difficulte}</span>
+              <span>{duree >= 1 ? duree : "–"} min</span>
+              <span className={`tag ${alcool ? "tag--alcool" : ""}`}>{alcool ? "Alcool" : "Sans alcool"}</span>
+            </div>
+          </div>
+          {apercuImage ? (
+            <img className="recette__visuel" src={apercuImage} alt="Aperçu de la photo" />
+          ) : (
+            <div className={`recette__visuel recette__visuel--vide ${alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">
+              {alcool ? <GlasseY /> : <GlasseU />}
+            </div>
+          )}
+        </div>
+        <p className="apercu__aide">Ton cocktail restera en brouillon tant que tu ne le publies pas.</p>
+      </aside>
       </div>
-
-      <div>
-        <label>Difficulté</label>
-        <select value={difficulte} onChange={(e) => setDifficulte(e.target.value)}>
-          <option value="Facile">Facile</option>
-          <option value="Moyen">Moyen</option>
-          <option value="Difficile">Difficile</option>
-        </select>
-      </div>
-
-      <div>
-        <label>Avec alcool ?</label>
-        <input type="checkbox" checked={alcool} onChange={(e) => setAlcool(e.target.checked)} />
-      </div>
-
-      <div>
-        <label>Durée (minutes)</label>
-        <input type="number" value={duree} onChange={(e) => setDuree(parseInt(e.target.value))} min={1} />
-        {erreurs.duree && <p style={{ color: 'red' }}>{erreurs.duree}</p>}
-      </div>
-
-      <div>
-        <label>Image</label>
-        <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] || null)} />
-      </div>
-
-      <button onClick={handleInfosSubmit}>Suivant → Ajouter les étapes</button>
-      {erreurs.global && <p style={{ color: 'red' }}>{erreurs.global}</p>}
-    </div>
+    </main>
   );
 
   return (
-    <div>
-      <h1>🍹 Étapes du cocktail</h1>
+    <main className="page creation">
+      <p className="surtitre">{nomcocktail}</p>
+      <h1>Étapes du cocktail</h1>
+      {progression}
 
-      {etapes.map((e, i) => (
-        <div key={i} style={{ border: '1px solid #ccc', padding: '15px', margin: '10px 0', borderRadius: '8px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3>Étape {e.numeroetape}</h3>
-            <button onClick={() => supprimerEtape(i)} style={{ color: 'red' }}>🗑️ Supprimer l'étape</button>
-          </div>
+      {etapes.length === 0 && (
+        <p className="creation__vide">Décris la préparation étape par étape : ce qu'on verse, avec quoi, et dans quel ordre.</p>
+      )}
 
-          <textarea
-            value={e.descriptionetape}
-            onChange={(ev) => updateEtapeDesc(i, ev.target.value)}
-            placeholder="Description de l'étape"
-            style={{ width: '100%' }}
-          />
+      <ol className="etapes-form">
+        {etapes.map((e, i) => (
+          <li key={i} className="etape-form">
+            <div className="etape-form__entete">
+              <h3>Étape {e.numeroetape}</h3>
+              <button type="button" className="btn btn--danger" onClick={() => supprimerEtape(i)}>Supprimer l'étape</button>
+            </div>
 
-          <h4>Ingrédients</h4>
-          <input
-            placeholder="Rechercher un ingrédient..."
-            value={recherches[i]?.ingredient || ""}
-            onChange={(ev) => {
-              const copy = [...recherches];
-              copy[i] = { ...copy[i], ingredient: ev.target.value };
-              setRecherches(copy);
-            }}
-          />
-          {recherches[i]?.ingredient && (
-            <div style={{ border: '1px solid #ccc', borderRadius: '5px', maxHeight: '150px', overflowY: 'auto' }}>
-              {ingredientsFiltres(recherches[i].ingredient).length > 0 ? (
-                ingredientsFiltres(recherches[i].ingredient).map((ing) => (
-                  <div key={ing.idingredient} onClick={() => {
-                    ajouterIngredientEtape(i, ing.idingredient);
-                    const copy = [...recherches];
-                    copy[i] = { ...copy[i], ingredient: "" };
-                    setRecherches(copy);
-                  }}
-                  style={{ padding: '8px', cursor: 'pointer' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f0')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}>
-                    {ing.nomingredient}
-                  </div>
-                ))
-              ) : (
-                <div style={{ padding: '8px' }}>
-                  <p>Aucun résultat pour "{recherches[i].ingredient}"</p>
-                  <select id={`nouvelle-categorie-${i}`} defaultValue="autre" style={{ marginRight: '5px' }}>
-                    {['alcool', 'jus', 'sirop', 'soda', 'eau', 'fruit', 'autre'].map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                  <button onClick={async () => {
-                    const token = localStorage.getItem("token");
-                    const categorie = (document.getElementById(`nouvelle-categorie-${i}`) as HTMLSelectElement).value;
-                    const res = await axios.post('/api/cocktail/listes/ingredients', {
-                      nomingredient: recherches[i].ingredient,
-                      categorie,
-                    }, { headers: { Authorization: `Bearer ${token}` } });
-                    setIngredients([...ingredients, res.data]);
-                    ajouterIngredientEtape(i, res.data.idingredient);
-                    const copy = [...recherches];
-                    copy[i] = { ...copy[i], ingredient: "" };
-                    setRecherches(copy);
-                  }}>+ Ajouter "{recherches[i].ingredient}"</button>
+            <label className="sr-only" htmlFor={`etape-${i}`}>Description de l'étape {e.numeroetape}</label>
+            <textarea id={`etape-${i}`} className="creation__texte" value={e.descriptionetape}
+              onChange={(ev) => updateEtapeDesc(i, ev.target.value)} placeholder="Ex. : Piler la menthe avec le sucre au fond du verre" />
+
+            <div className="etape-form__colonnes">
+              <div>
+                <h4>Ingrédients</h4>
+                <div className="selecteur__champ">
+                  <input className="etape-form__recherche" aria-label={`Rechercher un ingrédient pour l'étape ${e.numeroetape}`} placeholder="Rechercher un ingrédient…"
+                    value={recherches[i]?.ingredient || ""} onChange={(ev) => setRecherche(i, "ingredient", ev.target.value)} />
+                  {recherches[i]?.ingredient && (
+                    ingredientsFiltres(recherches[i].ingredient).length > 0 ? (
+                      <ul className="suggestions">
+                        {ingredientsFiltres(recherches[i].ingredient).map((ing) => (
+                          <li key={ing.idingredient}>
+                            <button type="button" onClick={() => { ajouterIngredientEtape(i, ing.idingredient); setRecherche(i, "ingredient", ""); }}>
+                              {ing.nomingredient}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="nouveau">
+                        <p>Aucun résultat pour « {recherches[i].ingredient} »</p>
+                        <label htmlFor={`categorie-${i}`}>Catégorie</label>
+                        <select id={`categorie-${i}`} value={nouvelleCategorie[i] || "autre"}
+                          onChange={(ev) => setNouvelleCategorie({ ...nouvelleCategorie, [i]: ev.target.value })}>
+                          {['alcool', 'jus', 'sirop', 'soda', 'eau', 'fruit', 'autre'].map((cat) => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                        <button type="button" className="btn btn--plein" onClick={() => creerIngredient(i)}>+ Créer « {recherches[i].ingredient} »</button>
+                      </div>
+                    )
+                  )}
                 </div>
-              )}
-            </div>
-          )}
-          {e.ingredients.map((ing, j) => (
-            <div key={j} style={{ display: 'flex', gap: '10px', margin: '5px 0', alignItems: 'center' }}>
-              <span style={{ flex: 1 }}>{ingredients.find(x => x.idingredient === ing.idingredient)?.nomingredient}</span>
-              <input type="number" value={ing.quantite || ""} onChange={(ev) => updateIngredient(i, j, 'quantite', parseFloat(ev.target.value))} min={0.01} style={{ width: '80px' }} />
-              <select 
-                value={ing.unite} 
-                onChange={(ev) => updateIngredient(i, j, 'unite', ev.target.value)}
-                style={{ width: '80px' }}
-              >
-                {getUnites(ing.idingredient).map((u) => (
-                  <option key={u} value={u}>{u}</option>
-                ))}
-              </select>
-              <button onClick={() => supprimerIngredient(i, j)} style={{ color: 'red' }}>✕</button>
-            </div>
-          ))}
 
-          <h4>Ustensiles</h4>
-          <input
-            placeholder="Rechercher un ustensile..."
-            value={recherches[i]?.ustensile || ""}
-            onChange={(ev) => {
-              const copy = [...recherches];
-              copy[i] = { ...copy[i], ustensile: ev.target.value };
-              setRecherches(copy);
-            }}
-          />
-          {recherches[i]?.ustensile && (
-            <div style={{ border: '1px solid #ccc', borderRadius: '5px', maxHeight: '150px', overflowY: 'auto' }}>
-              {ustensilesFiltres(recherches[i].ustensile).length > 0 ? (
-                ustensilesFiltres(recherches[i].ustensile).map((u) => (
-                  <div key={u.idustensile} onClick={() => {
-                    ajouterUstensileEtape(i, u.idustensile);
-                    const copy = [...recherches];
-                    copy[i] = { ...copy[i], ustensile: "" };
-                    setRecherches(copy);
-                  }}
-                  style={{ padding: '8px', cursor: 'pointer' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f0')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}>
-                    {u.nomustensile}
-                  </div>
-                ))
-              ) : (
-                <div style={{ padding: '8px' }}>
-                  <p>Aucun résultat pour "{recherches[i].ustensile}"</p>
-                  <button onClick={async () => {
-                    const token = localStorage.getItem("token");
-                    const res = await axios.post('/api/cocktail/listes/ustensiles', {
-                      nomustensile: recherches[i].ustensile,
-                    }, { headers: { Authorization: `Bearer ${token}` } });
-                    setUstensiles([...ustensiles, res.data]);
-                    ajouterUstensileEtape(i, res.data.idustensile);
-                    const copy = [...recherches];
-                    copy[i] = { ...copy[i], ustensile: "" };
-                    setRecherches(copy);
-                  }}>+ Ajouter "{recherches[i].ustensile}"</button>
+                <ul className="dosages-form">
+                  {e.ingredients.map((ing, j) => {
+                    const nom = nomIngredient(ing.idingredient);
+                    return (
+                      <li key={j}>
+                        <span className="dosages-form__nom">{nom}</span>
+                        <input type="number" aria-label={`Quantité de ${nom}`} value={ing.quantite || ""} min={0.01}
+                          onChange={(ev) => updateIngredient(i, j, 'quantite', parseFloat(ev.target.value))} />
+                        <select aria-label={`Unité de ${nom}`} value={ing.unite} onChange={(ev) => updateIngredient(i, j, 'unite', ev.target.value)}>
+                          {unitesPourCategorie(ingredients.find((x) => x.idingredient === ing.idingredient)?.categorie).map((u) => <option key={u} value={u}>{u}</option>)}
+                        </select>
+                        <button type="button" className="dosages-form__retirer" aria-label={`Retirer ${nom}`} onClick={() => supprimerIngredient(i, j)}>×</button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              <div>
+                <h4>Ustensiles</h4>
+                <div className="selecteur__champ">
+                  <input className="etape-form__recherche" aria-label={`Rechercher un ustensile pour l'étape ${e.numeroetape}`} placeholder="Rechercher un ustensile…"
+                    value={recherches[i]?.ustensile || ""} onChange={(ev) => setRecherche(i, "ustensile", ev.target.value)} />
+                  {recherches[i]?.ustensile && (
+                    ustensilesFiltres(recherches[i].ustensile).length > 0 ? (
+                      <ul className="suggestions">
+                        {ustensilesFiltres(recherches[i].ustensile).map((u) => (
+                          <li key={u.idustensile}>
+                            <button type="button" onClick={() => { ajouterUstensileEtape(i, u.idustensile); setRecherche(i, "ustensile", ""); }}>
+                              {u.nomustensile}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="nouveau">
+                        <p>Aucun résultat pour « {recherches[i].ustensile} »</p>
+                        <button type="button" className="btn btn--plein" onClick={() => creerUstensile(i)}>+ Créer « {recherches[i].ustensile} »</button>
+                      </div>
+                    )
+                  )}
                 </div>
-              )}
+
+                <div className="selecteur ustensiles-form">
+                  {e.ustensiles.map((ust, j) => {
+                    const nom = nomUstensile(ust.idustensile);
+                    return (
+                      <span key={j} className="puce">
+                        {nom}
+                        <button type="button" aria-label={`Retirer ${nom}`} onClick={() => supprimerUstensile(i, j)}>×</button>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          )}
-          {e.ustensiles.map((ust, j) => (
-            <div key={j} style={{ display: 'flex', gap: '10px', margin: '5px 0', alignItems: 'center' }}>
-              <span style={{ flex: 1 }}>{ustensiles.find(x => x.idustensile === ust.idustensile)?.nomustensile}</span>
-              <button onClick={() => supprimerUstensile(i, j)} style={{ color: 'red' }}>✕</button>
-            </div>
-          ))}
+          </li>
+        ))}
+      </ol>
+
+      <button type="button" className="pill creation__ajouter" onClick={ajouterEtape}>+ Ajouter une étape</button>
+
+      {erreurs.global && <p role="alert" className="connexion__erreur">{erreurs.global}</p>}
+
+      <div className="creation__fin">
+        <button type="button" className="pill" onClick={() => { setErreurs({}); setEtapeFormulaire(1); }} disabled={loading}>
+          ← Précédent
+        </button>
+        <div className="creation__publier">
+          <button type="button" className="pill" onClick={() => handleEtapesSubmit("brouillon")} disabled={loading}>
+            Continuer plus tard
+          </button>
+          <button type="button" className="pill" onClick={() => handleEtapesSubmit("priv_")} disabled={loading || etapes.length === 0}
+            aria-describedby={etapes.length === 0 ? "aide-publier" : undefined}>
+            Publier en privé
+          </button>
+          <button type="button" className="pill pill--mangue creation__principal" onClick={() => handleEtapesSubmit("publi_")}
+            disabled={loading || etapes.length === 0} aria-describedby={etapes.length === 0 ? "aide-publier" : undefined}>
+            {loading ? "Enregistrement…" : "Publier"}
+          </button>
         </div>
-      ))}
-
-      <button onClick={ajouterEtape}>+ Ajouter une étape</button>
-      <br /><br />
-      <button onClick={handleEtapesSubmit}>✅ Terminer</button>
-      {erreurs.global && <p style={{ color: 'red' }}>{erreurs.global}</p>}
-    </div>
+        {etapes.length === 0 && (
+          <p id="aide-publier" className="creation__legende creation__legende--alerte">Ajoute au moins une étape pour pouvoir publier, même en privé.</p>
+        )}
+        <p className="creation__legende">
+          <strong>Continuer plus tard</strong> garde ta recette en brouillon dans « Mes cocktails ».{" "}
+          <strong>Publier en privé</strong> la garde pour toi seul·e. <strong>Publier</strong> la rend visible par tout le monde.
+        </p>
+      </div>
+    </main>
   );
 }
 

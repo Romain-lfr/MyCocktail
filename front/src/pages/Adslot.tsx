@@ -1,19 +1,9 @@
 import { useEffect, useRef } from "react";
+import { CLIENT_ADSENSE as CLIENT, estMineur } from "../utils/pub";
 import "./mycocktail.css";
 
 declare global {
   interface Window { adsbygoogle?: unknown[] }
-}
-
-// Identifiant éditeur AdSense (ca-pub-XXXXXXXXXXXXXXXX), défini dans le fichier .env
-const CLIENT = import.meta.env.VITE_ADSENSE_CLIENT as string | undefined;
-
-const estMineur = () => localStorage.getItem("estMineur") === "true";
-
-/** Vrai si un emplacement doit être réservé dans la page (évite de laisser un trou vide). */
-export function pubAutorisee(slot?: string): boolean {
-  if (estMineur()) return false;
-  return import.meta.env.DEV || (!!CLIENT && !!slot);
 }
 
 // Le script AdSense n'est chargé que si une pub va réellement s'afficher

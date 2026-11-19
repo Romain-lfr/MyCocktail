@@ -1,4 +1,4 @@
-import { IsString, IsNumber, Min } from 'class-validator';
+import { IsString, IsNumber, IsOptional, Min } from 'class-validator';
 
 export class CreateDosageDto {
   @IsString()
@@ -11,6 +11,8 @@ export class CreateDosageDto {
   @IsString()
   unite: string;
 
+  // Un dosage peut ne pas être lié à une étape (voir docs/Bdd.md)
+  @IsOptional()
   @IsString()
   idetape?: string;
 }

@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import "./mycocktail.css";
+import { avecToken, messageApi } from "../utils/api";
+import { unitesPourCategorie } from "../utils/unites";
 
 interface Etape {
   idetape: string;
@@ -21,6 +24,18 @@ interface Ustensile {
   nomustensile: string;
 }
 
+// Valeurs du client Prisma : publi_ = publié, priv_ = privé, archiv_ = archivé
+// Statuts « publiés » (public ou privé) : au moins une étape obligatoire
+const STATUTS_PUBLIES = ["publi_", "priv_"];
+
+const STATUTS = [
+  { valeur: "brouillon", libelle: "Brouillon", aide: "Visible par toi seul·e, le temps de la peaufiner." },
+  { valeur: "publi_", libelle: "Publié", aide: "Visible par tout le monde sur l'accueil." },
+  { valeur: "priv_", libelle: "Privé", aide: "Terminé, mais gardé pour toi." },
+  { valeur: "archiv_", libelle: "Archivé", aide: "Retiré de la circulation, sans être supprimé." },
+];
+
+
 function ModifierCocktail() {
   const { nom } = useParams();
   const [nomcocktail, setNom] = useState("");
@@ -36,8 +51,14 @@ function ModifierCocktail() {
   // Une recherche par étape (clé = idetape), sinon taper dans une étape ouvre la liste dans toutes
   const [recherchesIngredient, setRecherchesIngredient] = useState<Record<string, string>>({});
   const [recherchesUstensile, setRecherchesUstensile] = useState<Record<string, string>>({});
+  const [nouvelleCategorie, setNouvelleCategorie] = useState<Record<string, string>>({});
   const [erreurs, setErreurs] = useState<Record<string, string>>({});
+  // Nouvelle étape en cours de saisie (null = formulaire fermé)
+  const [nouvelleEtape, setNouvelleEtape] = useState<string | null>(null);
+  // Dernier élément enregistré, pour afficher « Enregistré ✓ » à côté
+  const [enregistre, setEnregistre] = useState<string | null>(null);
   const navigate = useNavigate();
+  const estMineur = localStorage.getItem("estMineur") === "true";
 
   const ingredientsFiltres = (recherche: string) => ingredients.filter((ing) =>
     ing.nomingredient.toLowerCase().includes(recherche.toLowerCase())
@@ -47,38 +68,42 @@ function ModifierCocktail() {
     u.nomustensile.toLowerCase().includes(recherche.toLowerCase())
   );
 
+  // Relit les ingrédients et ustensiles des étapes depuis l'API, sans toucher aux textes
+  // pas encore enregistrés ni au reste du formulaire (remplace l'ancien rechargement de page)
+  const rafraichirEtapes = async () => {
+    const res = await axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, avecToken());
+    const fraiches: Etape[] = res.data.etape || [];
+    setEtapes((actuelles) => actuelles.map((e) => {
+      const f = fraiches.find((x) => x.idetape === e.idetape);
+      return f ? { ...e, dosage: f.dosage, etape_ustensile: f.etape_ustensile } : e;
+    }));
+  };
+
   const ajouterIngredientEtape = async (idetape: string, idingredient: string, unite: string) => {
-    const token = localStorage.getItem("token");
     try {
       await axios.post(`/api/cocktail/${idcocktail}/dosage`, {
         idingredient,
         quantite: 1,
         unite,
         idetape,
-      }, { headers: { Authorization: `Bearer ${token}` } });
-      window.location.reload();
+      }, avecToken());
+      setErreurs({});
+      await rafraichirEtapes();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
-      setErreurs({ global: message || "Erreur lors de l'ajout de l'ingrédient" });
+      setErreurs({ [`etape-${idetape}`]: messageApi(err) || "Erreur lors de l'ajout de l'ingrédient" });
     }
   };
 
   const ajouterUstensileEtape = async (idetape: string, idustensile: string) => {
-    const token = localStorage.getItem("token");
-    await axios.post(`/api/cocktail/etape/ustensile`, {
-      idetape,
-      idustensile,
-    }, { headers: { Authorization: `Bearer ${token}` } });
-    window.location.reload();
+    await axios.post(`/api/cocktail/etape/ustensile`, { idetape, idustensile }, avecToken());
+    await rafraichirEtapes();
   };
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
 
-    axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }).then((res) => {
+    axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, avecToken()).then((res) => {
       setNom(res.data.nomcocktail);
       setDescription(res.data.description);
       setDifficulte(res.data.difficulte);
@@ -91,26 +116,16 @@ function ModifierCocktail() {
 
     axios.get("/api/cocktail/listes/ingredients").then((res) => setIngredients(res.data));
     axios.get("/api/cocktail/listes/ustensiles").then((res) => setUstensiles(res.data));
-  }, [nom]);
-
-  const getUnites = (idingredient: string): string[] => {
-    const ingredient = ingredients.find((i) => i.idingredient === idingredient);
-    if (!ingredient) return ['cl', 'ml', 'l'];
-    switch (ingredient.categorie) {
-      case 'alcool': case 'jus': case 'sirop': case 'soda': case 'eau':
-        return ['cl', 'ml', 'l'];
-      case 'fruit': return ['pièce', 'tranche', 'g'];
-      case 'autre': return ['morceau', 'feuille', 'pincée', 'g'];
-      default: return ['cl', 'ml', 'l'];
-    }
-  };
+  }, [nom, navigate]);
 
   const handleSubmit = async () => {
     const err: Record<string, string> = {};
     if (nomcocktail.trim().length < 2) err.nom = "Le nom doit faire au moins 2 caractères";
     if (description.trim().length < 10) err.description = "La description doit faire au moins 10 caractères";
     if (!(duree >= 1)) err.duree = "La durée doit être positive"; // attrape aussi NaN (champ vidé)
-    if (Object.keys(err).length > 0) { setErreurs(err); return; }
+    if (STATUTS_PUBLIES.includes(statut) && etapes.length === 0) err.global = "Ajoute au moins une étape avant de publier le cocktail";
+    setErreurs(err);
+    if (Object.keys(err).length > 0) return;
 
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
@@ -118,10 +133,10 @@ function ModifierCocktail() {
     try {
       await axios.put(`/api/cocktail/${idcocktail}`, {
         nomcocktail, description, difficulte, alcool, duree, statut,
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      }, avecToken());
       navigate("/compte/cocktails");
-    } catch (err: any) {
-      setErreurs({ global: err.response?.data?.message || "Erreur lors de la modification" });
+    } catch (err) {
+      setErreurs({ global: messageApi(err) || "Erreur lors de la modification" });
     }
   };
 
@@ -130,9 +145,7 @@ function ModifierCocktail() {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
     try {
-      await axios.delete(`/api/cocktail/${idcocktail}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/api/cocktail/${idcocktail}`, avecToken());
       navigate("/");
     } catch {
       setErreurs({ global: "Erreur lors de la suppression" });
@@ -140,18 +153,14 @@ function ModifierCocktail() {
   };
 
   const ajouterEtape = async () => {
-    const token = localStorage.getItem("token");
-    const description = prompt("Description de la nouvelle étape :");
-    if (!description || description.trim().length < 5) {
-      alert("La description doit faire au moins 5 caractères");
+    const texte = (nouvelleEtape ?? "").trim();
+    if (texte.length < 5) {
+      setErreurs({ nouvelleEtape: "La description doit faire au moins 5 caractères" });
       return;
     }
 
     try {
-      const res = await axios.post(`/api/cocktail/${idcocktail}/etape`, {
-        descriptionetape: description,
-      }, { headers: { Authorization: `Bearer ${token}` } });
-
+      const res = await axios.post(`/api/cocktail/${idcocktail}/etape`, { descriptionetape: texte }, avecToken());
       setEtapes([...etapes, {
         idetape: res.data.idetape,
         numeroetape: res.data.numeroetape,
@@ -159,248 +168,325 @@ function ModifierCocktail() {
         dosage: [],
         etape_ustensile: [],
       }]);
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Erreur lors de l'ajout de l'étape");
+      setNouvelleEtape(null);
+      setErreurs({});
+    } catch (err) {
+      setErreurs({ nouvelleEtape: messageApi(err) || "Erreur lors de l'ajout de l'étape" });
     }
   };
 
+  const sauvegarderEtape = async (e: Etape) => {
+    await axios.put(`/api/cocktail/etape/${e.idetape}`, { descriptionetape: e.descriptionetape }, avecToken());
+    setEnregistre(e.idetape);
+  };
+
+  const supprimerEtape = async (e: Etape) => {
+    if (!confirm("Supprimer cette étape ?")) return;
+    try {
+      await axios.delete(`/api/cocktail/etape/${e.idetape}`, avecToken());
+      setEtapes(etapes.filter((et) => et.idetape !== e.idetape));
+    } catch (err) {
+      // ex. 409 : dernière étape d'un cocktail publié
+      setErreurs({ [`etape-${e.idetape}`]: messageApi(err) || "Erreur lors de la suppression de l'étape" });
+    }
+  };
+
+  const sauvegarderDosage = async (idetape: string, d: Etape["dosage"][number]) => {
+    await axios.put(`/api/cocktail/${idcocktail}/dosage/${d.idingredient}`, { quantite: Number(d.quantite), unite: d.unite }, avecToken());
+    setEnregistre(`${idetape}-${d.idingredient}`);
+  };
+
+  const retirerIngredient = async (i: number, idetape: string, d: Etape["dosage"][number]) => {
+    if (!confirm(`Retirer ${d.ingredient.nomingredient} de la recette ?`)) return;
+    try {
+      await axios.delete(`/api/cocktail/${idcocktail}/dosage/${d.idingredient}`, avecToken());
+      const copy = [...etapes];
+      copy[i] = { ...copy[i], dosage: copy[i].dosage.filter((x) => x.idingredient !== d.idingredient) };
+      setEtapes(copy);
+    } catch (err) {
+      setErreurs({ [`etape-${idetape}`]: messageApi(err) || "Erreur lors du retrait de l'ingrédient" });
+    }
+  };
+
+  const retirerUstensile = async (i: number, idetape: string, idustensile: string) => {
+    await axios.delete(`/api/cocktail/etape/${idetape}/ustensile/${idustensile}`, avecToken());
+    const copy = [...etapes];
+    copy[i] = { ...copy[i], etape_ustensile: copy[i].etape_ustensile.filter((u) => u.idustensile !== idustensile) };
+    setEtapes(copy);
+  };
+
+  const creerIngredient = async (idetape: string, nomingredient: string) => {
+    const res = await axios.post('/api/cocktail/listes/ingredients', {
+      nomingredient,
+      categorie: nouvelleCategorie[idetape] || "autre",
+    }, avecToken());
+    setIngredients([...ingredients, res.data]);
+    ajouterIngredientEtape(idetape, res.data.idingredient, unitesPourCategorie(res.data.categorie)[0]);
+  };
+
+  const creerUstensile = async (idetape: string, nomustensile: string) => {
+    const res = await axios.post('/api/cocktail/listes/ustensiles', { nomustensile }, avecToken());
+    setUstensiles([...ustensiles, res.data]);
+    ajouterUstensileEtape(idetape, res.data.idustensile);
+  };
+
+  // Champ invalide relié à son message d'erreur
+  const etat = (champ: string) => ({
+    "aria-invalid": !!erreurs[champ],
+    "aria-describedby": erreurs[champ] ? `erreur-${champ}` : undefined,
+  });
+  const message = (champ: string) =>
+    erreurs[champ] && <p id={`erreur-${champ}`} className="champ__erreur">{erreurs[champ]}</p>;
+  const confirmation = (cle: string) =>
+    enregistre === cle && <span className="enregistre" role="status">Enregistré ✓</span>;
+
+  const statutChoisi = STATUTS.find((s) => s.valeur === statut);
+
   return (
-    <div>
-      <button onClick={() => navigate(-1)}>← Retour</button>
-      <h1>Modifier {nom}</h1>
-
-      <div>
-        <label>Nom</label>
-        <input value={nomcocktail} onChange={(e) => setNom(e.target.value)} />
-        {erreurs.nom && <p style={{ color: 'red' }}>{erreurs.nom}</p>}
+    <main className="page creation">
+      <div className="fiche__retour">
+        <button className="pill" onClick={() => navigate(-1)}>← Retour</button>
       </div>
+      <p className="surtitre">Modifier la recette</p>
+      <h1>{nom}</h1>
 
-      <div>
-        <label>Description</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-        {erreurs.description && <p style={{ color: 'red' }}>{erreurs.description}</p>}
-      </div>
+      <div className="creation__grille modification">
+        <div className="creation__form">
+          <div className="connexion__champ">
+            <label htmlFor="nom">Nom du cocktail</label>
+            <input id="nom" value={nomcocktail} onChange={(e) => setNom(e.target.value)} {...etat("nom")} />
+            {message("nom")}
+          </div>
 
-      <div>
-        <label>Difficulté</label>
-        <select value={difficulte} onChange={(e) => setDifficulte(e.target.value)}>
-          <option value="Facile">Facile</option>
-          <option value="Moyen">Moyen</option>
-          <option value="Difficile">Difficile</option>
-        </select>
-      </div>
+          <div className="connexion__champ">
+            <label htmlFor="description">Description</label>
+            <textarea id="description" className="creation__texte" value={description}
+              onChange={(e) => setDescription(e.target.value)} {...etat("description")} />
+            {message("description")}
+          </div>
 
-      <div>
-        <label>Statut</label>
-        {/* valeurs du client Prisma : publi_ = publié, priv_ = privé, archiv_ = archivé */}
-        <select value={statut} onChange={(e) => setStatut(e.target.value)}>
-          <option value="brouillon">Brouillon (visible par moi seul)</option>
-          <option value="publi_">Publié (visible par tous)</option>
-          <option value="priv_">Privé</option>
-          <option value="archiv_">Archivé</option>
-        </select>
-      </div>
-
-      <div>
-        <label>Avec alcool ?</label>
-        <input type="checkbox" checked={alcool} onChange={(e) => setAlcool(e.target.checked)} />
-      </div>
-
-      <div>
-        <label>Durée (minutes)</label>
-        <input type="number" value={duree} onChange={(e) => setDuree(parseInt(e.target.value))} min={1} />
-        {erreurs.duree && <p style={{ color: 'red' }}>{erreurs.duree}</p>}
-      </div>
-
-      <button onClick={handleSubmit}>Sauvegarder</button>
-      <button onClick={handleSupprimer} style={{ color: 'red', marginLeft: '10px' }}>Supprimer</button>
-      {erreurs.global && <p style={{ color: 'red' }}>{erreurs.global}</p>}
-
-      <button onClick={ajouterEtape}>+ Ajouter une étape</button> 
-
-      <h2>Étapes</h2>
-      {etapes.map((e, i) => {
-        const rechercheIngredient = recherchesIngredient[e.idetape] || "";
-        const rechercheUstensile = recherchesUstensile[e.idetape] || "";
-        const setRechercheIngredient = (v: string) => setRecherchesIngredient({ ...recherchesIngredient, [e.idetape]: v });
-        const setRechercheUstensile = (v: string) => setRecherchesUstensile({ ...recherchesUstensile, [e.idetape]: v });
-        return (
-        <div key={e.idetape} style={{ border: '1px solid #eee', padding: '10px', margin: '10px 0', borderRadius: '8px' }}>
-          <p>Étape {e.numeroetape}</p>
-          <textarea
-            value={e.descriptionetape}
-            onChange={(ev) => {
-              const copy = [...etapes];
-              copy[i].descriptionetape = ev.target.value;
-              setEtapes(copy);
-            }}
-            style={{ width: '100%' }}
-          />
-          <button onClick={async () => {
-            const token = localStorage.getItem("token");
-            await axios.put(`/api/cocktail/etape/${e.idetape}`, {
-              descriptionetape: e.descriptionetape,
-            }, { headers: { Authorization: `Bearer ${token}` } });
-            alert("Étape sauvegardée !");
-          }}>Sauvegarder étape</button>
-          <button onClick={async () => {
-            if (!confirm("Supprimer cette étape ?")) return;
-            const token = localStorage.getItem("token");
-            await axios.delete(`/api/cocktail/etape/${e.idetape}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            setEtapes(etapes.filter((et) => et.idetape !== e.idetape));
-          }} style={{ color: 'red', marginLeft: '10px' }}>Supprimer étape</button>
-
-          <h4>Ingrédients</h4>
-          {e.dosage.map((d, j) => (
-            <div key={j} style={{ display: 'flex', gap: '10px', alignItems: 'center', margin: '5px 0' }}>
-              <span>{d.ingredient.nomingredient}</span>
-              <input
-                type="number"
-                value={d.quantite || ""}
-                onChange={(ev) => {
-                  const copy = [...etapes];
-                  copy[i].dosage[j].quantite = parseFloat(ev.target.value);
-                  setEtapes(copy);
-                }}
-                style={{ width: '80px' }}
-              />
-              <select
-                value={d.unite}
-                onChange={(ev) => {
-                  const copy = [...etapes];
-                  copy[i].dosage[j].unite = ev.target.value;
-                  setEtapes(copy);
-                }}
-              >
-                {getUnites(d.idingredient).map((u) => (
-                  <option key={u} value={u}>{u}</option>
+          <div className="creation__ligne">
+            <div className="connexion__champ">
+              <span className="creation__label" id="label-difficulte">Difficulté</span>
+              <div className="champ__pills" role="group" aria-labelledby="label-difficulte">
+                {["Facile", "Moyen", "Difficile"].map((d) => (
+                  <button key={d} type="button" className={`pill pill--${d.toLowerCase()} ${difficulte === d ? "pill--active" : ""}`}
+                    aria-pressed={difficulte === d} onClick={() => setDifficulte(d)}>{d}</button>
                 ))}
-              </select>
-              <button onClick={async () => {
-                const token = localStorage.getItem("token");
-                await axios.put(`/api/cocktail/${idcocktail}/dosage/${d.idingredient}`, {
-                  quantite: d.quantite,
-                  unite: d.unite,
-                }, { headers: { Authorization: `Bearer ${token}` } });
-                alert("Ingrédient sauvegardé !");
-              }}>Sauvegarder</button>
+              </div>
             </div>
-          ))}
 
-          <input
-            placeholder="Rechercher un ingrédient..."
-            value={rechercheIngredient}
-            onChange={(ev) => setRechercheIngredient(ev.target.value)}
-          />
-          {rechercheIngredient && (
-            <div style={{ border: '1px solid #ccc', borderRadius: '5px', maxHeight: '150px', overflowY: 'auto' }}>
-              {ingredientsFiltres(rechercheIngredient).length > 0 ? (
-                ingredientsFiltres(rechercheIngredient).map((ing) => (
-                  <div
-                    key={ing.idingredient}
-                    onClick={() => {
-                      ajouterIngredientEtape(e.idetape, ing.idingredient, getUnites(ing.idingredient)[0]);
-                      setRechercheIngredient("");
-                    }}
-                    style={{ padding: '8px', cursor: 'pointer' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f0')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}
-                  >
-                    {ing.nomingredient}
-                  </div>
-                ))
-              ) : (
-                <div style={{ padding: '8px' }}>
-                  <p>Aucun résultat pour "{rechercheIngredient}"</p>
-                  <select
-                    id={`nouvelle-categorie-${e.idetape}`}
-                    defaultValue="autre"
-                    style={{ marginRight: '5px' }}
-                  >
-                    {['alcool', 'jus', 'sirop', 'soda', 'eau', 'fruit', 'autre'].map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                  <button onClick={async () => {
-                    const token = localStorage.getItem("token");
-                    const categorie = (document.getElementById(`nouvelle-categorie-${e.idetape}`) as HTMLSelectElement).value;
-                    const res = await axios.post('/api/cocktail/listes/ingredients', {
-                      nomingredient: rechercheIngredient,
-                      categorie,
-                    }, { headers: { Authorization: `Bearer ${token}` } });
-                    setIngredients([...ingredients, res.data]);
-                    ajouterIngredientEtape(e.idetape, res.data.idingredient, getUnites(res.data.idingredient)[0]);
-                    setRechercheIngredient("");
-                  }}>
-                    + Ajouter "{rechercheIngredient}"
-                  </button>
-                </div>
-              )}
+            <div className="connexion__champ">
+              <span className="creation__label" id="label-alcool">Alcool</span>
+              <div className="champ__pills" role="group" aria-labelledby="label-alcool">
+                <button type="button" className={`pill ${!alcool ? "pill--active" : ""}`} aria-pressed={!alcool} onClick={() => setAlcool(false)}>Sans alcool</button>
+                <button type="button" className={`pill ${alcool ? "pill--active" : ""}`} aria-pressed={alcool} onClick={() => setAlcool(true)}
+                  disabled={estMineur} aria-describedby={estMineur ? "aide-alcool" : undefined}>Avec alcool</button>
+              </div>
+              {estMineur && <p id="aide-alcool" className="connexion__aide">Réservé aux majeurs.</p>}
             </div>
-          )}
 
-          <h4>Ustensiles</h4>
-          {e.etape_ustensile.map((u, j) => (
-            <div key={j} style={{ display: 'flex', gap: '10px', alignItems: 'center', margin: '5px 0' }}>
-              <span>{u.ustensile.nomustensile}</span>
-              <button onClick={async () => {
-                const token = localStorage.getItem("token");
-                await axios.delete(`/api/cocktail/etape/${e.idetape}/ustensile/${u.idustensile}`, {
-                  headers: { Authorization: `Bearer ${token}` },
-                });
-                const copy = [...etapes];
-                copy[i].etape_ustensile = copy[i].etape_ustensile.filter((_, k) => k !== j);
-                setEtapes(copy);
-              }} style={{ color: 'red' }}>Supprimer</button>
+            <div className="connexion__champ">
+              <label htmlFor="duree">Durée</label>
+              <div className="creation__duree">
+                <input id="duree" type="number" value={Number.isNaN(duree) ? "" : duree} onChange={(e) => setDuree(parseInt(e.target.value))} min={1} {...etat("duree")} />
+                <span aria-hidden="true">min</span>
+              </div>
+              {message("duree")}
             </div>
-          ))}
-
-          <input
-            placeholder="Rechercher un ustensile..."
-            value={rechercheUstensile}
-            onChange={(ev) => setRechercheUstensile(ev.target.value)}
-          />
-          {rechercheUstensile && (
-            <div style={{ border: '1px solid #ccc', borderRadius: '5px', maxHeight: '150px', overflowY: 'auto' }}>
-              {ustensilesFiltres(rechercheUstensile).length > 0 ? (
-                ustensilesFiltres(rechercheUstensile).map((u) => (
-                  <div
-                    key={u.idustensile}
-                    onClick={() => {
-                      ajouterUstensileEtape(e.idetape, u.idustensile);
-                      setRechercheUstensile("");
-                    }}
-                    style={{ padding: '8px', cursor: 'pointer' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f0')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}
-                  >
-                    {u.nomustensile}
-                  </div>
-                ))
-              ) : (
-                <div style={{ padding: '8px' }}>
-                  <p>Aucun résultat pour "{rechercheUstensile}"</p>
-                  <button onClick={async () => {
-                    const token = localStorage.getItem("token");
-                    const res = await axios.post('/api/cocktail/listes/ustensiles', {
-                      nomustensile: rechercheUstensile,
-                    }, { headers: { Authorization: `Bearer ${token}` } });
-                    setUstensiles([...ustensiles, res.data]);
-                    ajouterUstensileEtape(e.idetape, res.data.idustensile);
-                    setRechercheUstensile("");
-                  }}>
-                    + Ajouter "{rechercheUstensile}"
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+          </div>
         </div>
-        );
-      })}
-    </div>
+
+        <aside className="apercu publication" aria-label="Publication">
+          <p className="apercu__titre" id="label-statut">Statut</p>
+          <div className="statuts" role="group" aria-labelledby="label-statut">
+            {STATUTS.map((s) => {
+              // Sans étape, on ne peut pas choisir un statut publié (sauf s'il l'est déjà, pour pouvoir en sortir)
+              const bloque = etapes.length === 0 && STATUTS_PUBLIES.includes(s.valeur) && statut !== s.valeur;
+              return (
+                <button key={s.valeur} type="button" className={`pill ${statut === s.valeur ? "pill--active" : ""}`}
+                  aria-pressed={statut === s.valeur} onClick={() => setStatut(s.valeur)}
+                  disabled={bloque} aria-describedby={bloque ? "aide-statut" : undefined}>{s.libelle}</button>
+              );
+            })}
+          </div>
+          {etapes.length === 0 && (
+            <p id="aide-statut" className="publication__aide publication__aide--alerte">Ajoute au moins une étape pour publier, même en privé.</p>
+          )}
+          {statutChoisi && <p className="publication__aide">{statutChoisi.aide}</p>}
+
+          {erreurs.global && <p role="alert" className="connexion__erreur">{erreurs.global}</p>}
+          <button type="button" className="pill pill--mangue connexion__envoi" onClick={handleSubmit}>Enregistrer les modifications</button>
+
+          <div className="publication__danger">
+            <button type="button" className="pill pill--danger" onClick={handleSupprimer}>Supprimer le cocktail</button>
+          </div>
+        </aside>
+      </div>
+
+      <section className="modification__etapes" aria-labelledby="titre-etapes">
+        <h2 id="titre-etapes">Étapes</h2>
+        <p className="creation__vide">Chaque modification d'étape s'enregistre avec son propre bouton.</p>
+
+        <ol className="etapes-form">
+          {etapes.map((e, i) => {
+            const rechercheIngredient = recherchesIngredient[e.idetape] || "";
+            const rechercheUstensile = recherchesUstensile[e.idetape] || "";
+            const setRechercheIngredient = (v: string) => setRecherchesIngredient({ ...recherchesIngredient, [e.idetape]: v });
+            const setRechercheUstensile = (v: string) => setRecherchesUstensile({ ...recherchesUstensile, [e.idetape]: v });
+            return (
+              <li key={e.idetape} className="etape-form" aria-label={`Étape ${e.numeroetape}`}>
+                <div className="etape-form__entete">
+                  <h3>Étape {e.numeroetape}</h3>
+                  <button type="button" className="btn btn--danger" onClick={() => supprimerEtape(e)}>Supprimer l'étape</button>
+                </div>
+
+                <label className="sr-only" htmlFor={`etape-${e.idetape}`}>Description de l'étape {e.numeroetape}</label>
+                <textarea id={`etape-${e.idetape}`} className="creation__texte" value={e.descriptionetape}
+                  onChange={(ev) => {
+                    const copy = [...etapes];
+                    copy[i] = { ...copy[i], descriptionetape: ev.target.value };
+                    setEtapes(copy);
+                  }} />
+                <div className="actions">
+                  <button type="button" className="btn btn--plein" onClick={() => sauvegarderEtape(e)}>Enregistrer l'étape</button>
+                  {confirmation(e.idetape)}
+                </div>
+
+                {erreurs[`etape-${e.idetape}`] && <p role="alert" className="connexion__erreur">{erreurs[`etape-${e.idetape}`]}</p>}
+
+                <div className="etape-form__colonnes">
+                  <div>
+                    <h4>Ingrédients</h4>
+                    <ul className="dosages-form">
+                      {e.dosage.map((d, j) => (
+                        <li key={d.idingredient}>
+                          <span className="dosages-form__nom">{d.ingredient.nomingredient}</span>
+                          <input type="number" aria-label={`Quantité de ${d.ingredient.nomingredient}`} value={d.quantite || ""}
+                            onChange={(ev) => {
+                              const copy = [...etapes];
+                              // copie de l'étape ET de sa liste de dosages : ne jamais modifier l'état en place
+                              copy[i] = { ...copy[i], dosage: copy[i].dosage.map((x, k) => (k === j ? { ...x, quantite: parseFloat(ev.target.value) } : x)) };
+                              setEtapes(copy);
+                            }} />
+                          <select aria-label={`Unité de ${d.ingredient.nomingredient}`} value={d.unite}
+                            onChange={(ev) => {
+                              const copy = [...etapes];
+                              // copie de l'étape ET de sa liste de dosages : ne jamais modifier l'état en place
+                              copy[i] = { ...copy[i], dosage: copy[i].dosage.map((x, k) => (k === j ? { ...x, unite: ev.target.value } : x)) };
+                              setEtapes(copy);
+                            }}>
+                            {unitesPourCategorie(ingredients.find((x) => x.idingredient === d.idingredient)?.categorie).map((u) => <option key={u} value={u}>{u}</option>)}
+                          </select>
+                          <button type="button" className="btn" aria-label={`Enregistrer ${d.ingredient.nomingredient}`}
+                            onClick={() => sauvegarderDosage(e.idetape, d)}>Enregistrer</button>
+                          <button type="button" className="dosages-form__retirer" aria-label={`Retirer ${d.ingredient.nomingredient}`}
+                            onClick={() => retirerIngredient(i, e.idetape, d)}>×</button>
+                          {confirmation(`${e.idetape}-${d.idingredient}`)}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="selecteur__champ">
+                      <input className="etape-form__recherche" aria-label={`Rechercher un ingrédient pour l'étape ${e.numeroetape}`}
+                        placeholder="Ajouter un ingrédient…" value={rechercheIngredient} onChange={(ev) => setRechercheIngredient(ev.target.value)} />
+                      {rechercheIngredient && (
+                        ingredientsFiltres(rechercheIngredient).length > 0 ? (
+                          <ul className="suggestions">
+                            {ingredientsFiltres(rechercheIngredient).map((ing) => (
+                              <li key={ing.idingredient}>
+                                <button type="button" onClick={() => {
+                                  ajouterIngredientEtape(e.idetape, ing.idingredient, unitesPourCategorie(ing.categorie)[0]);
+                                  setRechercheIngredient("");
+                                }}>{ing.nomingredient}</button>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="nouveau">
+                            <p>Aucun résultat pour « {rechercheIngredient} »</p>
+                            <label htmlFor={`categorie-${e.idetape}`}>Catégorie</label>
+                            <select id={`categorie-${e.idetape}`} value={nouvelleCategorie[e.idetape] || "autre"}
+                              onChange={(ev) => setNouvelleCategorie({ ...nouvelleCategorie, [e.idetape]: ev.target.value })}>
+                              {['alcool', 'jus', 'sirop', 'soda', 'eau', 'fruit', 'autre'].map((cat) => (
+                                <option key={cat} value={cat}>{cat}</option>
+                              ))}
+                            </select>
+                            <button type="button" className="btn btn--plein" onClick={() => {
+                              creerIngredient(e.idetape, rechercheIngredient);
+                              setRechercheIngredient("");
+                            }}>+ Créer « {rechercheIngredient} »</button>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4>Ustensiles</h4>
+                    <div className="selecteur ustensiles-form">
+                      {e.etape_ustensile.map((u) => (
+                        <span key={u.idustensile} className="puce">
+                          {u.ustensile.nomustensile}
+                          <button type="button" aria-label={`Retirer ${u.ustensile.nomustensile}`}
+                            onClick={() => retirerUstensile(i, e.idetape, u.idustensile)}>×</button>
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="selecteur__champ ustensiles-form">
+                      <input className="etape-form__recherche" aria-label={`Rechercher un ustensile pour l'étape ${e.numeroetape}`}
+                        placeholder="Ajouter un ustensile…" value={rechercheUstensile} onChange={(ev) => setRechercheUstensile(ev.target.value)} />
+                      {rechercheUstensile && (
+                        ustensilesFiltres(rechercheUstensile).length > 0 ? (
+                          <ul className="suggestions">
+                            {ustensilesFiltres(rechercheUstensile).map((u) => (
+                              <li key={u.idustensile}>
+                                <button type="button" onClick={() => {
+                                  ajouterUstensileEtape(e.idetape, u.idustensile);
+                                  setRechercheUstensile("");
+                                }}>{u.nomustensile}</button>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="nouveau">
+                            <p>Aucun résultat pour « {rechercheUstensile} »</p>
+                            <button type="button" className="btn btn--plein" onClick={() => {
+                              creerUstensile(e.idetape, rechercheUstensile);
+                              setRechercheUstensile("");
+                            }}>+ Créer « {rechercheUstensile} »</button>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+
+        {nouvelleEtape === null ? (
+          <button type="button" className="pill creation__ajouter" onClick={() => { setNouvelleEtape(""); setErreurs({}); }}>
+            + Ajouter une étape
+          </button>
+        ) : (
+          <div className="etape-form nouvelle-etape">
+            <h3>Étape {etapes.length + 1}</h3>
+            <label className="sr-only" htmlFor="nouvelle-etape">Description de la nouvelle étape</label>
+            <textarea id="nouvelle-etape" className="creation__texte" value={nouvelleEtape} autoFocus
+              placeholder="Ex. : Servir bien frais avec une feuille de menthe"
+              onChange={(ev) => setNouvelleEtape(ev.target.value)} {...etat("nouvelleEtape")} />
+            {message("nouvelleEtape")}
+            <div className="actions">
+              <button type="button" className="btn btn--plein" onClick={ajouterEtape}>Ajouter l'étape</button>
+              <button type="button" className="btn" onClick={() => { setNouvelleEtape(null); setErreurs({}); }}>Annuler</button>
+            </div>
+          </div>
+        )}
+      </section>
+    </main>
   );
 }
 

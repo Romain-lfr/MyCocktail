@@ -68,7 +68,10 @@ describe('AuthService', () => {
       prisma.compte.findFirst.mockResolvedValue(compte(30));
       await service.login('Romain', 'MotDePasse123');
       const conditions = prisma.compte.findFirst.mock.calls[0][0].where.OR;
-      expect(conditions[0].pseudo).toEqual({ equals: 'Romain', mode: 'insensitive' });
+      expect(conditions[0].pseudo).toEqual({
+        equals: 'Romain',
+        mode: 'insensitive',
+      });
       expect(conditions[1].mailcompte).toBe('romain');
     });
 
@@ -76,7 +79,10 @@ describe('AuthService', () => {
       prisma.compte.findFirst.mockResolvedValue(compte(16));
       const res = await service.login('romain', 'MotDePasse123');
       expect(res).toEqual({ access_token: 'token-de-test', estMineur: true });
-      expect(jwt.sign.mock.calls[0][0]).toMatchObject({ sub: 'CPT-00001', estMineur: true });
+      expect(jwt.sign.mock.calls[0][0]).toMatchObject({
+        sub: 'CPT-00001',
+        estMineur: true,
+      });
     });
 
     it('marque un compte de 30 ans comme majeur', async () => {
@@ -90,22 +96,41 @@ describe('AuthService', () => {
     it('refuse un pseudo déjà utilisé', async () => {
       prisma.compte.findUnique.mockResolvedValueOnce({ idcompte: 'CPT-00001' });
       await expect(
-        service.register('romain', 'r@mycocktail.com', 'MotDePasse123', '2000-01-01'),
+        service.register(
+          'romain',
+          'r@mycocktail.com',
+          'MotDePasse123',
+          '2000-01-01',
+        ),
       ).rejects.toThrow(new ConflictException('Ce pseudo est déjà utilisé'));
     });
 
     it('refuse un email déjà utilisé', async () => {
-      prisma.compte.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({ idcompte: 'CPT-00001' });
+      prisma.compte.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ idcompte: 'CPT-00001' });
       await expect(
-        service.register('nouveau', 'R@MyCocktail.com', 'MotDePasse123', '2000-01-01'),
+        service.register(
+          'nouveau',
+          'R@MyCocktail.com',
+          'MotDePasse123',
+          '2000-01-01',
+        ),
       ).rejects.toThrow(new ConflictException('Cet email est déjà utilisé'));
-      expect(prisma.compte.findUnique.mock.calls[1][0].where.mailcompte).toBe('r@mycocktail.com');
+      expect(prisma.compte.findUnique.mock.calls[1][0].where.mailcompte).toBe(
+        'r@mycocktail.com',
+      );
     });
 
     it('inscrit le compte via inscrire_compte', async () => {
       prisma.compte.findUnique.mockResolvedValue(null);
       prisma.$queryRaw.mockResolvedValue([{ idcompte: 'CPT-00002' }]);
-      await service.register('nouveau', 'n@mycocktail.com', 'MotDePasse123', '2000-01-01');
+      await service.register(
+        'nouveau',
+        'n@mycocktail.com',
+        'MotDePasse123',
+        '2000-01-01',
+      );
       expect(prisma.$queryRaw).toHaveBeenCalled();
     });
   });

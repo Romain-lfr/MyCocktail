@@ -50,6 +50,9 @@ function repondre(donnees: unknown, { favori = false } = {}) {
   });
 }
 
+// Nombre de lectures de la fiche (1 au chargement, +1 après chaque action sur les avis)
+const appelsFiche = () => api.get.mock.calls.filter((c) => c[0] === '/api/cocktail/Pi%C3%B1a%20Colada').length;
+
 async function ouvrir(donnees: unknown = cocktail(), options?: { favori?: boolean }) {
   repondre(donnees, options);
   const rendu = rendre(<CocktailDetail />, { route: '/cocktail/Pi%C3%B1a%20Colada', path: '/cocktail/:nom', depuis: '/' });
@@ -210,6 +213,26 @@ describe('CocktailDetail', () => {
       expect(screen.getAllByText('autre, le 01/03/2024')).toHaveLength(2);
     });
 
+    it('auteur de la recette : pas de « Laisser un avis », lien pour modifier', async () => {
+      connecter({ sub: 'CPT-00009' }); // CPT-00009 = auteur du cocktail de test
+      const { user } = await ouvrir();
+      expect(screen.getByText('C\'est ta recette')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Laisser un avis' })).not.toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Modifier ma recette' }));
+      expect(emplacement()).toBe('/cocktail/Pi%C3%B1a%20Colada/modifier');
+    });
+
+    it('signale les réponses écrites par l’auteur de la recette', async () => {
+      await ouvrir(cocktail({
+        avis: [avisDe('AVS-00001', 'CPT-00002', 4, [
+          reponse('REP-00001', 'CPT-00009', 'Merci beaucoup !'),
+          reponse('REP-00002', 'CPT-00003', 'Pareil pour moi'),
+        ])],
+      }));
+      expect(screen.getAllByText('Auteur de la recette')).toHaveLength(1);
+      expect(screen.getByText('Auteur de la recette').closest('.reponse')).toHaveTextContent('Merci beaucoup !');
+    });
+
     it('« Laisser un avis » mène au formulaire (nom encodé)', async () => {
       connecter();
       const { user } = await ouvrir();
@@ -231,13 +254,17 @@ describe('CocktailDetail', () => {
       await user.selectOptions(screen.getByRole('combobox', { name: 'Note' }), '2');
       await user.clear(screen.getByRole('textbox', { name: 'Titre' }));
       await user.type(screen.getByRole('textbox', { name: 'Titre' }), 'Finalement bof');
+      // L'API renvoie désormais l'avis modifié : la fiche est relue, pas rechargée
+      repondre(cocktail({ avis: [{ ...avisDe('AVS-00001', 'CPT-00001', 2), titreavis: 'Finalement bof' }] }));
       await user.click(screen.getByRole('button', { name: 'Sauvegarder' }));
       expect(api.put).toHaveBeenCalledWith(
         '/api/avis/AVS-00001',
         { noteavis: 2, titreavis: 'Finalement bof', descriptionavis: 'Texte AVS-00001' },
         expect.any(Object),
       );
-      await waitFor(() => expect(window.location.reload).toHaveBeenCalled());
+      expect(await screen.findByText('Finalement bof')).toBeInTheDocument();
+      expect(appelsFiche()).toBe(2);
+      expect(window.location.reload).not.toHaveBeenCalled();
     });
 
     it('annuler la modification de l’avis', async () => {
@@ -254,8 +281,11 @@ describe('CocktailDetail', () => {
       vi.mocked(window.confirm).mockReturnValueOnce(false);
       await user.click(screen.getByRole('button', { name: 'Supprimer' }));
       expect(api.delete).not.toHaveBeenCalled();
+      repondre(cocktail({ avis: [] }));
       await user.click(screen.getByRole('button', { name: 'Supprimer' }));
       expect(api.delete).toHaveBeenCalledWith('/api/avis/AVS-00001', expect.any(Object));
+      expect(await screen.findByText('Aucun avis pour le moment.')).toBeInTheDocument();
+      expect(window.location.reload).not.toHaveBeenCalled();
     });
   });
 
@@ -265,9 +295,12 @@ describe('CocktailDetail', () => {
       const { user } = await ouvrir(cocktail({ avis: [avisDe('AVS-00001', 'CPT-00002', 4)] }));
       await user.click(screen.getByRole('button', { name: 'Répondre' }));
       await user.type(screen.getByRole('textbox', { name: 'Votre réponse' }), 'Merci pour l’astuce');
+      repondre(cocktail({ avis: [avisDe('AVS-00001', 'CPT-00002', 4, [reponse('REP-00001', 'CPT-00001', 'Merci pour l’astuce')])] }));
       await user.click(screen.getByRole('button', { name: 'Envoyer' }));
       expect(api.post).toHaveBeenCalledWith('/api/avis/AVS-00001/reponse', { commentaire: 'Merci pour l’astuce' }, expect.any(Object));
-      await waitFor(() => expect(window.location.reload).toHaveBeenCalled());
+      expect(await screen.findByText('Merci pour l’astuce')).toBeInTheDocument();
+      expect(screen.queryByRole('textbox', { name: 'Votre réponse' })).not.toBeInTheDocument();
+      expect(window.location.reload).not.toHaveBeenCalled();
     });
 
     it('n’envoie pas une réponse de moins de 2 caractères', async () => {
@@ -328,8 +361,11 @@ describe('CocktailDetail', () => {
       const champ = screen.getByRole('textbox', { name: 'Modifier la réponse' });
       await user.clear(champ);
       await user.type(champ, 'Réponse corrigée');
+      repondre(cocktail({ avis: [avisDe('AVS-00001', 'CPT-00002', 4, [reponse('REP-00001', 'CPT-00001', 'Réponse corrigée')])] }));
       await user.click(screen.getByRole('button', { name: 'Sauvegarder' }));
       expect(api.put).toHaveBeenCalledWith('/api/avis/reponse/REP-00001', { commentaire: 'Réponse corrigée' }, expect.any(Object));
+      expect(await screen.findByText('Réponse corrigée')).toBeInTheDocument();
+      expect(window.location.reload).not.toHaveBeenCalled();
     });
 
     it('annuler la modification de sa réponse', async () => {
@@ -348,8 +384,11 @@ describe('CocktailDetail', () => {
       vi.mocked(window.confirm).mockReturnValueOnce(false);
       await user.click(screen.getByRole('button', { name: 'Supprimer' }));
       expect(api.delete).not.toHaveBeenCalled();
+      repondre(cocktail({ avis: [avisDe('AVS-00001', 'CPT-00002', 4)] }));
       await user.click(screen.getByRole('button', { name: 'Supprimer' }));
       expect(api.delete).toHaveBeenCalledWith('/api/avis/reponse/REP-00001', expect.any(Object));
+      await waitFor(() => expect(screen.queryByText('Ma réponse')).not.toBeInTheDocument());
+      expect(window.location.reload).not.toHaveBeenCalled();
     });
   });
 });

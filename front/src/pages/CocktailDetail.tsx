@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { GlasseY, GlasseU } from "./Logo";
 import { idCompteDuToken } from "../utils/token";
 import "./mycocktail.css";
+import { avecToken, tokenSiConnecte } from "../utils/api";
+import { formatNote, formatQuantite, noteMoyenne } from "../utils/format";
 
 interface Reponse {
   idreponse: string;
@@ -52,7 +54,6 @@ interface Cocktail {
   avis: Avis[];
 }
 
-const formatQuantite = (q: number) => Number(q).toLocaleString("fr-FR", { maximumFractionDigits: 2 });
 // « Feuilles de menthe (6 feuilles) » : évite « 6 feuilles Feuilles de menthe »
 const formatDosage = (d: Dosage) => `${d.ingredient.nomingredient} (${formatQuantite(d.quantite)} ${d.unite})`;
 
@@ -64,7 +65,7 @@ function CocktailDetail() {
   const token = localStorage.getItem("token");
   const userIdcompte = idCompteDuToken(token);
   const [introuvable, setIntrouvable] = useState(false);
-  const auth = { headers: { Authorization: `Bearer ${token}` } };
+  const auth = avecToken();
 
   const [editAvisId, setEditAvisId] = useState<string | null>(null);
   const [editNote, setEditNote] = useState(5);
@@ -80,6 +81,18 @@ function CocktailDetail() {
   const basculerEtape = (id: string) =>
     setFaites((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id]));
 
+  // (Re)charge la fiche : au montage, puis après chaque action sur les avis, sans recharger toute la page
+  const charger = useCallback(() =>
+    axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, tokenSiConnecte())
+      .then((res) => {
+        if (res.data) setCocktail(res.data);
+        else setIntrouvable(true);
+      })
+      .catch((err) => {
+        if (err.response?.status === 403) navigate("/login");
+        else setIntrouvable(true);
+      }), [nom, token, navigate]);
+
   const handleSauvegarderAvis = async () => {
     await axios.put(`/api/avis/${editAvisId}`, {
       noteavis: editNote,
@@ -87,25 +100,25 @@ function CocktailDetail() {
       descriptionavis: editDescription,
     }, auth);
     setEditAvisId(null);
-    window.location.reload();
+    await charger();
   };
 
   const handleSupprimerAvis = async (idavis: string) => {
     if (!confirm("Supprimer cet avis ?")) return;
     await axios.delete(`/api/avis/${idavis}`, auth);
-    window.location.reload();
+    await charger();
   };
 
   const sauvegarderReponse = async (idreponse: string) => {
     await axios.put(`/api/avis/reponse/${idreponse}`, { commentaire: editCommentaire }, auth);
     setEditReponseId(null);
-    window.location.reload();
+    await charger();
   };
 
   const supprimerReponse = async (idreponse: string) => {
     if (!confirm("Supprimer cette réponse ?")) return;
     await axios.delete(`/api/avis/reponse/${idreponse}`, auth);
-    window.location.reload();
+    await charger();
   };
 
   const envoyerReponse = async (idavis: string, parent: string | null) => {
@@ -115,7 +128,7 @@ function CocktailDetail() {
     setReponseAvisId(null);
     setReponseParentId(null);
     setCommentaire("");
-    window.location.reload();
+    await charger();
   };
 
   const annulerReponse = () => {
@@ -128,7 +141,7 @@ function CocktailDetail() {
     if (!token || !cocktail) return;
     axios.get(`/api/compte/favori/${cocktail.idcocktail}`, auth)
       .then((res) => setIsFavori(res.data.isFavori));
-  }, [cocktail]);
+  }, [cocktail?.idcocktail]);
 
   const toggleFavori = async () => {
     if (!token) { navigate("/login"); return; }
@@ -141,19 +154,7 @@ function CocktailDetail() {
     }
   };
 
-  useEffect(() => {
-    axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then((res) => {
-        if (res.data) setCocktail(res.data);
-        else setIntrouvable(true);
-      })
-      .catch((err) => {
-        if (err.response?.status === 403) navigate("/login");
-        else setIntrouvable(true);
-      });
-  }, [nom]);
+  useEffect(() => { charger(); }, [charger]);
 
   if (!cocktail) {
     return (
@@ -167,10 +168,9 @@ function CocktailDetail() {
     cocktail.etape.flatMap((e) => e.etape_ustensile.map((u) => u.ustensile.nomustensile))
   ));
 
-  const moyenne = cocktail.avis.length
-    ? cocktail.avis.reduce((s, a) => s + a.noteavis, 0) / cocktail.avis.length
-    : 0;
-  const moyenneTexte = moyenne.toFixed(1).replace(".", ",");
+  const moyenneTexte = formatNote(noteMoyenne(cocktail.avis));
+  // Le compte connecté est l'auteur : il ne peut pas noter sa propre recette (refusé aussi par l'API)
+  const estAuteur = !!userIdcompte && userIdcompte === cocktail.idcompte;
 
   const formReponse = (a: Avis, parent: string | null) => (
     <div className="form-inline">
@@ -194,7 +194,10 @@ function CocktailDetail() {
     ) : (
       <>
         <p>{r.commentaire}</p>
-        <p className="avis__auteur">{r.compte.pseudo}</p>
+        <p className="avis__auteur">
+          {r.compte.pseudo}
+          {r.idcompte === cocktail.idcompte && <span className="badge-auteur">Auteur de la recette</span>}
+        </p>
         <div className="actions">
           {peutRepondre && token && userIdcompte !== r.idcompte && (
             <button className="btn" onClick={() => { setReponseAvisId(a.idavis); setReponseParentId(r.idreponse); setCommentaire(""); }}>Répondre</button>
@@ -312,7 +315,13 @@ function CocktailDetail() {
               <p className="fiche__moyenne">{moyenneTexte}<small>/5</small></p>
             )}
             <p>{cocktail.avis.length > 0 ? `${cocktail.avis.length} avis` : "Aucun avis pour le moment."}</p>
-            {token ? (
+            {estAuteur ? (
+              <div className="fiche__auteur">
+                <p className="fiche__auteur-titre">C'est ta recette</p>
+                <p>Tu ne peux pas la noter toi-même, mais tu peux répondre aux avis.</p>
+                <button className="pill" onClick={() => navigate(`/cocktail/${encodeURIComponent(nom!)}/modifier`)}>Modifier ma recette</button>
+              </div>
+            ) : token ? (
               <button className="pill pill--mangue" onClick={() => navigate(`/cocktail/${encodeURIComponent(nom!)}/avis`)}>Laisser un avis</button>
             ) : (
               <p className="fiche__connexion"><Link to="/login">Connecte-toi</Link> pour laisser un avis.</p>

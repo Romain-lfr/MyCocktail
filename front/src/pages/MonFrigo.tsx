@@ -1,6 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import CarteRecette from "./CarteRecette";
+import type { RecetteResume } from "./CarteRecette";
+import { GlasseU } from "./Logo";
+import "./mycocktail.css";
+import { avecToken } from "../utils/api";
+import { unitesPourCategorie } from "../utils/unites";
+import { formatQuantite } from "../utils/format";
 
 interface FrigoComposition {
   idingredient: string;
@@ -9,16 +16,9 @@ interface FrigoComposition {
   ingredient: { nomingredient: string; categorie: string };
 }
 
-interface Cocktail {
-  idcocktail: string;
-  nomcocktail: string;
-  image: { urlimage: string }[];
-  avis: { noteavis: number }[];
-}
-
 function MonFrigo() {
-  const [composition, setComposition] = useState<FrigoComposition[]>([]);
-  const [cocktails, setCocktails] = useState<Cocktail[]>([]);
+  const [composition, setComposition] = useState<FrigoComposition[] | null>(null);
+  const [cocktails, setCocktails] = useState<RecetteResume[] | null>(null);
   const [ingredients, setIngredients] = useState<{ idingredient: string; nomingredient: string; categorie: string }[]>([]);
   const [recherche, setRecherche] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
@@ -27,138 +27,153 @@ function MonFrigo() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
-  const getUnites = (categorie: string): string[] => {
-    switch (categorie) {
-      case 'alcool': case 'jus': case 'sirop': case 'soda': case 'eau':
-        return ['cl', 'ml', 'l'];
-      case 'fruit': return ['pièce', 'tranche', 'g'];
-      case 'autre': return ['morceau', 'feuille', 'pincée', 'g'];
-      default: return ['cl', 'ml', 'l'];
-    }
-  };
+  // Relit le frigo et les cocktails réalisables (qui en dépendent) sans recharger la page
+  const chargerFrigo = useCallback(() => Promise.all([
+    axios.get("/api/compte/frigo", avecToken())
+      .then((res) => setComposition(res.data.frigo_composition)),
+    axios.get("/api/compte/frigo/cocktails", avecToken())
+      .then((res) => setCocktails(res.data)),
+  ]), []);
 
   useEffect(() => {
     if (!token) { navigate("/login"); return; }
-
-    axios.get("/api/compte/frigo", { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => setComposition(res.data.frigo_composition));
-
-    axios.get("/api/compte/frigo/cocktails", { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => setCocktails(res.data));
-
+    chargerFrigo();
     axios.get("/api/cocktail/listes/ingredients")
       .then((res) => setIngredients(res.data));
-  }, []);
+  }, [token, navigate, chargerFrigo]);
 
   const handleAjouter = async (idingredient: string, categorie: string) => {
-    const unite = getUnites(categorie)[0];
+    const unite = unitesPourCategorie(categorie)[0];
     await axios.post(`/api/compte/frigo/${idingredient}`, {
       quantite: 1,
       unite,
-    }, { headers: { Authorization: `Bearer ${token}` } });
+    }, avecToken());
     setRecherche("");
-    window.location.reload();
+    await chargerFrigo();
   };
 
   const handleModifier = async (idingredient: string) => {
     await axios.post(`/api/compte/frigo/${idingredient}`, {
       quantite: editQuantite,
       unite: editUnite,
-    }, { headers: { Authorization: `Bearer ${token}` } });
+    }, avecToken());
     setEditId(null);
-    window.location.reload();
+    await chargerFrigo();
   };
 
   const handleSupprimer = async (idingredient: string) => {
     if (!confirm("Supprimer cet ingrédient du frigo ?")) return;
-    await axios.delete(`/api/compte/frigo/${idingredient}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setComposition(composition.filter((c) => c.idingredient !== idingredient));
+    await axios.delete(`/api/compte/frigo/${idingredient}`, avecToken());
+    setComposition((liste) => (liste ?? []).filter((c) => c.idingredient !== idingredient));
+    // Un cocktail peut ne plus être réalisable sans cet ingrédient
+    axios.get("/api/compte/frigo/cocktails", avecToken())
+      .then((res) => setCocktails(res.data));
   };
 
+  const contenu = composition ?? [];
   const ingredientsFiltres = ingredients
     .filter((i) => i.nomingredient.toLowerCase().includes(recherche.toLowerCase()))
-    .filter((i) => !composition.find((c) => c.idingredient === i.idingredient));
+    .filter((i) => !contenu.find((c) => c.idingredient === i.idingredient))
+    .slice(0, 8);
 
-  const getMoyenne = (c: Cocktail) =>
-    c.avis.length ? c.avis.reduce((s, av) => s + av.noteavis, 0) / c.avis.length : 0;
+  const nbIng = contenu.length;
+  const nbCocktails = cocktails?.length ?? 0;
 
   return (
-    <div>
-      <button onClick={() => navigate("/compte")}>← Retour</button>
-      <h1>Mon frigo</h1>
+    <main className="page">
+      <div className="fiche__retour">
+        <button className="pill" onClick={() => navigate("/compte")}>← Retour</button>
+      </div>
 
-      {/* Ajouter un ingrédient */}
-      <h2>Ajouter un ingrédient</h2>
-      <input
-        placeholder="Rechercher un ingrédient..."
-        value={recherche}
-        onChange={(e) => setRecherche(e.target.value)}
-      />
-      {recherche && (
-        <div style={{ border: '1px solid #ccc', borderRadius: '5px', maxHeight: '150px', overflowY: 'auto' }}>
-          {ingredientsFiltres.length > 0 ? (
-            ingredientsFiltres.map((i) => (
-              <div
-                key={i.idingredient}
-                onClick={() => handleAjouter(i.idingredient, i.categorie)}
-                style={{ padding: '8px', cursor: 'pointer' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f0f0')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}
-              >
-                {i.nomingredient}
+      <header className="espace-entete">
+        <div>
+          <p className="surtitre">Mon espace</p>
+          <h1>Mon frigo</h1>
+          {composition && cocktails && (
+            <p className="espace-entete__compte">
+              {nbIng} ingrédient{nbIng > 1 ? "s" : ""} · {nbCocktails} cocktail{nbCocktails > 1 ? "s" : ""} réalisable{nbCocktails > 1 ? "s" : ""}
+            </p>
+          )}
+        </div>
+      </header>
+
+      <div className="monfrigo">
+        <section className="monfrigo__contenu" aria-labelledby="titre-frigo">
+          <h2 id="titre-frigo">Dans mon frigo</h2>
+
+          <div className="selecteur__champ">
+            <label className="sr-only" htmlFor="recherche-frigo">Ajouter un ingrédient au frigo</label>
+            <input id="recherche-frigo" className="etape-form__recherche" placeholder="Ajouter un ingrédient…"
+              value={recherche} onChange={(e) => setRecherche(e.target.value)} />
+            {recherche && (
+              ingredientsFiltres.length > 0 ? (
+                <ul className="suggestions">
+                  {ingredientsFiltres.map((i) => (
+                    <li key={i.idingredient}>
+                      <button type="button" onClick={() => handleAjouter(i.idingredient, i.categorie)}>{i.nomingredient}</button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="monfrigo__aucun">Aucun résultat</p>
+              )
+            )}
+          </div>
+
+          {composition && nbIng === 0 && (
+            <p className="monfrigo__vide">Frigo vide ! Ajoute ce que tu as sous la main pour découvrir ce que tu peux préparer.</p>
+          )}
+
+          <ul className="dosages monfrigo__liste">
+            {contenu.map((c) => {
+              const nom = c.ingredient.nomingredient;
+              return editId === c.idingredient ? (
+                <li key={c.idingredient} className="monfrigo__edition">
+                  <span className="dosages__nom">{nom}</span>
+                  <input type="number" aria-label={`Quantité de ${nom}`} value={Number.isNaN(editQuantite) ? "" : editQuantite}
+                    onChange={(e) => setEditQuantite(parseFloat(e.target.value))} />
+                  <select aria-label={`Unité de ${nom}`} value={editUnite} onChange={(e) => setEditUnite(e.target.value)}>
+                    {unitesPourCategorie(c.ingredient.categorie).map((u) => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                  <span className="actions">
+                    <button className="btn btn--plein" onClick={() => handleModifier(c.idingredient)}>Enregistrer</button>
+                    <button className="btn" onClick={() => setEditId(null)}>Annuler</button>
+                  </span>
+                </li>
+              ) : (
+                <li key={c.idingredient}>
+                  <span className="dosages__nom">{nom}</span>
+                  <span className="dosages__trait" aria-hidden="true" />
+                  <span className="dosages__qte">{formatQuantite(c.quantite)}<small>{c.unite}</small></span>
+                  <button className="monfrigo__icone" aria-label={`Modifier ${nom}`}
+                    onClick={() => { setEditId(c.idingredient); setEditQuantite(Number(c.quantite)); setEditUnite(c.unite); }}>✎</button>
+                  <button className="monfrigo__icone monfrigo__icone--retirer" aria-label={`Retirer ${nom}`}
+                    onClick={() => handleSupprimer(c.idingredient)}>×</button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        <section className="monfrigo__realisables" aria-labelledby="titre-realisables">
+          <h2 id="titre-realisables">Ce que tu peux préparer</h2>
+          {cocktails && nbCocktails === 0 && (
+            <div className="vide">
+              <span className="vide__verre" aria-hidden="true"><GlasseU /></span>
+              <div>
+                <p className="vide__titre">Aucun cocktail réalisable avec vos ingrédients.</p>
+                <p>Il faut avoir <strong>tous</strong> les ingrédients d'une recette pour qu'elle apparaisse ici. Ajoute-en quelques-uns !</p>
               </div>
-            ))
-          ) : (
-            <p style={{ padding: '8px' }}>Aucun résultat</p>
-          )}
-        </div>
-      )}
-
-      {/* Liste des ingrédients */}
-      <h2>Mes ingrédients</h2>
-      {composition.length === 0 && <p>Frigo vide !</p>}
-      {composition.map((c) => (
-        <div key={c.idingredient} style={{ border: '1px solid #ccc', padding: '10px', margin: '5px 0', borderRadius: '5px' }}>
-          {editId === c.idingredient ? (
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <span>{c.ingredient.nomingredient}</span>
-              <input
-                type="number"
-                value={editQuantite}
-                onChange={(e) => setEditQuantite(parseFloat(e.target.value))}
-                style={{ width: '80px' }}
-              />
-              <select value={editUnite} onChange={(e) => setEditUnite(e.target.value)}>
-                {getUnites(c.ingredient.categorie).map((u) => (
-                  <option key={u} value={u}>{u}</option>
-                ))}
-              </select>
-              <button onClick={() => handleModifier(c.idingredient)}>Sauvegarder</button>
-              <button onClick={() => setEditId(null)}>Annuler</button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <span style={{ flex: 1 }}>{c.ingredient.nomingredient} — {c.quantite} {c.unite}</span>
-              <button onClick={() => { setEditId(c.idingredient); setEditQuantite(c.quantite); setEditUnite(c.unite); }}>Modifier</button>
-              <button onClick={() => handleSupprimer(c.idingredient)} style={{ color: 'red' }}>Supprimer</button>
             </div>
           )}
-        </div>
-      ))}
-
-      {/* Cocktails réalisables */}
-      <h2>Cocktails réalisables avec mon frigo</h2>
-      {cocktails.length === 0 && <p>Aucun cocktail réalisable avec vos ingrédients.</p>}
-      {cocktails.map((c) => (
-        <div key={c.idcocktail} onClick={() => navigate(`/cocktail/${encodeURIComponent(c.nomcocktail)}`)} style={{ cursor: 'pointer', border: '1px solid #ccc', padding: '10px', margin: '10px 0' }}>
-          {c.image && c.image[0] && <img src={`/api${c.image[0].urlimage}`} width={100} />}
-          <p>{c.nomcocktail}</p>
-          <p>{c.avis.length > 0 ? `${getMoyenne(c).toFixed(1)}/5 (${c.avis.length} avis)` : "Aucun avis"}</p>
-        </div>
-      ))}
-    </div>
+          {nbCocktails > 0 && (
+            <ul className="recettes monfrigo__recettes">
+              {cocktails!.map((c) => <CarteRecette key={c.idcocktail} c={c} />)}
+            </ul>
+          )}
+        </section>
+      </div>
+    </main>
   );
 }
 

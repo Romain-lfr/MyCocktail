@@ -1,6 +1,7 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateCompteDto } from './dto/update-compte.dto';
+import { codePrisma } from '../commun/erreurs';
 
 @Injectable()
 export class CompteService {
@@ -53,7 +54,7 @@ export class CompteService {
   }
 
   async ajouterFavori(idcompte: string, idcocktail: string) {
-    const result = await this.prisma.$queryRaw<any[]>`
+    const result = await this.prisma.$queryRaw<Record<string, unknown>[]>`
       SELECT * FROM ajouter_favori(${idcompte}::varchar, ${idcocktail}::varchar)
     `;
     return result[0];
@@ -95,7 +96,9 @@ export class CompteService {
         where: { idcompte },
         data: {
           ...(data.pseudo ? { pseudo: data.pseudo } : {}),
-          ...(data.mailcompte ? { mailcompte: data.mailcompte.toLowerCase() } : {}),
+          ...(data.mailcompte
+            ? { mailcompte: data.mailcompte.toLowerCase() }
+            : {}),
           ...(data.numtel !== undefined ? { numtel: data.numtel } : {}),
         },
         select: {
@@ -108,8 +111,8 @@ export class CompteService {
           role: true,
         },
       });
-    } catch (e: any) {
-      if (e?.code === 'P2002') {
+    } catch (e: unknown) {
+      if (codePrisma(e) === 'P2002') {
         throw new ConflictException('Ce pseudo ou cet email est déjà utilisé');
       }
       throw e;
@@ -128,10 +131,17 @@ export class CompteService {
     });
   }
 
-  async ajouterIngredientFrigo(idcompte: string, idingredient: string, quantite: number, unite: string) {
+  async ajouterIngredientFrigo(
+    idcompte: string,
+    idingredient: string,
+    quantite: number,
+    unite: string,
+  ) {
     const frigo = await this.prisma.frigo.findUnique({ where: { idcompte } });
     return this.prisma.frigo_composition.upsert({
-      where: { idfrigo_idingredient: { idfrigo: frigo!.idfrigo, idingredient } },
+      where: {
+        idfrigo_idingredient: { idfrigo: frigo!.idfrigo, idingredient },
+      },
       update: { quantite, unite },
       create: { idfrigo: frigo!.idfrigo, idingredient, quantite, unite },
     });
@@ -140,7 +150,9 @@ export class CompteService {
   async supprimerIngredientFrigo(idcompte: string, idingredient: string) {
     const frigo = await this.prisma.frigo.findUnique({ where: { idcompte } });
     return this.prisma.frigo_composition.delete({
-      where: { idfrigo_idingredient: { idfrigo: frigo!.idfrigo, idingredient } },
+      where: {
+        idfrigo_idingredient: { idfrigo: frigo!.idfrigo, idingredient },
+      },
     });
   }
 
@@ -169,7 +181,7 @@ export class CompteService {
 
     // Filtrer côté Node : tous les ingrédients du cocktail sont dans le frigo
     return cocktails.filter((c) =>
-      c.dosage.every((d) => ingredientsFrigo.includes(d.idingredient))
+      c.dosage.every((d) => ingredientsFrigo.includes(d.idingredient)),
     );
   }
 }

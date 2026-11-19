@@ -21,21 +21,30 @@ describe('DTO auth', () => {
     });
 
     it('refuse un pseudo de moins de 3 caractères', async () => {
-      expect(await champsInvalides(RegisterDto, { ...valide, pseudo: 'ro' })).toEqual(['pseudo']);
+      expect(
+        await champsInvalides(RegisterDto, { ...valide, pseudo: 'ro' }),
+      ).toEqual(['pseudo']);
     });
 
     it('refuse un email invalide', async () => {
-      expect(await champsInvalides(RegisterDto, { ...valide, mail: 'pas-un-mail' })).toEqual(['mail']);
+      expect(
+        await champsInvalides(RegisterDto, { ...valide, mail: 'pas-un-mail' }),
+      ).toEqual(['mail']);
     });
 
     it('refuse un mot de passe de moins de 8 caractères (la base ne le vérifie pas)', async () => {
-      expect(await champsInvalides(RegisterDto, { ...valide, mdp: '1234567' })).toEqual(['mdp']);
+      expect(
+        await champsInvalides(RegisterDto, { ...valide, mdp: '1234567' }),
+      ).toEqual(['mdp']);
     });
 
     it('refuse une date de naissance invalide', async () => {
-      expect(await champsInvalides(RegisterDto, { ...valide, dateNaissance: 'hier' })).toEqual([
-        'dateNaissance',
-      ]);
+      expect(
+        await champsInvalides(RegisterDto, {
+          ...valide,
+          dateNaissance: 'hier',
+        }),
+      ).toEqual(['dateNaissance']);
     });
 
     it('refuse un corps vide', async () => {
@@ -47,13 +56,15 @@ describe('DTO auth', () => {
 
   describe('LoginDto', () => {
     it('accepte un pseudo ou un email avec un mot de passe', async () => {
-      expect(await champsInvalides(LoginDto, { pseudoOrMail: 'romain', mdp: 'x' })).toEqual([]);
+      expect(
+        await champsInvalides(LoginDto, { pseudoOrMail: 'romain', mdp: 'x' }),
+      ).toEqual([]);
     });
 
     it('refuse des champs vides ou absents', async () => {
-      expect((await champsInvalides(LoginDto, { pseudoOrMail: '' })).sort()).toEqual(
-        ['mdp', 'pseudoOrMail'].sort(),
-      );
+      expect(
+        (await champsInvalides(LoginDto, { pseudoOrMail: '' })).sort(),
+      ).toEqual(['mdp', 'pseudoOrMail'].sort());
     });
   });
 });

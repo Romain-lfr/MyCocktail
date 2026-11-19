@@ -18,6 +18,7 @@ describe('Recherche', () => {
     rendre(<Recherche />, { route: '/recherche' });
     expect(api.get).not.toHaveBeenCalled();
     expect(screen.getByText('Aucun cocktail trouvé.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Rechercher' })).toBeInTheDocument();
   });
 
   it('visiteur : ne cherche que des cocktails sans alcool', async () => {
@@ -53,14 +54,16 @@ describe('Recherche', () => {
     rendre(<Recherche />, { route: '/recherche?q=moj' });
     expect(await screen.findByText('Mojito')).toBeInTheDocument();
     expect(await screen.findByText('mojitoLover')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Résultats pour "moj"' })).toBeInTheDocument();
+    expect(screen.getByText('Membre depuis janvier 2024')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Résultats pour « moj »' })).toBeInTheDocument();
+    expect(screen.getByText('1 cocktail · 1 compte')).toBeInTheDocument();
     expect(screen.getByRole('img')).toHaveAttribute('src', '/api/public/images/1.webp');
   });
 
   it('cliquer sur un cocktail ouvre sa fiche', async () => {
     repondre({ cocktails: [{ idcocktail: 'COK-00001', nomcocktail: 'Sex on the Beach', image: [] }] });
     const { user } = rendre(<Recherche />, { route: '/recherche?q=sex' });
-    await user.click(await screen.findByText('Sex on the Beach'));
+    await user.click(await screen.findByRole('button', { name: 'Sex on the Beach' }));
     expect(emplacement()).toBe('/cocktail/Sex%20on%20the%20Beach');
   });
 
@@ -71,5 +74,32 @@ describe('Recherche', () => {
     expect(await screen.findByText('Mojito')).toBeInTheDocument();
     expect(screen.getByText('Aucun compte trouvé.')).toBeInTheDocument();
     await waitFor(() => expect(erreur).toHaveBeenCalled());
+  });
+
+  it('relance une recherche depuis la page', async () => {
+    repondre();
+    const { user } = rendre(<Recherche />, { route: '/recherche?q=moj' });
+    const champ = screen.getByRole('searchbox', { name: 'Nouvelle recherche' });
+    expect(champ).toHaveValue('moj');
+    await user.clear(champ);
+    await user.type(champ, 'piña colada');
+    await user.click(screen.getByRole('button', { name: 'Chercher' }));
+    expect(emplacement()).toBe('/recherche?q=pi%C3%B1a%20colada');
+  });
+
+  it('n’envoie rien avec une recherche vide', async () => {
+    repondre();
+    const { user } = rendre(<Recherche />, { route: '/recherche?q=moj' });
+    await user.clear(screen.getByRole('searchbox', { name: 'Nouvelle recherche' }));
+    await user.click(screen.getByRole('button', { name: 'Chercher' }));
+    expect(emplacement()).toBe('/recherche?q=moj');
+  });
+
+  it('sans résultat : propose de voir toutes les recettes', async () => {
+    repondre();
+    const { user } = rendre(<Recherche />, { route: '/recherche?q=zzz' });
+    expect(await screen.findByText('0 cocktail · 0 compte')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Voir toutes les recettes' }));
+    expect(emplacement()).toBe('/');
   });
 });

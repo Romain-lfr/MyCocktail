@@ -17,8 +17,13 @@ describe('AuthController', () => {
   });
 
   it('login transmet pseudo/email et mot de passe au service', async () => {
-    authService.login.mockResolvedValue({ access_token: 't', estMineur: false });
-    await expect(controller.login({ pseudoOrMail: 'romain', mdp: 'Romain1234' })).resolves.toEqual({
+    authService.login.mockResolvedValue({
+      access_token: 't',
+      estMineur: false,
+    });
+    await expect(
+      controller.login({ pseudoOrMail: 'romain', mdp: 'Romain1234' }),
+    ).resolves.toEqual({
       access_token: 't',
       estMineur: false,
     });

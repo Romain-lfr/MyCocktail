@@ -13,8 +13,19 @@ describe('AvisController', () => {
     modifierReponse: jest.fn(),
     supprimerReponse: jest.fn(),
   };
-  const req = { user: { idcompte: 'CPT-00001' } };
-  const avis = { noteavis: 5, titreavis: 'Top', descriptionavis: 'Vraiment excellent' };
+  const req = {
+    user: {
+      idcompte: 'CPT-00001',
+      pseudo: 'romain',
+      role: 'user',
+      estMineur: false,
+    },
+  };
+  const avis = {
+    noteavis: 5,
+    titreavis: 'Top',
+    descriptionavis: 'Vraiment excellent',
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -28,12 +39,25 @@ describe('AvisController', () => {
 
   it('ajouterAvis utilise le compte du token', async () => {
     await controller.ajouterAvis('COK-00001', avis, req);
-    expect(avisService.ajouterAvis).toHaveBeenCalledWith('COK-00001', 'CPT-00001', avis);
+    expect(avisService.ajouterAvis).toHaveBeenCalledWith(
+      'COK-00001',
+      'CPT-00001',
+      avis,
+    );
   });
 
   it('ajouterReponse transmet le commentaire et la réponse parente', async () => {
-    await controller.ajouterReponse('AVS-00001', { commentaire: 'Merci', idreponse_parent: 'REP-00001' }, req);
-    expect(avisService.ajouterReponse).toHaveBeenCalledWith('AVS-00001', 'CPT-00001', 'Merci', 'REP-00001');
+    await controller.ajouterReponse(
+      'AVS-00001',
+      { commentaire: 'Merci', idreponse_parent: 'REP-00001' },
+      req,
+    );
+    expect(avisService.ajouterReponse).toHaveBeenCalledWith(
+      'AVS-00001',
+      'CPT-00001',
+      'Merci',
+      'REP-00001',
+    );
   });
 
   // Les 4 routes de modification/suppression traduisent les erreurs du service en codes HTTP
@@ -53,7 +77,8 @@ describe('AvisController', () => {
     {
       nom: 'modifierReponse',
       service: avisService.modifierReponse,
-      appel: () => controller.modifierReponse('REP-00001', { commentaire: 'Edit' }, req),
+      appel: () =>
+        controller.modifierReponse('REP-00001', { commentaire: 'Edit' }, req),
       introuvable: 'Réponse introuvable',
     },
     {
@@ -89,6 +114,10 @@ describe('AvisController', () => {
   it('les appels de modification utilisent le compte du token', async () => {
     avisService.modifierReponse.mockResolvedValue({});
     await controller.modifierReponse('REP-00001', { commentaire: 'Edit' }, req);
-    expect(avisService.modifierReponse).toHaveBeenCalledWith('REP-00001', 'CPT-00001', 'Edit');
+    expect(avisService.modifierReponse).toHaveBeenCalledWith(
+      'REP-00001',
+      'CPT-00001',
+      'Edit',
+    );
   });
 });

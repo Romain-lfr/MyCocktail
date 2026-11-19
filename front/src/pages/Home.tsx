@@ -2,8 +2,11 @@ import { Fragment, useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { GlasseY, GlasseU } from "./Logo";
-import AdSlot, { pubAutorisee } from "./Adslot";
+import AdSlot from "./Adslot";
+import { pubAutorisee } from "../utils/pub";
 import "./mycocktail.css";
+import { avecToken, tokenSiConnecte } from "../utils/api";
+import { formatNote, noteMoyenne } from "../utils/format";
 
 interface Cocktail {
     idcocktail: string;
@@ -116,9 +119,7 @@ function Home() {
 
     useEffect(() => {
         if (!token) return;
-        axios.get("/api/compte/mes-favoris", {
-            headers: { Authorization: `Bearer ${token}` },
-        }).then((res) => setFavoris(res.data.map((f: { idcocktail: string }) => f.idcocktail)));
+        axios.get("/api/compte/mes-favoris", avecToken()).then((res) => setFavoris(res.data.map((f: { idcocktail: string }) => f.idcocktail)));
     }, []);
 
     useEffect(() => {
@@ -139,7 +140,7 @@ function Home() {
         const query = params.toString();
         const url = `/api/cocktail${query ? `?${query}` : ""}`;
 
-        axios.get(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+        axios.get(url, tokenSiConnecte())
             .then((res) => setCocktails(res.data))
             .catch((err) => {
                 console.error(err);
@@ -154,10 +155,10 @@ function Home() {
     const toggleFavori = async (idcocktail: string) => {
         if (!token) { navigate("/login"); return; }
         if (favoris.includes(idcocktail)) {
-            await axios.delete(`/api/compte/favori/${idcocktail}`, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.delete(`/api/compte/favori/${idcocktail}`, avecToken());
             setFavoris(favoris.filter((id) => id !== idcocktail));
         } else {
-            await axios.post(`/api/compte/favori/${idcocktail}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.post(`/api/compte/favori/${idcocktail}`, {}, avecToken());
             setFavoris([...favoris, idcocktail]);
         }
     };
@@ -196,8 +197,7 @@ function Home() {
     // Quelques ingrédients proposés en un clic tant que le frigo est vide
     const idees = filtreIngredients.length === 0 ? listeIngredients.slice(0, 5) : [];
 
-    const getMoyenne = (c: Cocktail) =>
-        c.avis.length ? c.avis.reduce((s, av) => s + av.noteavis, 0) / c.avis.length : 0;
+    const getMoyenne = (c: Cocktail) => noteMoyenne(c.avis);
 
     const cocktailsTries = [...cocktails]
         .filter((c) => !filtreDifficulte || c.difficulte === filtreDifficulte)
@@ -276,7 +276,7 @@ function Home() {
                             <span className="vedette__meta">
                                 <span className={`statut statut--${vedette.difficulte}`}>{vedette.difficulte}</span>
                                 <span>{vedette.duree} min</span>
-                                <span>{vedette.avis.length > 0 ? `${getMoyenne(vedette).toFixed(1).replace(".", ",")}/5 (${vedette.avis.length} avis)` : "Aucun avis"}</span>
+                                <span>{vedette.avis.length > 0 ? `${formatNote(getMoyenne(vedette))}/5 (${vedette.avis.length} avis)` : "Aucun avis"}</span>
                                 <span className={`tag ${vedette.alcool ? "tag--alcool" : ""}`}>{vedette.alcool ? "Alcool" : "Sans alcool"}</span>
                             </span>
                         </button>
@@ -385,7 +385,11 @@ function Home() {
                     <ul className="recettes">
                         {liste.map((c, i) => (
                             <Fragment key={c.idcocktail}>
-                            <li className="recette">
+                            <li className="recette recette--cliquable" onClick={(e) => {
+                                // Toute la carte ouvre la fiche, sauf ses propres boutons (favori…)
+                                if ((e.target as HTMLElement).closest("button, a")) return;
+                                navigate(`/cocktail/${encodeURIComponent(c.nomcocktail)}`);
+                            }}>
                                 <div className="recette__corps">
                                     <h2>
                                         <button className="recette__nom" onClick={() => navigate(`/cocktail/${encodeURIComponent(c.nomcocktail)}`)}>
@@ -396,7 +400,7 @@ function Home() {
                                     <div className="recette__meta">
                                         <span className={`statut statut--${c.difficulte}`}>{c.difficulte}</span>
                                         <span>{c.duree} min</span>
-                                        <span>{c.avis.length > 0 ? `${getMoyenne(c).toFixed(1).replace(".", ",")}/5 (${c.avis.length} avis)` : "Aucun avis"}</span>
+                                        <span>{c.avis.length > 0 ? `${formatNote(getMoyenne(c))}/5 (${c.avis.length} avis)` : "Aucun avis"}</span>
                                         <span className={`tag ${c.alcool ? "tag--alcool" : ""}`}>{c.alcool ? "Alcool" : "Sans alcool"}</span>
                                     </div>
                                 </div>

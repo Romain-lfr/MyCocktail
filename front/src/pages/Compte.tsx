@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import "./mycocktail.css";
+import { avecToken } from "../utils/api";
 
 interface CompteInfo {
   idcompte: string;
@@ -40,9 +41,7 @@ function Profil() {
       return;
     }
 
-    axios.get("/api/compte/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    axios.get("/api/compte/me", avecToken())
       .then((res) => setCompte(res.data))
       .catch(() => {
         localStorage.removeItem("token");

@@ -1,58 +1,69 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import CarteRecette from "./CarteRecette";
+import type { RecetteResume } from "./CarteRecette";
+import { GlasseU } from "./Logo";
+import "./mycocktail.css";
+import { avecToken } from "../utils/api";
 
-interface Favori {
-  cocktail: {
-    idcocktail: string;
-    nomcocktail: string;
-    image: { urlimage: string }[];
-  };
-}
+interface Favori { cocktail: RecetteResume }
 
 function MesFavoris() {
-  const [favoris, setFavoris] = useState<Favori[]>([]);
+  const [favoris, setFavoris] = useState<Favori[] | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
 
-    axios.get("/api/compte/mes-favoris", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    axios.get("/api/compte/mes-favoris", avecToken())
       .then((res) => setFavoris(res.data))
       .catch(() => navigate("/login"));
-  }, []);
+  }, [navigate]);
+
+  const retirer = async (idcocktail: string) => {
+    await axios.delete(`/api/compte/favori/${idcocktail}`, avecToken());
+    setFavoris((liste) => (liste ?? []).filter((f) => f.cocktail.idcocktail !== idcocktail));
+  };
+
+  const n = favoris?.length ?? 0;
 
   return (
-    <div>
-      <button onClick={() => navigate("/compte")}>← Retour</button>
-      <h1>❤️ Mes favoris</h1>
-      {favoris.length === 0 && <p>Aucun favori.</p>}
-      {favoris.map((f, i) => (
-        <div key={i} onClick={() => navigate(`/cocktail/${encodeURIComponent(f.cocktail.nomcocktail)}`)} style={{ cursor: 'pointer', border: '1px solid #ccc', padding: '10px', margin: '10px 0' }}>
-          {f.cocktail.image && f.cocktail.image[0] && (
-            <img src={`/api${f.cocktail.image[0].urlimage}`} width={100} />
-          )}
-          <p>{f.cocktail.nomcocktail}</p>
-          <button
-            onClick={async (e) => {
-              e.stopPropagation();
-              const token = localStorage.getItem("token");
-              await axios.delete(`/api/compte/favori/${f.cocktail.idcocktail}`, {
-                headers: { Authorization: `Bearer ${token}` },
-              });
-              window.location.reload();
-            }}
-            style={{ color: 'red', marginLeft: '10px' }}
-          >
-            Retirer
-          </button>
+    <main className="page">
+      <div className="fiche__retour">
+        <button className="pill" onClick={() => navigate("/compte")}>← Retour</button>
+      </div>
+
+      <header className="espace-entete">
+        <div>
+          <p className="surtitre">Mon espace</p>
+          <h1>Mes favoris</h1>
+          {favoris && n > 0 && <p className="espace-entete__compte">{n} recette{n > 1 ? "s" : ""} gardée{n > 1 ? "s" : ""} sous le coude</p>}
         </div>
-      ))}
-      
-    </div>
+      </header>
+
+      {favoris && n === 0 && (
+        <div className="vide">
+          <span className="vide__verre" aria-hidden="true"><GlasseU /></span>
+          <div>
+            <p className="vide__titre">Aucun favori.</p>
+            <p>Ajoute des recettes à tes favoris depuis l'accueil ou leur fiche pour les retrouver ici.</p>
+            <button className="pill pill--mangue" onClick={() => navigate("/")}>Découvrir les recettes</button>
+          </div>
+        </div>
+      )}
+
+      {n > 0 && (
+        <ul className="recettes">
+          {favoris!.map((f) => (
+            <CarteRecette key={f.cocktail.idcocktail} c={f.cocktail}>
+              <button className="pill pill--mangue" onClick={() => retirer(f.cocktail.idcocktail)}>Retirer</button>
+            </CarteRecette>
+          ))}
+        </ul>
+      )}
+    </main>
   );
 }
 

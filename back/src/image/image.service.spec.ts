@@ -6,7 +6,10 @@ jest.mock('sharp', () => ({ __esModule: true, default: sharpMock }));
 
 // fs.unlinkSync est remplacé : on ne supprime aucun vrai fichier
 const unlinkSync = jest.fn();
-jest.mock('fs', () => ({ ...jest.requireActual('fs'), unlinkSync: (p: string) => unlinkSync(p) }));
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  unlinkSync: (p: string) => unlinkSync(p),
+}));
 
 import { Test, TestingModule } from '@nestjs/testing';
 import * as path from 'path';
@@ -28,7 +31,7 @@ describe('ImageService', () => {
 
   describe('convertAndSave', () => {
     it('convertit en WebP qualité 80 dans public/images', async () => {
-      const url = await service.convertAndSave('public/images/123.png', 'photo.png');
+      const url = await service.convertAndSave('public/images/123.png');
 
       expect(sharpMock).toHaveBeenCalledWith('public/images/123.png');
       expect(webp).toHaveBeenCalledWith({ quality: 80 });
@@ -39,15 +42,15 @@ describe('ImageService', () => {
     });
 
     it('supprime le fichier d’origine après conversion', async () => {
-      await service.convertAndSave('public/images/123.png', 'photo.png');
+      await service.convertAndSave('public/images/123.png');
       expect(unlinkSync).toHaveBeenCalledWith('public/images/123.png');
     });
 
     it('garde le fichier d’origine si la conversion échoue', async () => {
       toFile.mockRejectedValueOnce(new Error('image corrompue'));
-      await expect(service.convertAndSave('public/images/123.png', 'photo.png')).rejects.toThrow(
-        'image corrompue',
-      );
+      await expect(
+        service.convertAndSave('public/images/123.png'),
+      ).rejects.toThrow('image corrompue');
       expect(unlinkSync).not.toHaveBeenCalled();
     });
   });
@@ -60,9 +63,9 @@ describe('ImageService', () => {
     ['ajouterImageAvis', 'AVS-00001'],
   ] as const)('%s convertit puis enregistre en base', async (methode, id) => {
     prisma.$queryRaw.mockResolvedValue([{ idimage: 'IMG-00001' }]);
-    await expect(service[methode](id, 'public/images/1.png', 'photo.png')).resolves.toEqual([
-      { idimage: 'IMG-00001' },
-    ]);
+    await expect(
+      service[methode](id, 'public/images/1.png', 'photo.png'),
+    ).resolves.toEqual([{ idimage: 'IMG-00001' }]);
     expect(toFile).toHaveBeenCalled();
     const valeursSql = prisma.$queryRaw.mock.calls[0].slice(1);
     expect(valeursSql[0]).toBe(id);

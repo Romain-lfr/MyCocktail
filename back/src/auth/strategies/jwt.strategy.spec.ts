@@ -12,10 +12,10 @@ describe('JwtStrategy', () => {
     expect(() => new JwtStrategy()).toThrow('JWT_SECRET manquant');
   });
 
-  it('transforme le contenu du token en utilisateur (req.user)', async () => {
+  it('transforme le contenu du token en utilisateur (req.user)', () => {
     process.env.JWT_SECRET = 'secret-de-test';
     const strategy = new JwtStrategy();
-    const user = await strategy.validate({
+    const user = strategy.validate({
       sub: 'CPT-00001',
       pseudo: 'romain',
       role: 'user',

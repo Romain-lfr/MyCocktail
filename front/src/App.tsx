@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import CocktailDetail from "./pages/CocktailDetail";
 import Header from "./pages/Header";
+import Footer from "./pages/Footer";
 import Compte from "./pages/Compte";
 import MesCocktails from "./pages/MesCocktails";
 import MesFavoris from "./pages/MesFavoris";
@@ -13,7 +14,6 @@ import AjouterAvis from "./pages/AjouterAvis";
 import Recherche from "./pages/Recherche";
 import ModifierCocktail from "./pages/ModifierCocktail";
 import ModifierCompte from "./pages/ModifierCompte";
-import InfoCompte from "./pages/InfoCompte";
 import MonFrigo from "./pages/MonFrigo";
 
 function App() {
@@ -35,9 +35,9 @@ function App() {
         <Route path="/recherche" element={<Recherche />} />
         <Route path="/cocktail/:nom/modifier" element={<ModifierCocktail />} />
         <Route path="/compte/modifier" element={<ModifierCompte />} />
-        <Route path="/compte/info" element={<InfoCompte />} />
         <Route path="/compte/frigo" element={<MonFrigo />} />
       </Routes>
+      <Footer />
       </div>
     </BrowserRouter>
   );

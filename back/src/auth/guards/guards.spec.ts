@@ -19,7 +19,9 @@ describe('Guards JWT', () => {
     });
 
     it('ignore un token invalide et traite la requête comme anonyme', () => {
-      expect(guard.handleRequest(new Error('jwt expired'), undefined)).toBeNull();
+      expect(
+        guard.handleRequest(new Error('jwt expired'), undefined),
+      ).toBeNull();
     });
   });
 });

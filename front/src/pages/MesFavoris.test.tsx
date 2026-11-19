@@ -29,9 +29,16 @@ describe('MesFavoris', () => {
     expect(screen.getAllByRole('img')).toHaveLength(1);
   });
 
-  it('affiche un message sans favori', async () => {
-    await ouvrir([]);
+  it('compte les favoris (accord au pluriel)', async () => {
+    await ouvrir();
+    expect(screen.getByText('2 recettes gardées sous le coude')).toBeInTheDocument();
+  });
+
+  it('sans favori : message et lien vers l’accueil', async () => {
+    const { user } = await ouvrir([]);
     expect(await screen.findByText('Aucun favori.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Découvrir les recettes' }));
+    expect(emplacement()).toBe('/');
   });
 
   it('cliquer sur un favori ouvre sa fiche', async () => {
@@ -44,7 +51,10 @@ describe('MesFavoris', () => {
     const { user } = await ouvrir();
     await user.click(screen.getAllByRole('button', { name: 'Retirer' })[0]);
     expect(api.delete).toHaveBeenCalledWith('/api/compte/favori/COK-00001', expect.any(Object));
-    await waitFor(() => expect(window.location.reload).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText('Mojito')).not.toBeInTheDocument());
+    expect(screen.getByText('Virgin Mary')).toBeInTheDocument();
+    expect(screen.getByText('1 recette gardée sous le coude')).toBeInTheDocument();
+    expect(window.location.reload).not.toHaveBeenCalled();
     expect(emplacement()).toBe('/');
   });
 

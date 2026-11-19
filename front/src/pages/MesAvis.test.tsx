@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import MesAvis from './MesAvis';
-import { api, connecter, emplacement, rendre } from '../test/utils';
+import { api, connecter, emplacement, erreurApi, rendre } from '../test/utils';
 
 const avis = [
   {
@@ -41,16 +41,19 @@ describe('MesAvis', () => {
     expect(api.get).toHaveBeenCalledWith('/api/compte/mes-avis', expect.any(Object));
     expect(screen.getByText('Frais et bien dosé')).toBeInTheDocument();
     expect(screen.getByText('Bof')).toBeInTheDocument();
+    expect(screen.getByText('2 avis · 3,0/5 de moyenne')).toBeInTheDocument();
   });
 
-  it('affiche un message sans avis', async () => {
-    await ouvrir([]);
+  it('sans avis : message et lien vers les recettes', async () => {
+    const { user } = await ouvrir([]);
     expect(await screen.findByText('Aucun avis posté.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Découvrir les recettes' }));
+    expect(emplacement()).toBe('/');
   });
 
   it('le nom du cocktail ouvre sa fiche', async () => {
     const { user } = await ouvrir();
-    await user.click(screen.getByText('Piña Colada'));
+    await user.click(screen.getByRole('button', { name: 'Piña Colada' }));
     expect(emplacement()).toBe('/cocktail/Pi%C3%B1a%20Colada');
   });
 
@@ -58,11 +61,12 @@ describe('MesAvis', () => {
     const { user } = await ouvrir();
     await user.click(screen.getAllByRole('button', { name: 'Modifier' })[0]);
 
-    const titre = screen.getByDisplayValue('Très bon');
+    expect(screen.getByRole('radio', { name: /4 sur 5/ })).toBeChecked();
+    const titre = screen.getByLabelText('Titre');
     await user.clear(titre);
     await user.type(titre, 'Excellent');
-    await user.selectOptions(screen.getByRole('combobox'), '5');
-    await user.click(screen.getByRole('button', { name: 'Sauvegarder' }));
+    await user.click(screen.getByRole('radio', { name: /5 sur 5/ }));
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
 
     expect(api.put).toHaveBeenCalledWith(
       '/api/avis/AVS-00001',
@@ -70,13 +74,39 @@ describe('MesAvis', () => {
       expect.any(Object),
     );
     expect(await screen.findByText('Excellent')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Sauvegarder' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Enregistrer' })).not.toBeInTheDocument();
+    expect(screen.getByText('2 avis · 3,5/5 de moyenne')).toBeInTheDocument();
+  });
+
+  it('valide la modification avant tout appel', async () => {
+    const { user } = await ouvrir();
+    await user.click(screen.getAllByRole('button', { name: 'Modifier' })[0]);
+    await user.clear(screen.getByLabelText('Titre'));
+    await user.type(screen.getByLabelText('Titre'), 'Ok');
+    await user.clear(screen.getByLabelText('Ton avis'));
+    await user.type(screen.getByLabelText('Ton avis'), 'Court');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(screen.getByLabelText('Titre')).toHaveAccessibleDescription('Le titre doit faire au moins 3 caractères');
+    expect(screen.getByLabelText('Ton avis')).toHaveAccessibleDescription('La description doit faire au moins 10 caractères');
+    expect(api.put).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [erreurApi(403, 'Non autorisé'), 'Non autorisé'],
+    [new Error('Network Error'), 'Erreur lors de la modification de l\'avis'],
+  ])('affiche l’erreur de l’API et reste en modification (%#)', async (erreur, texte) => {
+    const { user } = await ouvrir();
+    api.put.mockRejectedValue(erreur);
+    await user.click(screen.getAllByRole('button', { name: 'Modifier' })[0]);
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(texte);
+    expect(screen.getByLabelText('Titre')).toBeInTheDocument();
   });
 
   it('annuler la modification ne change rien', async () => {
     const { user } = await ouvrir();
     await user.click(screen.getAllByRole('button', { name: 'Modifier' })[0]);
-    await user.type(screen.getByDisplayValue('Frais et bien dosé'), ' !!!');
+    await user.type(screen.getByLabelText('Ton avis'), ' !!!');
     await user.click(screen.getByRole('button', { name: 'Annuler' }));
     expect(api.put).not.toHaveBeenCalled();
     expect(screen.getByText('Frais et bien dosé')).toBeInTheDocument();

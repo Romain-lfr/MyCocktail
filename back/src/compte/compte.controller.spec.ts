@@ -19,7 +19,14 @@ describe('CompteController', () => {
     supprimerIngredientFrigo: jest.fn(),
     getCocktailsRealisables: jest.fn(),
   };
-  const req = { user: { idcompte: 'CPT-00001', estMineur: true } };
+  const req = {
+    user: {
+      idcompte: 'CPT-00001',
+      pseudo: 'romain',
+      role: 'user',
+      estMineur: true,
+    },
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -47,9 +54,18 @@ describe('CompteController', () => {
     controller.isFavori('COK-00001', req);
     controller.ajouterFavori('COK-00001', req);
     controller.supprimerFavori('COK-00001', req);
-    expect(compteService.isFavori).toHaveBeenCalledWith('CPT-00001', 'COK-00001');
-    expect(compteService.ajouterFavori).toHaveBeenCalledWith('CPT-00001', 'COK-00001');
-    expect(compteService.supprimerFavori).toHaveBeenCalledWith('CPT-00001', 'COK-00001');
+    expect(compteService.isFavori).toHaveBeenCalledWith(
+      'CPT-00001',
+      'COK-00001',
+    );
+    expect(compteService.ajouterFavori).toHaveBeenCalledWith(
+      'CPT-00001',
+      'COK-00001',
+    );
+    expect(compteService.supprimerFavori).toHaveBeenCalledWith(
+      'CPT-00001',
+      'COK-00001',
+    );
   });
 
   it('rechercherComptes transmet le pseudo cherché', () => {
@@ -59,18 +75,35 @@ describe('CompteController', () => {
 
   it('modifierCompte transmet le corps validé', () => {
     controller.modifierCompte({ pseudo: 'nouveau' }, req);
-    expect(compteService.modifierCompte).toHaveBeenCalledWith('CPT-00001', { pseudo: 'nouveau' });
+    expect(compteService.modifierCompte).toHaveBeenCalledWith('CPT-00001', {
+      pseudo: 'nouveau',
+    });
   });
 
   it('frigo : ajouter et retirer un ingrédient', () => {
-    controller.ajouterIngredientFrigo('ING-00001', { quantite: 50, unite: 'cl' }, req);
+    controller.ajouterIngredientFrigo(
+      'ING-00001',
+      { quantite: 50, unite: 'cl' },
+      req,
+    );
     controller.supprimerIngredientFrigo('ING-00001', req);
-    expect(compteService.ajouterIngredientFrigo).toHaveBeenCalledWith('CPT-00001', 'ING-00001', 50, 'cl');
-    expect(compteService.supprimerIngredientFrigo).toHaveBeenCalledWith('CPT-00001', 'ING-00001');
+    expect(compteService.ajouterIngredientFrigo).toHaveBeenCalledWith(
+      'CPT-00001',
+      'ING-00001',
+      50,
+      'cl',
+    );
+    expect(compteService.supprimerIngredientFrigo).toHaveBeenCalledWith(
+      'CPT-00001',
+      'ING-00001',
+    );
   });
 
   it('getCocktailsRealisables transmet aussi estMineur', () => {
     controller.getCocktailsRealisables(req);
-    expect(compteService.getCocktailsRealisables).toHaveBeenCalledWith('CPT-00001', true);
+    expect(compteService.getCocktailsRealisables).toHaveBeenCalledWith(
+      'CPT-00001',
+      true,
+    );
   });
 });

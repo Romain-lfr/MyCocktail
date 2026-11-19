@@ -4,8 +4,8 @@ import MesCocktails from './MesCocktails';
 import { api, connecter, emplacement, rendre } from '../test/utils';
 
 const cocktails = [
-  { idcocktail: 'COK-00001', nomcocktail: 'Piña Colada', image: [{ urlimage: '/public/images/1.webp' }] },
-  { idcocktail: 'COK-00002', nomcocktail: 'Mojito', image: [] },
+  { idcocktail: 'COK-00001', nomcocktail: 'Piña Colada', statut: 'publi_', alcool: true, difficulte: 'Moyen', duree: 7, image: [{ urlimage: '/public/images/1.webp' }] },
+  { idcocktail: 'COK-00002', nomcocktail: 'Mojito', statut: 'brouillon', image: [] },
 ];
 
 async function ouvrir(data = cocktails) {
@@ -28,6 +28,13 @@ describe('MesCocktails', () => {
     expect(screen.getByText('Piña Colada')).toBeInTheDocument();
     expect(screen.getAllByRole('img')).toHaveLength(1);
     expect(screen.getByRole('img')).toHaveAttribute('src', '/api/public/images/1.webp');
+  });
+
+  it('affiche le statut de chaque cocktail et le nombre de créations', async () => {
+    await ouvrir();
+    expect(screen.getByText('Publié')).toHaveClass('etat--publié');
+    expect(screen.getByText('Brouillon')).toBeInTheDocument();
+    expect(screen.getByText('2 créations, brouillons compris')).toBeInTheDocument();
   });
 
   it('affiche un message si je n’ai aucun cocktail', async () => {
@@ -53,11 +60,13 @@ describe('MesCocktails', () => {
     expect(emplacement()).toBe('/cocktail/ajouter');
   });
 
-  it('supprime après confirmation puis recharge', async () => {
+  it('supprime après confirmation et retire la carte sans recharger', async () => {
     const { user } = await ouvrir();
     await user.click(screen.getAllByRole('button', { name: 'Supprimer' })[0]);
     expect(api.delete).toHaveBeenCalledWith('/api/cocktail/COK-00001', expect.any(Object));
-    await waitFor(() => expect(window.location.reload).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText('Piña Colada')).not.toBeInTheDocument());
+    expect(screen.getByText('Mojito')).toBeInTheDocument();
+    expect(window.location.reload).not.toHaveBeenCalled();
   });
 
   it('ne supprime rien si on annule la confirmation', async () => {

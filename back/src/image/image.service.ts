@@ -8,13 +8,11 @@ import * as path from 'path';
 export class ImageService {
   constructor(private prisma: PrismaService) {}
 
-  async convertAndSave(filePath: string, originalName: string): Promise<string> {
+  async convertAndSave(filePath: string): Promise<string> {
     const webpFilename = Date.now() + '.webp';
     const webpPath = path.join('./public/images', webpFilename);
 
-    await sharp(filePath)
-      .webp({ quality: 80 })
-      .toFile(webpPath);
+    await sharp(filePath).webp({ quality: 80 }).toFile(webpPath);
 
     // Supprimer l'original
     fs.unlinkSync(filePath);
@@ -22,29 +20,45 @@ export class ImageService {
     return `/public/images/${webpFilename}`;
   }
 
-  async ajouterImageCocktail(idcocktail: string, filePath: string, originalName: string) {
-    const urlimage = await this.convertAndSave(filePath, originalName);
+  async ajouterImageCocktail(
+    idcocktail: string,
+    filePath: string,
+    originalName: string,
+  ) {
+    const urlimage = await this.convertAndSave(filePath);
     return this.prisma.$queryRaw`
       SELECT * FROM ajouter_image_cocktail(${idcocktail}, ${urlimage}, ${originalName})
     `;
   }
 
-  async ajouterImageCompte(idcompte: string, filePath: string, originalName: string) {
-    const urlimage = await this.convertAndSave(filePath, originalName);
+  async ajouterImageCompte(
+    idcompte: string,
+    filePath: string,
+    originalName: string,
+  ) {
+    const urlimage = await this.convertAndSave(filePath);
     return this.prisma.$queryRaw`
       SELECT * FROM modifier_image_compte(${idcompte}, ${urlimage}, ${originalName})
     `;
   }
 
-  async ajouterImageIngredient(idingredient: string, filePath: string, originalName: string) {
-    const urlimage = await this.convertAndSave(filePath, originalName);
+  async ajouterImageIngredient(
+    idingredient: string,
+    filePath: string,
+    originalName: string,
+  ) {
+    const urlimage = await this.convertAndSave(filePath);
     return this.prisma.$queryRaw`
       SELECT * FROM modifier_image_ingredient(${idingredient}, ${urlimage}, ${originalName})
     `;
   }
 
-  async ajouterImageAvis(idavis: string, filePath: string, originalName: string) {
-    const urlimage = await this.convertAndSave(filePath, originalName);
+  async ajouterImageAvis(
+    idavis: string,
+    filePath: string,
+    originalName: string,
+  ) {
+    const urlimage = await this.convertAndSave(filePath);
     return this.prisma.$queryRaw`
       SELECT * FROM ajouter_image_avis(${idavis}, ${urlimage}, ${originalName})
     `;

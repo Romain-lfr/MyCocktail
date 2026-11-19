@@ -1,5 +1,11 @@
-import { IsString, IsBoolean, IsInt, IsEnum, MinLength, Min } from 'class-validator';
-
+import {
+  IsString,
+  IsBoolean,
+  IsInt,
+  IsEnum,
+  MinLength,
+  Min,
+} from 'class-validator';
 
 export enum DifficulteEnum {
   Facile = 'Facile',
@@ -13,7 +19,9 @@ export class CreateCocktailDto {
   nomcocktail: string;
 
   @IsString()
-  @MinLength(10, { message: 'La description doit faire au moins 10 caractères' })
+  @MinLength(10, {
+    message: 'La description doit faire au moins 10 caractères',
+  })
   description: string;
 
   @IsEnum(DifficulteEnum, { message: 'Difficulté invalide' })

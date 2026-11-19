@@ -4,6 +4,7 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { GlasseU } from "./Logo";
 import "./mycocktail.css";
+import { messageApi } from "../utils/api";
 
 type Champ = "pseudo" | "mail" | "mdp" | "confirmMdp" | "dateNaissance" | "global";
 
@@ -67,7 +68,7 @@ function Register() {
       await axios.post("/api/auth/register", { pseudo, mail, mdp, dateNaissance });
       navigate("/login");
     } catch (e: unknown) {
-      const message = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
+      const message = messageApi(e);
       setErreurs({ global: message || "Erreur lors de la création du compte" });
     } finally {
       setChargement(false);

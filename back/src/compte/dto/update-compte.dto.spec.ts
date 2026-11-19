@@ -3,7 +3,9 @@ import { validate } from 'class-validator';
 import { UpdateCompteDto } from './update-compte.dto';
 
 const champsInvalides = async (corps: object) =>
-  (await validate(plainToInstance(UpdateCompteDto, corps))).map((e) => e.property);
+  (await validate(plainToInstance(UpdateCompteDto, corps))).map(
+    (e) => e.property,
+  );
 
 describe('UpdateCompteDto', () => {
   it('accepte une modification partielle (tous les champs sont optionnels)', async () => {
@@ -20,10 +22,14 @@ describe('UpdateCompteDto', () => {
   });
 
   it('refuse un email invalide', async () => {
-    expect(await champsInvalides({ mailcompte: 'pas-un-mail' })).toEqual(['mailcompte']);
+    expect(await champsInvalides({ mailcompte: 'pas-un-mail' })).toEqual([
+      'mailcompte',
+    ]);
   });
 
   it('ne déclare pas de champ date de naissance', () => {
-    expect(Object.keys(plainToInstance(UpdateCompteDto, {}))).not.toContain('datenaissance');
+    expect(Object.keys(plainToInstance(UpdateCompteDto, {}))).not.toContain(
+      'datenaissance',
+    );
   });
 });

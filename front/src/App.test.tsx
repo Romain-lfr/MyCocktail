@@ -14,7 +14,7 @@ describe('App (routes)', () => {
   it.each([
     ['/login', { role: 'heading', name: 'Connexion' }],
     ['/register', { role: 'heading', name: 'Créer un compte' }],
-    ['/recherche?q=moj', { role: 'heading', name: 'Résultats pour "moj"' }],
+    ['/recherche?q=moj', { role: 'heading', name: 'Résultats pour « moj »' }],
     ['/cocktail/Mojito/avis', { role: 'heading', name: /Laisser un avis sur Mojito/ }],
   ])('%s affiche la bonne page', async (url, { role, name }) => {
     ouvrir(url);
@@ -29,6 +29,7 @@ describe('App (routes)', () => {
       await screen.findByRole('navigation', { name: 'Navigation principale' });
       expect(document.querySelectorAll('header')).toHaveLength(1);
       expect(document.querySelector('header')).toHaveClass('header');
+      expect(document.querySelectorAll('footer.footer')).toHaveLength(1);
     },
   );
 
@@ -43,7 +44,7 @@ describe('App (routes)', () => {
     expect(api.get).not.toHaveBeenCalledWith('/api/cocktail/ajouter', expect.anything());
   });
 
-  it.each(['/compte', '/compte/cocktails', '/compte/favoris', '/compte/avis', '/compte/info', '/compte/modifier', '/compte/frigo'])(
+  it.each(['/compte', '/compte/cocktails', '/compte/favoris', '/compte/avis', '/compte/modifier', '/compte/frigo'])(
     '%s renvoie vers /login sans être connecté',
     async (url) => {
       ouvrir(url);

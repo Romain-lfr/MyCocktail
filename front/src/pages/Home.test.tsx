@@ -146,6 +146,16 @@ describe('Home', () => {
       expect(emplacement()).toBe('/cocktail/Cocktail%201');
     });
 
+    it('cliquer n’importe où sur une carte ouvre sa fiche, sauf sur le bouton favori', async () => {
+      connecter();
+      repondre({ cocktails: [cocktail(1), cocktail(2)] });
+      const { user } = rendre(<Home />);
+      await user.click(await screen.findByRole('button', { name: 'Ajouter aux favoris' }));
+      expect(emplacement()).toBe('/');
+      await user.click(screen.getByText('Description du cocktail 1'));
+      expect(emplacement()).toBe('/cocktail/Cocktail%201');
+    });
+
     it('compte les recettes et précise le filtre', async () => {
       connecter();
       repondre({ cocktails: [cocktail(1), cocktail(2)] });

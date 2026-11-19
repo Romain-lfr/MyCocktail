@@ -11,6 +11,8 @@ export class CreateAvisDto {
   titreavis: string;
 
   @IsString()
-  @MinLength(10, { message: 'La description doit faire au moins 10 caractères' })
+  @MinLength(10, {
+    message: 'La description doit faire au moins 10 caractères',
+  })
   descriptionavis: string;
 }

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-// Adslot lit VITE_ADSENSE_CLIENT au chargement : on recharge le module après chaque stubEnv
+// utils/pub lit VITE_ADSENSE_CLIENT au chargement : on recharge les modules après chaque stubEnv
 async function chargerAdslot(client?: string) {
   vi.resetModules();
   if (client) vi.stubEnv('VITE_ADSENSE_CLIENT', client);
@@ -13,19 +13,6 @@ describe('Adslot', () => {
     vi.unstubAllEnvs();
     document.head.querySelectorAll('script[data-adsense]').forEach((s) => s.remove());
     delete window.adsbygoogle;
-  });
-
-  describe('pubAutorisee', () => {
-    it('refuse toujours la pub à un mineur', async () => {
-      localStorage.setItem('estMineur', 'true');
-      const { pubAutorisee } = await chargerAdslot('ca-pub-123');
-      expect(pubAutorisee('slot')).toBe(false);
-    });
-
-    it('réserve l’emplacement en développement', async () => {
-      const { pubAutorisee } = await chargerAdslot();
-      expect(pubAutorisee()).toBe(true);
-    });
   });
 
   describe('AdSlot', () => {

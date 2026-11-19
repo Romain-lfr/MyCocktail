@@ -7,6 +7,11 @@
   --paprika: #C1440E;
   --encre: #123A3A;
   --sable: #FCEBD1;
+  /* Variantes de survol / fond, dérivées de la palette */
+  --mangue-claire: #FFB347; /* survol des boutons mangue */
+  --encre-claire: #1B5252;  /* survol des boutons encre */
+  --sable-clair: #FFF8EE;   /* champs sur carte sable */
+  --blanc: #FFFFFF;         /* fond de base du site, sous le pied de page */
   --radius-card: 20px;
   --marge: clamp(24px, 5vw, 80px);
   --fond-carte: var(--sable); /* fond des recettes : à changer ici */
@@ -16,9 +21,13 @@
 
 * { box-sizing: border-box; }
 
+/* Pas d'effet élastique quand on tire la page au-delà du haut ou du bas :
+   sinon le fond blanc de base apparaît au-dessus du header encre */
+html, body { overscroll-behavior: none; }
+
 body {
   margin: 0;
-  background: var(--encre);
+  background: var(--blanc);
   color: var(--sable);
   font-family: var(--font-texte);
   line-height: 1.5;
@@ -39,7 +48,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 }
 .pill:hover { background: rgba(252, 235, 209, .12); }
 .pill--active, .pill--mangue { background: var(--mangue); border-color: var(--mangue); color: var(--encre); }
-.pill--active:hover, .pill--mangue:hover { background: #ffb347; }
+.pill--active:hover, .pill--mangue:hover { background: var(--mangue-claire); }
 
 .tag { padding: 2px 10px; border-radius: 8px; font: 500 12px var(--font-texte); border: 1px solid var(--encre); color: var(--encre); }
 .tag--alcool { background: var(--mangue); border-color: var(--mangue); }
@@ -73,8 +82,6 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 /* ---------- Page ---------- */
 .page { width: 100%; padding: 0 var(--marge) 64px; }
 
-.vide { padding: 48px 0; font-size: 18px; }
-
 @media (max-width: 720px) {
   .header__search { order: 3; max-width: none; width: 100%; margin-left: 0; }
   .header__actions { margin-left: auto; }
@@ -89,13 +96,15 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .fiche__meta .tag { border-color: var(--sable); color: var(--sable); }
 .fiche__meta .tag--alcool { border-color: var(--mangue); color: var(--encre); }
 .fiche__desc { font-size: 18px; max-width: 56ch; margin: 0 0 24px; }
-.fiche__photo { width: 100%; aspect-ratio: 4 / 3; max-height: 360px; border-radius: 28px; object-fit: cover; display: block; }
-.fiche__photo--vide { display: grid; place-items: center; color: var(--encre); }
+/* Photo entière, jamais recadrée : elle garde ses proportions dans la limite de la colonne et de 520px de haut */
+.fiche__photo { display: block; justify-self: center; width: auto; height: auto; max-width: 100%; max-height: min(520px, 70vh); border-radius: 28px; box-shadow: 14px 14px 0 var(--paprika); transform: rotate(-2deg); }
+.fiche__photo--vide { width: 100%; aspect-ratio: 4 / 3; max-height: 360px; display: grid; place-items: center; color: var(--encre); }
 .fiche__photo--vide svg { height: 55%; width: auto; }
 
 .fiche__corps { display: grid; grid-template-columns: minmax(280px, 400px) minmax(0, 1fr); gap: 64px; align-items: start; border-top: 1px solid rgba(252, 235, 209, .3); padding: 40px 0 56px; }
 .fiche h2 { font-size: 30px; color: var(--mangue); margin-bottom: 18px; }
-.fiche__ingredients { background: var(--fond-carte); color: var(--encre); border-radius: var(--radius-card); padding: 28px 32px; }
+/* Ingrédients toujours visibles pendant la lecture des étapes (ordinateur) */
+.fiche__ingredients { position: sticky; top: 96px; background: var(--fond-carte); color: var(--encre); border-radius: var(--radius-card); padding: 28px 32px; }
 .fiche .fiche__ingredients h2 { color: var(--encre); }
 
 /* Ingrédients présentés comme une carte de bar : nom ........ quantité */
@@ -110,7 +119,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .materiel li { border: 1.5px solid rgba(252, 235, 209, .6); border-radius: 999px; padding: 4px 16px; font-size: 14px; }
 
 .etapes { list-style: none; margin: 0; padding: 0; }
-.etape { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 16px; padding: 20px 24px; margin-bottom: 16px; background: var(--fond-carte); color: var(--encre); border-radius: var(--radius-card); }
+.etape { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 16px; padding: 20px 24px; margin-bottom: 16px; background: var(--fond-carte); color: var(--encre); border-radius: var(--radius-card); }
 .etape__num { font: italic 700 56px var(--font-titre); color: var(--paprika); line-height: 1; }
 .etape p { margin: 4px 0 8px; font-size: 18px; max-width: 62ch; }
 .etape .etape__ing { font-size: 15px; opacity: .8; margin: 0 0 4px; }
@@ -131,7 +140,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .btn { padding: 5px 16px; border-radius: 999px; border: 1.5px solid rgba(252, 235, 209, .6); background: transparent; color: var(--sable); font: 500 13px var(--font-texte); cursor: pointer; }
 .btn:hover { background: rgba(252, 235, 209, .12); }
 .btn--plein { background: var(--mangue); border-color: var(--mangue); color: var(--encre); }
-.btn--plein:hover { background: #ffb347; }
+.btn--plein:hover { background: var(--mangue-claire); }
 .btn--danger { border-color: var(--paprika); }
 .btn--danger:hover { background: var(--paprika); }
 .fil { margin: 16px 0 0; padding-left: 20px; border-left: 3px solid var(--mangue); }
@@ -143,10 +152,6 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .form-inline select option { color: var(--encre); }
 .form-inline textarea { min-height: 90px; resize: vertical; }
 
-/* Photo penchée avec ombre paprika, comme la recette mise en avant de l'accueil */
-.fiche__photo { box-shadow: 14px 14px 0 var(--paprika); transform: rotate(-2deg); }
-/* Ingrédients toujours visibles pendant la lecture des étapes (ordinateur) */
-.fiche__ingredients { position: sticky; top: 96px; }
 .fiche__compte { margin: -10px 0 8px; font-size: 14px; opacity: .7; }
 
 /* Étapes à cocher pendant la préparation */
@@ -155,7 +160,6 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .etapes__barre { height: 8px; border-radius: 999px; background: rgba(252, 235, 209, .15); overflow: hidden; margin: 4px 0 10px; }
 .etapes__barre span { display: block; height: 100%; background: var(--citron); border-radius: 999px; transition: width .3s; }
 .etapes__aide { margin: 0 0 16px; font-size: 14px; opacity: .8; }
-.etape { grid-template-columns: 56px minmax(0, 1fr) auto; }
 /* Case ronde bien visible à droite de chaque étape */
 .etape__case {
   width: 44px; height: 44px; border-radius: 50%; align-self: center; cursor: pointer;
@@ -177,7 +181,8 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
   .fiche__entete { grid-template-columns: 1fr; }
   .fiche__corps { grid-template-columns: 1fr; gap: 32px; }
   .fiche__ingredients { position: static; }
-  .fiche__photo { transform: none; box-shadow: 8px 8px 0 var(--paprika); width: calc(100% - 8px); }
+  .fiche__photo { transform: none; box-shadow: 8px 8px 0 var(--paprika); max-width: calc(100% - 8px); }
+  .fiche__photo--vide { width: calc(100% - 8px); }
 }
 
 /* Boutons et champs à l'intérieur des tuiles claires (avis) */
@@ -188,53 +193,29 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .avis .btn--danger:hover { background: var(--paprika); color: var(--sable); }
 .avis .fil { border-left-color: var(--paprika); }
 .avis .fil .fil { border-left-color: rgba(18, 58, 58, .25); }
-.avis .form-inline select, .avis .form-inline input, .avis .form-inline textarea { border-color: var(--encre); color: var(--encre); background: #fff8ee; }
-
-/* ============ Page compte (sans conteneurs) ============ */
-.compte { padding: 64px 0 40px; display: grid; grid-template-columns: minmax(220px, 1fr) 2fr; gap: 48px; align-items: start; }
-.compte__intro { position: sticky; top: 100px; }
-.compte__salut { margin: 0 0 8px; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; opacity: .7; }
-.compte__intro h1 { font-size: clamp(44px, 7vw, 84px); color: var(--mangue); line-height: 1; word-break: break-word; }
-.compte__sous { margin: 20px 0 0; font-size: 15px; opacity: .85; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
-.compte__role { color: var(--citron); font-weight: 600; }
-
-.menu { list-style: none; margin: 0; padding: 0; border-top: 1px solid rgba(252, 235, 209, .3); }
-.menu li { border-bottom: 1px solid rgba(252, 235, 209, .3); }
-.menu__lien {
-  width: 100%; display: grid; grid-template-columns: 56px 1fr auto; align-items: baseline; gap: 12px;
-  padding: 28px 4px; background: none; border: 0; color: var(--sable); text-align: left; cursor: pointer; font: inherit;
-  transition: color .2s, padding-left .2s;
-}
-.menu__num { font: 500 14px var(--font-texte); opacity: .55; }
-.menu__titre { font: italic 700 clamp(28px, 4vw, 44px) var(--font-titre); line-height: 1.1; }
-.menu__texte { display: block; margin-top: 6px; font: 400 15px var(--font-texte); opacity: .7; font-style: normal; }
-.menu__fleche { font-size: 28px; transition: transform .2s; }
-.menu__lien:hover, .menu__lien:focus-visible { color: var(--mangue); padding-left: 16px; }
-.menu__lien:hover .menu__fleche { transform: translateX(6px); }
-
-@media (max-width: 800px) {
-  .compte { grid-template-columns: 1fr; gap: 32px; padding-top: 40px; }
-  .compte__intro { position: static; }
-}
-@media (prefers-reduced-motion: reduce) { .menu__lien, .menu__fleche { transition: none; } }
+.avis .form-inline select, .avis .form-inline input, .avis .form-inline textarea { border-color: var(--encre); color: var(--encre); background: var(--sable-clair); }
 
 /* ============ Mise en page avec footer ============ */
 /* overflow-x: clip (et non hidden) : coupe tout débordement horizontal sans casser le header sticky */
 .layout { min-height: 100vh; display: flex; flex-direction: column; overflow-x: clip; }
-.layout > main { flex: 1; }
+.layout > main { flex: 1; padding-bottom: 48px; background: var(--encre); } /* les pages restent sur fond encre */
+/* Pages en deux volets : les volets vont jusqu'au pied de page, sans bande encre en dessous */
+.layout > main.connexion, .layout > main.profil { padding-bottom: 0; }
 
 /* ============ Footer ============ */
-.footer { background: var(--encre); border-top: 1px solid rgba(252, 235, 209, .2); margin-top: auto; }
-.footer__inner { padding: 40px var(--marge) 24px; }
+/* Pied de page sur le fond blanc de base : il se distingue des pages, qui sont sur fond encre */
+.footer { color: var(--encre); margin-top: auto; }
+.footer__inner { padding: 48px var(--marge) 24px; }
 .footer__haut { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 32px; }
-.footer .logo { font-size: 30px; }
-.footer__slogan { margin: 12px 0 0; font-size: 14px; opacity: .75; max-width: 30ch; }
-.footer h3 { font: 600 12px var(--font-texte); font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: var(--mangue); margin-bottom: 14px; }
+.footer .logo { font-size: 30px; color: var(--encre); }
+.footer__slogan { margin: 12px 0 0; font-size: 14px; opacity: .8; max-width: 30ch; }
+.footer h2 { font: 600 12px var(--font-texte); font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: var(--paprika); margin-bottom: 14px; }
 .footer ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.footer a { color: var(--sable); text-decoration: none; font-size: 14px; }
-.footer a:hover { color: var(--mangue); text-decoration: underline; }
-.footer__bas { margin-top: 32px; padding-top: 16px; border-top: 1px solid rgba(252, 235, 209, .25); font-size: 13px; opacity: .7; }
-.footer__etoile { color: var(--mangue); width: 28px; height: 28px; }
+.footer a { color: var(--encre); text-decoration: none; font-size: 14px; }
+.footer a:hover { color: var(--paprika); text-decoration: underline; }
+.footer :focus-visible { outline-color: var(--encre); }
+.footer__bas { margin-top: 32px; padding-top: 16px; border-top: 1px solid rgba(18, 58, 58, .2); font-size: 13px; opacity: .75; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 24px; }
+.footer__bas p { margin: 0; }
 
 /* ============ Page profil (deux volets) ============ */
 .profil { display: grid; grid-template-columns: minmax(280px, 36%) 1fr; min-height: 560px; }
@@ -243,10 +224,10 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
   padding: 48px 24px; text-align: center;
 }
-.profil__avatar { width: 180px; height: 180px; border-radius: 50%; background: var(--encre); color: var(--mangue); display: grid; place-items: center; font: italic 700 88px var(--font-titre); text-transform: uppercase; }
+.profil__avatar { width: 180px; height: 180px; border-radius: 50%; background: var(--encre); color: var(--mangue); display: grid; place-items: center; font: italic 700 88px var(--font-titre); text-transform: uppercase; box-shadow: 0 0 0 8px var(--mangue), 0 0 0 11px var(--encre); }
 .profil__gauche h1 { font-size: clamp(30px, 4vw, 44px); line-height: 1.1; word-break: break-word; }
 .profil__mail { font-size: 15px; word-break: break-all; margin: 0; }
-.profil__role { font-weight: 600; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; }
+.profil__role { font-weight: 600; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; padding: 4px 14px; border-radius: 999px; background: var(--encre); color: var(--mangue); }
 
 .profil__droite { background: var(--sable); color: var(--encre); padding: 48px clamp(24px, 6vw, 80px); }
 .profil__droite h2 { font-size: 26px; padding-bottom: 8px; border-bottom: 2px solid var(--encre); margin-bottom: 20px; max-width: 560px; }
@@ -255,8 +236,6 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .infos dt { font-weight: 600; }
 .infos dd { margin: 0; }
 .profil__surtitre { color: var(--encre); opacity: .75; margin: 0; }
-.profil__avatar { box-shadow: 0 0 0 8px var(--mangue), 0 0 0 11px var(--encre); }
-.profil__role { padding: 4px 14px; border-radius: 999px; background: var(--encre); color: var(--mangue); }
 .profil__depuis { margin: 0; font: italic 500 18px var(--font-titre); }
 
 /* Mon espace : tuiles numérotées */
@@ -278,7 +257,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 @media (prefers-reduced-motion: reduce) { .espace a, .espace a:hover, .espace a:hover .espace__fleche { transition: none; transform: none; } }
 .profil__action { margin-top: 40px; }
 .profil__action .pill { background: var(--encre); border-color: var(--encre); color: var(--sable); padding: 12px 28px; font-weight: 600; }
-.profil__action .pill:hover { background: #1b5252; }
+.profil__action .pill:hover { background: var(--encre-claire); }
 
 @media (max-width: 800px) {
   .profil { grid-template-columns: 1fr; }
@@ -323,7 +302,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .champ__erreur { color: var(--mangue); font-size: 13px; margin: 0; }
 
 .recettes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.recette { display: grid; grid-template-columns: 1fr 112px; gap: 8px 20px; padding: 24px; background: var(--fond-carte); color: var(--encre); border-radius: var(--radius-card); align-content: start; }
+.recette { display: grid; grid-template-columns: 1fr 112px; gap: 8px 20px; padding: 24px; background: var(--fond-carte); color: var(--encre); border-radius: var(--radius-card); align-content: start; transition: transform .2s, box-shadow .2s; }
 .recette .pill { border-color: var(--encre); color: var(--encre); }
 .recette .pill:hover { background: rgba(18, 58, 58, .1); }
 .recette .pill--mangue { background: var(--mangue); border-color: var(--mangue); }
@@ -334,7 +313,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .recette__meta { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 14px; }
 .recette__meta .tag { border-color: var(--encre); color: var(--encre); }
 .recette__meta .tag--alcool { border-color: var(--mangue); color: var(--encre); }
-.recette__visuel { grid-column: 2; grid-row: 1 / span 2; width: 112px; height: 112px; border-radius: 24px; object-fit: cover; }
+.recette__visuel { grid-column: 2; grid-row: 1 / span 2; width: 112px; height: 112px; border-radius: 24px; object-fit: cover; transition: transform .2s; }
 .recette__visuel--vide { display: grid; place-items: center; color: var(--encre); }
 .recette__visuel--vide svg { width: 56px; height: 56px; }
 .recette__visuel--alcool { background: var(--mangue); }
@@ -344,7 +323,24 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .recette__visuel--alcool, .connexion__gauche { --verre-deco: var(--paprika); }          /* fond mangue */
 .recette__visuel--moktail, .connexion__gauche--citron, .vide__verre { --verre-liquide: var(--mangue); } /* fond citron */
 .recette__corps { grid-column: 1; grid-row: 1; }
-.recette__actions { grid-column: 1; grid-row: 2; display: flex; }
+.recette__actions { grid-column: 1; grid-row: 2; display: flex; flex-wrap: wrap; gap: 8px; }
+.vide__verre--mangue { background: var(--mangue); --verre-liquide: var(--citron); --verre-deco: var(--paprika); } /* fond mangue */
+
+/* Bouton destructif dans une carte claire */
+.recette .pill--danger { border-color: var(--paprika); color: var(--paprika); }
+.recette .pill--danger:hover { background: var(--paprika); color: var(--sable); }
+
+/* Statut d'un cocktail (Mes cocktails) */
+.etat { padding: 2px 12px; border-radius: 999px; font: 600 12px var(--font-texte); border: 1.5px solid var(--encre); color: var(--encre); }
+.etat--publié { background: var(--citron); border-color: var(--citron); }
+.etat--privé { background: var(--encre); color: var(--sable); }
+.etat--brouillon { border-style: dashed; }
+.etat--archivé { opacity: .6; }
+
+/* En-tête des pages « Mon espace » */
+.espace-entete { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; padding: 16px 0 32px; }
+.espace-entete h1 { font-size: clamp(40px, 6vw, 72px); color: var(--mangue); line-height: 1.02; }
+.espace-entete__compte { margin: 12px 0 0; font: italic 500 20px var(--font-titre); }
 
 @media (max-width: 1000px) {
   .recettes { grid-template-columns: 1fr; }
@@ -362,7 +358,6 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .pub__dev { padding: 28px; border: 1.5px dashed rgba(252, 235, 209, .5); border-radius: var(--radius-card); font-size: 14px; opacity: .8; }
 
 .barre__difficulte { display: flex; gap: 8px; flex-wrap: wrap; }
-
 
 /* ============ Pilules de difficulté (couleurs de la charte) ============ */
 .pill--facile { border-color: var(--citron); }
@@ -394,33 +389,24 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .actifs__effacer:hover { background: rgba(252, 235, 209, .12); }
 
 /* État vide */
-.vide { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; padding: 48px 0; }
+.vide { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; padding: 48px 0; font-size: 18px; }
 .vide p { margin: 0 0 16px; max-width: 52ch; }
 .vide .vide__titre { margin-bottom: 8px; font: italic 700 clamp(28px, 3.4vw, 40px) var(--font-titre); color: var(--mangue); }
 .vide__verre { width: 120px; height: 120px; border-radius: 28px; background: var(--citron); color: var(--encre); display: grid; place-items: center; transform: rotate(-6deg); }
 .vide__verre svg { width: 64px; height: 64px; }
 
 /* Cartes vivantes */
-.recette { transition: transform .2s, box-shadow .2s; }
 .recette:hover { transform: translateY(-4px); box-shadow: 8px 8px 0 var(--paprika); }
-.recette__visuel { transition: transform .2s; }
 .recette:hover .recette__visuel { transform: rotate(-4deg); }
-.vedette__visuel { box-shadow: 12px 12px 0 var(--paprika); transform: rotate(-2deg); transition: transform .2s; }
 .vedette:hover .vedette__visuel { transform: rotate(0); }
-@media (max-width: 520px) {
-  /* Photo en pleine largeur : pas d'inclinaison et ombre gardée dans l'écran */
-  .vedette__visuel { transform: none; box-shadow: 8px 8px 0 var(--paprika); width: calc(100% - 8px); }
-}
 @media (prefers-reduced-motion: reduce) {
   .recette, .recette:hover, .recette:hover .recette__visuel, .vedette__visuel, .pill:active, .btn:active { transform: none; }
 }
 
-
-
 /* Recette mise en avant : image à gauche, texte à côté */
 .vedette { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; max-width: 620px; justify-self: center; display: grid; grid-template-columns: 220px minmax(0, 1fr); column-gap: 28px; row-gap: 6px; align-content: center; }
 .vedette:focus-visible { outline: 3px solid var(--mangue); outline-offset: 8px; border-radius: 12px; }
-.vedette__visuel { grid-column: 1; grid-row: 1 / span 5; width: 220px; height: 220px; border-radius: 28px; object-fit: cover; display: block; }
+.vedette__visuel { grid-column: 1; grid-row: 1 / span 5; width: 220px; height: 220px; border-radius: 28px; object-fit: cover; display: block; box-shadow: 12px 12px 0 var(--paprika); transform: rotate(-2deg); transition: transform .2s; }
 .vedette__visuel--vide { display: grid; place-items: center; color: var(--encre); }
 .vedette__visuel--vide svg { width: 110px; height: 110px; }
 .vedette__legende, .vedette__nom, .vedette__desc, .vedette__meta { grid-column: 2; }
@@ -433,14 +419,15 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .vedette .tag--alcool { border-color: var(--mangue); color: var(--encre); }
 @media (max-width: 520px) {
   .vedette { grid-template-columns: 1fr; }
-  .vedette__visuel { grid-row: auto; width: 100%; height: 200px; }
+  /* Photo en pleine largeur : pas d'inclinaison et ombre gardée dans l'écran */
+  .vedette__visuel { grid-row: auto; width: 100%; height: 200px; transform: none; box-shadow: 8px 8px 0 var(--paprika); }
   .vedette__legende, .vedette__nom, .vedette__desc, .vedette__meta { grid-column: 1; }
 }
 
 /* ============ Page connexion ============ */
 .connexion { display: grid; grid-template-columns: minmax(280px, 42%) 1fr; min-height: 560px; }
 .connexion__gauche { background: var(--mangue); color: var(--encre); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 48px 32px; text-align: center; }
-.connexion__verre { width: 180px; height: auto; color: var(--encre); }
+.connexion__verre { width: 180px; height: auto; color: var(--encre); transform: rotate(-8deg); }
 .connexion__slogan { margin: 0; font: italic 700 clamp(26px, 3vw, 38px) var(--font-titre); line-height: 1.15; max-width: 16ch; }
 .connexion__droite { padding: 56px var(--marge); display: flex; flex-direction: column; justify-content: center; max-width: 640px; }
 .connexion__droite h1 { font-size: clamp(38px, 5vw, 60px); color: var(--mangue); margin-bottom: 32px; }
@@ -460,7 +447,6 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .connexion__alt a { color: var(--mangue); }
 .connexion__droite .surtitre { margin-bottom: 10px; }
 .connexion__gauche--citron { background: var(--citron); }
-.connexion__verre { transform: rotate(-8deg); }
 .connexion__aide { margin: 0; font-size: 13px; opacity: .7; }
 .connexion__champ input[type="date"] { color-scheme: dark; }
 
@@ -477,3 +463,229 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
   .connexion__verre { width: 72px; }
   .connexion__slogan { font-size: 22px; max-width: none; }
 }
+/* ============ Création d'un cocktail ============ */
+.creation h1 { font-size: clamp(38px, 5.5vw, 68px); color: var(--mangue); line-height: 1.02; }
+.creation .surtitre { margin-top: 8px; }
+.creation__grille { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 440px); gap: 56px; align-items: start; }
+.creation__form { display: flex; flex-direction: column; gap: 24px; }
+
+/* Aperçu en direct de la carte, à droite du formulaire */
+.apercu { position: sticky; top: 96px; display: flex; flex-direction: column; gap: 12px; }
+.apercu__titre { margin: 0; font: 600 12px var(--font-texte); letter-spacing: .14em; text-transform: uppercase; color: var(--mangue); }
+.apercu .recette { transform: rotate(-1.5deg); box-shadow: 10px 10px 0 var(--paprika); }
+.apercu .recette:hover { transform: rotate(-1.5deg); }
+.apercu__nom { cursor: default; }
+.apercu__nom:hover { text-decoration: none; }
+.apercu__aide { margin: 14px 0 0; font-size: 13px; opacity: .7; }
+@media (max-width: 1000px) {
+  .creation__grille { grid-template-columns: 1fr; gap: 40px; }
+  .apercu { position: static; }
+  .apercu .recette, .apercu .recette:hover { transform: none; box-shadow: 8px 8px 0 var(--paprika); }
+}
+.creation__label { font-size: 14px; opacity: .85; }
+.creation__label small { opacity: .7; }
+.creation__ligne { display: flex; flex-wrap: wrap; gap: 24px 40px; }
+.creation__texte {
+  width: 100%; min-height: 110px; resize: vertical; padding: 14px 20px; border-radius: 20px;
+  border: 1.5px solid rgba(252, 235, 209, .6); background: transparent; color: var(--sable); font: 400 16px var(--font-texte);
+}
+.creation__texte[aria-invalid="true"] { border-color: var(--mangue); }
+.creation__texte::placeholder, .etape-form__recherche::placeholder { color: rgba(252, 235, 209, .55); }
+.creation__duree { display: flex; align-items: center; gap: 10px; }
+.connexion__champ .creation__duree input { width: 110px; }
+.pill:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Zone de dépôt de la photo */
+.depot { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 24px; border: 2px dashed rgba(252, 235, 209, .5); border-radius: var(--radius-card); cursor: pointer; }
+.depot:hover, .depot:focus-within { border-color: var(--mangue); }
+.depot input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.depot__texte { font: italic 700 22px var(--font-titre); }
+.depot__aide { font-size: 13px; opacity: .7; }
+
+/* Indicateur de progression 1 → 2 */
+.progression { list-style: none; margin: 20px 0 36px; padding: 0; display: flex; gap: 12px; flex-wrap: wrap; }
+.progression li { display: inline-flex; align-items: center; gap: 10px; padding: 6px 16px 6px 6px; border-radius: 999px; border: 1.5px solid rgba(252, 235, 209, .3); font-size: 14px; opacity: .7; }
+.progression li > span { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: rgba(252, 235, 209, .15); font-weight: 600; }
+.progression li[aria-current="step"] { opacity: 1; border-color: var(--mangue); }
+.progression li[aria-current="step"] > span { background: var(--mangue); color: var(--encre); }
+.progression .progression__faite > span { background: var(--citron); color: var(--encre); }
+
+/* Étapes du formulaire : cartes sable */
+.creation__vide { font-size: 18px; max-width: 52ch; opacity: .85; }
+.etapes-form { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 20px; }
+.etape-form { background: var(--fond-carte); color: var(--encre); border-radius: var(--radius-card); padding: 24px 28px; display: flex; flex-direction: column; gap: 14px; }
+.etape-form__entete { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.etape-form h3 { font-size: 30px; color: var(--paprika); }
+.etape-form h4 { margin: 0 0 10px; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; }
+.etape-form .btn { border-color: var(--encre); color: var(--encre); }
+.etape-form .btn--danger { border-color: var(--paprika); color: var(--paprika); }
+.etape-form .btn--danger:hover { background: var(--paprika); color: var(--sable); }
+.etape-form .btn--plein { background: var(--mangue); border-color: var(--mangue); }
+.etape-form .creation__texte, .etape-form__recherche, .dosages-form input, .dosages-form select, .nouveau select {
+  border: 1.5px solid var(--encre); color: var(--encre); background: transparent; font: 400 15px var(--font-texte);
+}
+.etape-form .creation__texte { min-height: 80px; }
+.etape-form .creation__texte::placeholder, .etape-form .etape-form__recherche::placeholder { color: rgba(18, 58, 58, .5); }
+.etape-form__colonnes { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 28px; }
+.etape-form__recherche { width: 100%; padding: 9px 18px; border-radius: 999px; }
+.etape-form .suggestions { background: var(--encre); color: var(--sable); }
+.etape-form .suggestions button:hover, .etape-form .suggestions button:focus-visible { background: rgba(252, 235, 209, .15); }
+.etape-form :focus-visible { outline-color: var(--encre); }
+.nouveau { margin-top: 8px; padding: 12px 14px; border-radius: 14px; border: 1.5px dashed rgba(18, 58, 58, .4); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
+.nouveau p { margin: 0; flex-basis: 100%; }
+.nouveau select { padding: 5px 10px; border-radius: 10px; }
+.dosages-form { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.dosages-form li { display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 2px dotted rgba(18, 58, 58, .25); }
+.dosages-form__nom { flex: 1; font-weight: 500; }
+.dosages-form input { width: 76px; padding: 6px 10px; border-radius: 10px; }
+.dosages-form select { padding: 6px 8px; border-radius: 10px; }
+.dosages-form__retirer { border: 0; background: none; color: var(--paprika); font-size: 22px; line-height: 1; cursor: pointer; padding: 2px 8px; border-radius: 999px; }
+.dosages-form__retirer:hover { background: rgba(18, 58, 58, .1); }
+.ustensiles-form { margin-top: 12px; }
+.creation__ajouter { margin-top: 20px; border-style: dashed; }
+.creation__fin { margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(252, 235, 209, .3); display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; }
+.creation__publier { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.creation__principal { padding: 12px 32px; font-size: 16px; font-weight: 600; }
+.creation__legende { flex-basis: 100%; margin: 0; font-size: 13px; opacity: .7; text-align: right; }
+@media (max-width: 720px) {
+  .creation__publier { width: 100%; flex-direction: column-reverse; align-items: stretch; }
+  .creation__publier .pill { justify-content: center; }
+  .creation__legende { text-align: left; }
+}
+.creation .connexion__erreur { margin-top: 16px; }
+
+@media (max-width: 720px) {
+  .etape-form { padding: 20px; }
+  .etape-form__colonnes { grid-template-columns: 1fr; gap: 20px; }
+}
+
+/* ============ Modification d'un cocktail ============ */
+.pill--danger { border-color: var(--paprika); }
+.pill--danger:hover { background: var(--paprika); color: var(--sable); }
+.statuts { display: flex; flex-wrap: wrap; gap: 8px; }
+.publication { gap: 16px; }
+.publication__aide { margin: 0; font-size: 14px; opacity: .8; min-height: 2.6em; }
+.publication__danger { margin-top: 8px; padding-top: 20px; border-top: 1px solid rgba(252, 235, 209, .25); }
+.enregistre { font-size: 13px; font-weight: 600; color: var(--encre); background: var(--citron); padding: 3px 10px; border-radius: 999px; align-self: center; }
+.dosages-form .enregistre { padding: 2px 8px; }
+.etape-form .actions { margin-top: 0; align-items: center; }
+.modification__etapes { margin-top: 56px; padding-top: 32px; border-top: 1px solid rgba(252, 235, 209, .3); }
+.modification__etapes > h2 { font-size: clamp(30px, 3.6vw, 44px); color: var(--mangue); }
+.modification__etapes .creation__vide { margin: 8px 0 24px; font-size: 15px; }
+.nouvelle-etape { margin-top: 20px; border: 2px dashed var(--paprika); }
+.creation__legende--alerte, .publication__aide--alerte { color: var(--mangue); opacity: 1; }
+
+/* Fiche : zone avis quand on est l'auteur de la recette */
+.fiche__auteur { padding: 18px 20px; border: 1.5px dashed rgba(252, 235, 209, .45); border-radius: var(--radius-card); max-width: 360px; }
+.fiche__auteur p { margin: 0 0 12px; font-size: 15px; opacity: .85; }
+.fiche__auteur .fiche__auteur-titre { margin-bottom: 4px; font: italic 700 22px var(--font-titre); color: var(--citron); opacity: 1; }
+.badge-auteur { margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--encre); color: var(--sable); font: 600 11px var(--font-texte); letter-spacing: .04em; vertical-align: middle; }
+
+/* Carte entièrement cliquable (le nom reste le bouton accessible au clavier) */
+.recette--cliquable { cursor: pointer; }
+.recette--cliquable:hover .recette__nom { text-decoration: underline; text-decoration-color: var(--paprika); text-decoration-thickness: 3px; text-underline-offset: 5px; }
+
+/* ============ Ajouter un avis ============ */
+.avis-page .connexion__droite { justify-content: flex-start; padding-top: 32px; max-width: 720px; }
+.avis-page__retour { margin: 0 0 24px; }
+.avis-page .connexion__droite h1 { font-size: clamp(32px, 4.4vw, 52px); line-height: 1.05; }
+.avis-page form { max-width: 520px; }
+.avis-page__photo { width: min(320px, 80%); aspect-ratio: 1; object-fit: cover; border-radius: 28px; box-shadow: 12px 12px 0 var(--encre); transform: rotate(-3deg); }
+
+/* Note en étoiles (boutons radio cachés, étoiles cliquables) */
+.etoiles { border: 0; margin: 0; padding: 0; }
+.etoiles legend { padding: 0; margin-bottom: 8px; font-size: 14px; opacity: .85; }
+.etoiles__liste { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.etoiles__etoile { cursor: pointer; font-size: 40px; line-height: 1; color: rgba(252, 235, 209, .25); padding: 2px; border-radius: 8px; transition: transform .15s, color .15s; }
+.etoiles__etoile--pleine { color: var(--mangue); }
+.etoiles__etoile:hover { transform: scale(1.12); }
+.etoiles__etoile:focus-within { outline: 3px solid var(--mangue); outline-offset: 2px; }
+.etoiles__libelle { margin-left: 12px; font: italic 500 20px var(--font-titre); }
+@media (prefers-reduced-motion: reduce) {
+  .etoiles__etoile { transition: none; }
+  .etoiles__etoile:hover, .avis-page__photo { transform: none; }
+}
+@media (max-width: 800px) {
+  .avis-page__photo { width: 96px; box-shadow: 6px 6px 0 var(--encre); }
+}
+
+/* ============ Mes avis ============ */
+.mes-avis { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.mon-avis { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.mon-avis p { margin: 0; }
+.mon-avis__entete { display: flex; align-items: baseline; gap: 12px; }
+.mon-avis__etoiles { color: var(--mangue); font-size: 18px; letter-spacing: 2px; }
+.mon-avis__etoiles span { color: rgba(18, 58, 58, .2); }
+.mon-avis .avis__auteur { margin-top: 6px; }
+.mon-avis__lien { border: 0; background: none; padding: 0; font: inherit; color: var(--paprika); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.mon-avis__cocktail { font: italic 700 22px var(--font-titre); }
+.mon-avis__edition { display: flex; flex-direction: column; gap: 14px; }
+/* Champs et étoiles sur la carte claire */
+.mon-avis input, .mon-avis .creation__texte { border-color: var(--encre); color: var(--encre); background: transparent; }
+.mon-avis .connexion__champ input { padding: 10px 18px; }
+.mon-avis .etoiles__etoile { font-size: 32px; color: rgba(18, 58, 58, .2); }
+.mon-avis .etoiles__etoile--pleine { color: var(--mangue); }
+.mon-avis .etoiles__etoile:focus-within { outline-color: var(--encre); }
+.mon-avis .etoiles__libelle { font-size: 17px; }
+@media (max-width: 900px) { .mes-avis { grid-template-columns: 1fr; } }
+
+/* ============ Modifier mon profil ============ */
+.modifier-compte .connexion__droite { justify-content: flex-start; padding-top: 32px; }
+.modifier-compte .connexion__gauche { gap: 16px; }
+.modifier-compte .connexion__gauche .profil__mail { color: var(--encre); opacity: .8; }
+.modifier-compte__facultatif { opacity: .65; }
+.connexion__champ input:disabled { opacity: .5; cursor: not-allowed; }
+.connexion__succes { margin: 0; padding: 10px 16px; border-radius: 12px; background: var(--citron); color: var(--encre); font-size: 14px; font-weight: 600; }
+@media (max-width: 800px) {
+  .modifier-compte .profil__avatar { width: 72px; height: 72px; font-size: 36px; }
+  .modifier-compte .connexion__gauche { flex-wrap: wrap; justify-content: flex-start; }
+}
+
+/* ============ Mon frigo ============ */
+.monfrigo { display: grid; grid-template-columns: minmax(300px, 420px) minmax(0, 1fr); gap: 48px; align-items: start; }
+.monfrigo h2 { font-size: 30px; margin-bottom: 18px; }
+.monfrigo__contenu { position: sticky; top: 96px; background: var(--fond-carte); color: var(--encre); border-radius: var(--radius-card); padding: 28px 32px; }
+.monfrigo__contenu .etape-form__recherche { border: 1.5px solid var(--encre); color: var(--encre); background: transparent; font: 400 15px var(--font-texte); }
+.monfrigo__contenu .etape-form__recherche::placeholder { color: rgba(18, 58, 58, .5); }
+.monfrigo__contenu .suggestions { background: var(--encre); color: var(--sable); }
+.monfrigo__contenu .suggestions button:hover, .monfrigo__contenu .suggestions button:focus-visible { background: rgba(252, 235, 209, .15); }
+.monfrigo__contenu :focus-visible { outline-color: var(--encre); }
+.monfrigo__aucun { margin: 8px 0 0; font-size: 14px; opacity: .7; }
+.monfrigo__vide { margin: 20px 0 0; font-size: 15px; opacity: .8; }
+.monfrigo__liste { margin-top: 12px; }
+.monfrigo__icone { border: 0; background: none; color: var(--encre); font-size: 18px; line-height: 1; padding: 4px 6px; border-radius: 999px; cursor: pointer; opacity: .55; }
+.monfrigo__icone:hover { opacity: 1; background: rgba(18, 58, 58, .1); }
+.monfrigo__icone--retirer { color: var(--paprika); font-size: 22px; opacity: .8; }
+.monfrigo__edition { flex-wrap: wrap; }
+.monfrigo__edition input, .monfrigo__edition select { padding: 6px 10px; border-radius: 10px; border: 1.5px solid var(--encre); background: transparent; color: var(--encre); font: 400 15px var(--font-texte); }
+.monfrigo__edition input { width: 76px; }
+.monfrigo__edition .btn { border-color: var(--encre); color: var(--encre); }
+.monfrigo__edition .btn--plein { background: var(--mangue); border-color: var(--mangue); }
+.monfrigo__edition .actions { margin-top: 0; }
+.monfrigo__realisables h2 { color: var(--mangue); }
+.monfrigo__recettes { grid-template-columns: 1fr; }
+.monfrigo .vide { padding-top: 8px; }
+@media (min-width: 1300px) { .monfrigo__recettes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) {
+  .monfrigo { grid-template-columns: 1fr; gap: 40px; }
+  .monfrigo__contenu { position: static; padding: 24px; }
+}
+
+/* ============ Recherche ============ */
+.recherche-entete { padding-top: 40px; }
+.recherche-entete h1 { word-break: break-word; }
+.recherche-form { display: flex; gap: 8px; flex: 1; min-width: 260px; max-width: 460px; }
+.recherche-form input {
+  flex: 1; min-width: 0; padding: 11px 20px; border-radius: 999px;
+  border: 1.5px solid rgba(252, 235, 209, .6); background: transparent; color: var(--sable); font: 400 15px var(--font-texte);
+}
+.recherche-form input::placeholder { color: rgba(252, 235, 209, .55); }
+.recherche-bloc { padding-top: 24px; border-top: 1px solid rgba(252, 235, 209, .3); margin-bottom: 40px; }
+.recherche-bloc > h2 { font-size: 30px; color: var(--mangue); margin-bottom: 20px; }
+.recherche-bloc .vide { padding-top: 8px; }
+.recherche-aucun { margin: 0; opacity: .8; }
+.comptes-trouves { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+.compte-trouve { display: flex; align-items: center; gap: 14px; padding: 12px 22px 12px 12px; border-radius: 999px; background: var(--fond-carte); color: var(--encre); }
+.compte-trouve__avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--mangue); color: var(--encre); display: grid; place-items: center; font: italic 700 22px var(--font-titre); text-transform: uppercase; }
+.compte-trouve__pseudo { display: block; font: italic 700 20px var(--font-titre); line-height: 1.1; }
+.compte-trouve__depuis { display: block; font-size: 13px; opacity: .7; }

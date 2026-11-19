@@ -30,8 +30,8 @@ function Login() {
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("estMineur", String(!!res.data.estMineur));
       navigate("/");
-    } catch (err: any) {
-      const status = err.response?.status;
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } }).response?.status;
       setErreur(
         status === 400 || status === 401 || status === 404
           ? "E-mail ou mot de passe incorrect."
