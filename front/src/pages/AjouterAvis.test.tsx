@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import AjouterAvis from './AjouterAvis';
-import { api, connecter, emplacement, erreurApi, rendre } from '../test/utils';
+import { api, connecter, emplacement, erreurApi, imageIntrouvable, rendre } from '../test/utils';
 
 const cocktail = { idcocktail: 'COK-00001', nomcocktail: 'Piña Colada', idcompte: 'CPT-00009', alcool: true, image: [] };
 
@@ -95,6 +95,19 @@ describe('AjouterAvis', () => {
   it('affiche la photo de la recette si elle existe', async () => {
     ouvrir({ ...cocktail, image: [{ urlimage: '/public/images/1.webp', titleimage: 'Photo' }] });
     expect(await screen.findByAltText('Photo')).toHaveAttribute('src', '/api/public/images/1.webp');
+  });
+
+  it.each([
+    [true, 'Y', true],
+    [false, 'U', false],
+  ])('photo introuvable (alcool = %s) : verre en %s à la place', async (alcool, _verre, aUneDeco) => {
+    ouvrir({ ...cocktail, alcool, image: [{ urlimage: '/public/images/absente.webp', titleimage: 'Photo' }] });
+    imageIntrouvable(await screen.findByAltText('Photo'));
+    expect(screen.queryByAltText('Photo')).not.toBeInTheDocument();
+    const verre = document.querySelector('svg.connexion__verre');
+    expect(verre).toBeInTheDocument();
+    // Verre en Y = rondelle décorative (cercle) ; verre en U = paille, sans cercle
+    expect(verre!.querySelector('circle') !== null).toBe(aUneDeco);
   });
 
   it('cocktail sans alcool : volet citron', async () => {

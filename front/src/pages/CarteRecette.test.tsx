@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { screen } from '@testing-library/react';
 import CarteRecette from './CarteRecette';
-import { emplacement, rendre } from '../test/utils';
+import { emplacement, imageIntrouvable, rendre } from '../test/utils';
 
 const base = { idcocktail: 'COK-00001', nomcocktail: 'Piña Colada' };
 
@@ -53,6 +53,16 @@ describe('CarteRecette', () => {
     const r = rendre(<ul><CarteRecette c={{ ...base, alcool: false }} /></ul>);
     expect(r.container.querySelector('.recette__visuel--moktail')).toBeInTheDocument();
     expect(screen.getByText('Sans alcool')).toBeInTheDocument();
+  });
+
+  it.each([
+    [true, '.recette__visuel--alcool'],
+    [false, '.recette__visuel--moktail'],
+  ])('photo introuvable (alcool = %s) : remplacée par le verre %s', (alcool, classe) => {
+    const { container } = rendre(<ul><CarteRecette c={{ ...base, alcool, image: [{ urlimage: '/public/images/absente.webp' }] }} /></ul>);
+    imageIntrouvable(screen.getByAltText('Piña Colada'));
+    expect(screen.queryByAltText('Piña Colada')).not.toBeInTheDocument();
+    expect(container.querySelector(classe)).toBeInTheDocument();
   });
 
   it('affiche les actions passées en enfants, et rien sinon', () => {

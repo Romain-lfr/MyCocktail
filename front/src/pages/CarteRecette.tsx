@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { GlasseY, GlasseU } from "./Logo";
+import ImageOuSecours from "./ImageOuSecours";
 import { libelleStatut } from "../utils/statut";
 import "./mycocktail.css";
 import { formatNote, noteMoyenne } from "../utils/format";
@@ -53,13 +54,16 @@ export default function CarteRecette({ c, avecStatut = false, children }: { c: R
 
       {children && <div className="recette__actions">{children}</div>}
 
-      {image ? (
-        <img className="recette__visuel" src={`/api${image.urlimage}`} alt={image.titleimage || c.nomcocktail} />
-      ) : (
-        <div className={`recette__visuel recette__visuel--vide ${c.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">
-          {c.alcool ? <GlasseY /> : <GlasseU />}
-        </div>
-      )}
+      <ImageOuSecours
+        className="recette__visuel"
+        src={image && `/api${image.urlimage}`}
+        alt={image?.titleimage || c.nomcocktail}
+        secours={
+          <div className={`recette__visuel recette__visuel--vide ${c.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">
+            {c.alcool ? <GlasseY /> : <GlasseU />}
+          </div>
+        }
+      />
     </li>
   );
 }

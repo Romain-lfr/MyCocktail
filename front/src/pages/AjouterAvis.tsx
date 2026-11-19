@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { GlasseY, GlasseU } from "./Logo";
+import ImageOuSecours from "./ImageOuSecours";
 import NoteEtoiles from "./NoteEtoiles";
 import { idCompteDuToken } from "../utils/token";
 import "./mycocktail.css";
@@ -76,13 +77,14 @@ function AjouterAvis() {
   return (
     <main className="connexion avis-page">
       <section className={`connexion__gauche ${cocktail && !cocktail.alcool ? "connexion__gauche--citron" : ""}`} aria-label="Recette notée">
-        {image ? (
-          <img className="avis-page__photo" src={`/api${image.urlimage}`} alt={image.titleimage || nom} />
-        ) : cocktail?.alcool === false ? (
-          <GlasseU className="connexion__verre" />
-        ) : (
-          <GlasseY className="connexion__verre" />
-        )}
+        <ImageOuSecours
+          className="avis-page__photo"
+          src={image && `/api${image.urlimage}`}
+          alt={image?.titleimage || nom || ""}
+          secours={cocktail?.alcool === false
+            ? <GlasseU className="connexion__verre" />
+            : <GlasseY className="connexion__verre" />}
+        />
         <p className="connexion__slogan">{nom}</p>
       </section>
 

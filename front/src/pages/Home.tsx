@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { GlasseY, GlasseU } from "./Logo";
+import ImageOuSecours from "./ImageOuSecours";
 import AdSlot from "./Adslot";
 import { pubAutorisee } from "../utils/pub";
 import "./mycocktail.css";
@@ -261,13 +262,16 @@ function Home() {
 
                     {vedette && (
                         <button className="vedette" onClick={() => navigate(`/cocktail/${encodeURIComponent(vedette.nomcocktail)}`)}>
-                            {vedette.image[0] ? (
-                                <img className="vedette__visuel" src={`/api${vedette.image[0].urlimage}`} alt="" />
-                            ) : (
-                                <span className={`vedette__visuel vedette__visuel--vide ${vedette.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">
-                                    {vedette.alcool ? <GlasseY /> : <GlasseU />}
-                                </span>
-                            )}
+                            <ImageOuSecours
+                                className="vedette__visuel"
+                                src={vedette.image[0] && `/api${vedette.image[0].urlimage}`}
+                                alt=""
+                                secours={
+                                    <span className={`vedette__visuel vedette__visuel--vide ${vedette.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">
+                                        {vedette.alcool ? <GlasseY /> : <GlasseU />}
+                                    </span>
+                                }
+                            />
                             <span className="vedette__legende">
                                 {vedette.avis.length > 0 ? "Le mieux noté" : "Dernière recette"}
                             </span>
@@ -412,13 +416,16 @@ function Home() {
                                     </button>
                                 </div>
 
-                                {c.image[0] ? (
-                                    <img className="recette__visuel" src={`/api${c.image[0].urlimage}`} alt={c.image[0].titleimage || c.nomcocktail} />
-                                ) : (
-                                    <div className={`recette__visuel recette__visuel--vide ${c.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">
-                                        {c.alcool ? <GlasseY /> : <GlasseU />}
-                                    </div>
-                                )}
+                                <ImageOuSecours
+                                    className="recette__visuel"
+                                    src={c.image[0] && `/api${c.image[0].urlimage}`}
+                                    alt={c.image[0]?.titleimage || c.nomcocktail}
+                                    secours={
+                                        <div className={`recette__visuel recette__visuel--vide ${c.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">
+                                            {c.alcool ? <GlasseY /> : <GlasseU />}
+                                        </div>
+                                    }
+                                />
                             </li>
                             {(i + 1) % 2 === 0 && i < 18 && i < liste.length - 1 && pubAutorisee(SLOT_LISTE) && (
                                 <li className="pub"><AdSlot slot={SLOT_LISTE} /></li>

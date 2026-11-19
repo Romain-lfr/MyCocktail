@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Avatar from "./Avatar";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import "./mycocktail.css";
@@ -63,7 +64,7 @@ function Profil() {
       <main className="profil">
         <section className="profil__gauche" aria-label="Aperçu du compte">
           <p className="surtitre profil__surtitre">Mon compte</p>
-          <div className="profil__avatar" aria-hidden="true">{compte.pseudo.charAt(0)}</div>
+          <Avatar className="profil__avatar" pseudo={compte.pseudo} />
           <h1>{compte.pseudo}</h1>
           <p className="profil__mail">{compte.mailcompte}</p>
           <span className="profil__role">{libelleRole[compte.role] ?? compte.role}</span>

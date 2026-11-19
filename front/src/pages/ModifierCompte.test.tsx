@@ -60,6 +60,8 @@ describe('ModifierCompte', () => {
     await user.type(champs().pseudo, 'Zoé');
     expect(apercu.getByText('Zoé')).toBeInTheDocument();
     expect(apercu.getByText('Z')).toBeInTheDocument();
+    await user.type(champs().pseudo, '_martin');
+    expect(apercu.getByText('ZM')).toBeInTheDocument();
   });
 
   it('désactive le bouton pendant l’enregistrement', async () => {

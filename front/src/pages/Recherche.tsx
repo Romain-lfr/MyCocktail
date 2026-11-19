@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import CarteRecette from "./CarteRecette";
 import type { RecetteResume } from "./CarteRecette";
 import { GlasseU } from "./Logo";
+import Avatar from "./Avatar";
 import { tokenSiConnecte } from "../utils/api";
 import "./mycocktail.css";
 
@@ -103,7 +104,7 @@ function Recherche() {
           <ul className="comptes-trouves">
             {comptes.map((c) => (
               <li key={c.idcompte} className="compte-trouve">
-                <span className="compte-trouve__avatar" aria-hidden="true">{c.pseudo.charAt(0)}</span>
+                <Avatar className="compte-trouve__avatar" pseudo={c.pseudo} />
                 <span>
                   <span className="compte-trouve__pseudo">{c.pseudo}</span>
                   <span className="compte-trouve__depuis">Membre depuis {moisAnnee(c.dateinscription)}</span>

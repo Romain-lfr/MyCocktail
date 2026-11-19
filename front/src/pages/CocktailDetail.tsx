@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { GlasseY, GlasseU } from "./Logo";
+import ImageOuSecours from "./ImageOuSecours";
 import { idCompteDuToken } from "../utils/token";
 import "./mycocktail.css";
 import { avecToken, tokenSiConnecte } from "../utils/api";
@@ -235,13 +236,16 @@ function CocktailDetail() {
             </button>
           </div>
 
-          {cocktail.image?.[0] ? (
-            <img className="fiche__photo" src={`/api${cocktail.image[0].urlimage}`} alt={cocktail.image[0].titleimage || cocktail.nomcocktail} />
-          ) : (
-            <div className={`fiche__photo fiche__photo--vide ${cocktail.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">
-              {cocktail.alcool ? <GlasseY /> : <GlasseU />}
-            </div>
-          )}
+          <ImageOuSecours
+            className="fiche__photo"
+            src={cocktail.image?.[0] && `/api${cocktail.image[0].urlimage}`}
+            alt={cocktail.image?.[0]?.titleimage || cocktail.nomcocktail}
+            secours={
+              <div className={`fiche__photo fiche__photo--vide ${cocktail.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">
+                {cocktail.alcool ? <GlasseY /> : <GlasseU />}
+              </div>
+            }
+          />
         </section>
 
         <section className="fiche__corps">

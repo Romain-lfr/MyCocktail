@@ -687,5 +687,6 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .comptes-trouves { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
 .compte-trouve { display: flex; align-items: center; gap: 14px; padding: 12px 22px 12px 12px; border-radius: 999px; background: var(--fond-carte); color: var(--encre); }
 .compte-trouve__avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--mangue); color: var(--encre); display: grid; place-items: center; font: italic 700 22px var(--font-titre); text-transform: uppercase; }
+.avatar__photo { object-fit: cover; padding: 0; }
 .compte-trouve__pseudo { display: block; font: italic 700 20px var(--font-titre); line-height: 1.1; }
 .compte-trouve__depuis { display: block; font-size: 13px; opacity: .7; }

@@ -55,6 +55,7 @@ describe('Recherche', () => {
     expect(await screen.findByText('Mojito')).toBeInTheDocument();
     expect(await screen.findByText('mojitoLover')).toBeInTheDocument();
     expect(screen.getByText('Membre depuis janvier 2024')).toBeInTheDocument();
+    expect(document.querySelector('.compte-trouve__avatar')).toHaveTextContent('ML');
     expect(screen.getByRole('heading', { name: 'Résultats pour « moj »' })).toBeInTheDocument();
     expect(screen.getByText('1 cocktail · 1 compte')).toBeInTheDocument();
     expect(screen.getByRole('img')).toHaveAttribute('src', '/api/public/images/1.webp');

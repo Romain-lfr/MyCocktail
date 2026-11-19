@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import CocktailDetail from './CocktailDetail';
-import { api, connecter, emplacement, erreurApi, rendre } from '../test/utils';
+import { api, connecter, emplacement, erreurApi, imageIntrouvable, rendre } from '../test/utils';
 
 const reponse = (id: string, idcompte: string, commentaire: string, parent: string | null = null) => ({
   idreponse: id, idcompte, commentaire, datereponse: '2024-03-02T00:00:00.000Z',
@@ -157,6 +157,13 @@ describe('CocktailDetail', () => {
     it('affiche la photo si elle existe, sinon un verre', async () => {
       await ouvrir(cocktail({ image: [{ urlimage: '/public/images/p.webp', titleimage: 'Photo' }] }));
       expect(screen.getByAltText('Photo')).toHaveAttribute('src', '/api/public/images/p.webp');
+    });
+
+    it('photo introuvable : remplacée par le verre (alcool)', async () => {
+      await ouvrir(cocktail({ alcool: true, image: [{ urlimage: '/public/images/absente.webp', titleimage: 'Photo' }] }));
+      imageIntrouvable(screen.getByAltText('Photo'));
+      expect(screen.queryByAltText('Photo')).not.toBeInTheDocument();
+      expect(document.querySelector('.fiche__photo--vide.recette__visuel--alcool')).toBeInTheDocument();
     });
 
     it('verre « mocktail » pour un cocktail sans alcool', async () => {

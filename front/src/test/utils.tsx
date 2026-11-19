@@ -1,6 +1,6 @@
 // Outils partagés par les tests du front
 import type { ReactElement } from 'react';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -51,4 +51,9 @@ export function connecter({ sub = 'CPT-00001', estMineur = false } = {}) {
 /** Erreur axios telle que la renvoie l'API */
 export function erreurApi(status: number, message?: string) {
   return { isAxiosError: true, response: { status, data: message ? { message } : {} } };
+}
+
+/** Simule une image introuvable (404) : le navigateur déclenche « error » sur l'<img>. */
+export function imageIntrouvable(img: HTMLElement) {
+  act(() => { img.dispatchEvent(new Event('error')); });
 }

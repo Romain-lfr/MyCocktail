@@ -369,9 +369,7 @@ PERFORM ajouter_ustensile_etape(e1_vmo, 'UST-00002'); PERFORM ajouter_ustensile_
 PERFORM ajouter_ustensile_etape(e1_app, 'UST-00001'); PERFORM ajouter_ustensile_etape(e3_app, 'UST-00006'); PERFORM ajouter_ustensile_etape(e3_app, 'UST-00009');
 
 /* ============================================================
-   7 BIS. COCKTAILS SUPPLÉMENTAIRES (COK-00008 → COK-00039)
-   Chaque bloc : cocktail, étapes, dosages, ustensiles.
-   Variables c / e1..e4 réutilisées d'un bloc à l'autre.
+   7 BIS. COCKTAILS SUPPLÉMENTAIRES 
    ============================================================ */
 
 -- Margarita (COK-00008)
@@ -830,6 +828,38 @@ PERFORM ajouter_image_cocktail('COK-00004', '/public/images/sex_on_the_beach.web
 PERFORM ajouter_image_cocktail('COK-00005', '/public/images/punch.webp', 'Punch');
 PERFORM ajouter_image_cocktail('COK-00006', '/public/images/virgin_mojito.webp', 'Virgin Mojito');
 PERFORM ajouter_image_cocktail('COK-00007', '/public/images/apple_rose.jpg', 'Apple Rose');
+PERFORM ajouter_image_cocktail('COK-00008', '/public/images/margarita.webp', 'Margarita');
+PERFORM ajouter_image_cocktail('COK-00009', '/public/images/Daiquiri.jpg', 'Daiquiri');
+PERFORM ajouter_image_cocktail('COK-00010', '/public/images/Caïpirinha.jpeg', 'Caïpirinha');
+PERFORM ajouter_image_cocktail('COK-00011', '/public/images/cosmopolitan.webp', 'Cosmopolitan');
+PERFORM ajouter_image_cocktail('COK-00012', '/public/images/Negroni.jpeg', 'Negroni');
+PERFORM ajouter_image_cocktail('COK-00013', '/public/images/old-fashioned.jpg', 'Old Fashioned');
+PERFORM ajouter_image_cocktail('COK-00014', '/public/images/Spritz.jpeg', 'Spritz');
+PERFORM ajouter_image_cocktail('COK-00015', '/public/images/Moscow_Mule.jpeg', 'Moscow Mule');
+PERFORM ajouter_image_cocktail('COK-00016', '/public/images/Piña_Colada.webp', 'Piña Colada');
+PERFORM ajouter_image_cocktail('COK-00017', '/public/images/Whisky_Sour.jpg', 'Whisky Sour');
+PERFORM ajouter_image_cocktail('COK-00018', '/public/images/Espresso_Martini.webp', 'Espresso Martini');
+PERFORM ajouter_image_cocktail('COK-00019', '/public/images/Kir_Royal.webp', 'Kir Royal');
+PERFORM ajouter_image_cocktail('COK-00020', '/public/images/Bloody_Mary.jpeg', 'Bloody Mary');
+PERFORM ajouter_image_cocktail('COK-00021', '/public/images/Mai_Tai.jpg', 'Mai Tai');
+PERFORM ajouter_image_cocktail('COK-00022', '/public/images/Paloma.jpeg', 'Paloma');
+PERFORM ajouter_image_cocktail('COK-00023', '/public/images/Dark_n_Stormy.jpeg', 'Dark ''n'' Stormy');
+PERFORM ajouter_image_cocktail('COK-00024', '/public/images/Blue_Lagoon.jpeg', 'Blue Lagoon');
+PERFORM ajouter_image_cocktail('COK-00025', '/public/images/Hugo.webp', 'Hugo');
+PERFORM ajouter_image_cocktail('COK-00026', '/public/images/Sangria.jpeg', 'Sangria');
+PERFORM ajouter_image_cocktail('COK-00027', '/public/images/French_75.jpg', 'French 75');
+PERFORM ajouter_image_cocktail('COK-00028', '/public/images/Amaretto_Sour.webp', 'Amaretto Sour');
+PERFORM ajouter_image_cocktail('COK-00029', '/public/images/Dry_Martini.webp', 'Dry Martini');
+PERFORM ajouter_image_cocktail('COK-00030', '/public/images/Ti_Punch.jpeg', 'Ti'' Punch');
+PERFORM ajouter_image_cocktail('COK-00031', '/public/images/Basil_Smash.jpg', 'Basil Smash');
+PERFORM ajouter_image_cocktail('COK-00032', '/public/images/Shirley_Temple.jpeg', 'Shirley Temple');
+PERFORM ajouter_image_cocktail('COK-00033', '/public/images/Virgin_Colada.jpg', 'Virgin Colada');
+PERFORM ajouter_image_cocktail('COK-00034', '/public/images/Limonade_Fraise_Basilic.jpg', 'Limonade Fraise Basilic');
+PERFORM ajouter_image_cocktail('COK-00035', '/public/images/Virgin_Mule.jpeg', 'Virgin Mule');
+PERFORM ajouter_image_cocktail('COK-00036', '/public/images/Smoothie_Mangue_Coco.jpeg', 'Smoothie Mangue Coco');
+PERFORM ajouter_image_cocktail('COK-00037', '/public/images/Thé_Glacé_Pêche.jpg', 'Thé Glacé Pêche');
+PERFORM ajouter_image_cocktail('COK-00038', '/public/images/Pastèque_Menthe_Cooler.jpg', 'Pastèque Menthe Cooler');
+PERFORM ajouter_image_cocktail('COK-00039', '/public/images/Fleur_d_Oranger_Fizz.jpeg', 'Fleur d''Oranger Fizz');
 
 END $$;
 

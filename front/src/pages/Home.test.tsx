@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import Home from './Home';
-import { api, connecter, emplacement, rendre } from '../test/utils';
+import { api, connecter, emplacement, imageIntrouvable, rendre } from '../test/utils';
 
 type C = {
   idcocktail: string; nomcocktail: string; description: string; difficulte: string;
@@ -184,6 +184,22 @@ describe('Home', () => {
       expect(document.querySelector('.recette__visuel--alcool')).toBeInTheDocument();
       expect(document.querySelector('.recettes .recette__visuel--moktail')).toBeInTheDocument();
       expect(screen.getAllByText('Alcool').length).toBeGreaterThan(0);
+    });
+
+    it('image introuvable : verre à la place, dans la liste et en vedette', async () => {
+      repondre({
+        cocktails: [
+          cocktail(9, { alcool: false, avis: [{ noteavis: 5 }], image: [{ urlimage: '/public/images/absente9.webp', titleimage: 'Vedette' }] }),
+          cocktail(1, { alcool: true, image: [{ urlimage: '/public/images/absente1.webp', titleimage: 'Photo 1' }] }),
+        ],
+      });
+      rendre(<Home />);
+      imageIntrouvable(await screen.findByAltText('Photo 1'));
+      document.querySelectorAll('img.vedette__visuel').forEach((img) => imageIntrouvable(img as HTMLElement));
+      expect(screen.queryByAltText('Photo 1')).not.toBeInTheDocument();
+      expect(document.querySelector('.recettes .recette__visuel--alcool')).toBeInTheDocument();
+      expect(document.querySelector('img.vedette__visuel')).not.toBeInTheDocument();
+      expect(document.querySelector('.vedette__visuel--vide.recette__visuel--moktail')).toBeInTheDocument();
     });
 
     it('affiche l’image de la recette mise en avant', async () => {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Avatar from "./Avatar";
 import type { FormEvent } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -72,7 +73,7 @@ function ModifierCompte() {
     <main className="connexion modifier-compte">
       {/* Aperçu en direct, comme sur la page Mon compte */}
       <section className="connexion__gauche profil__gauche" aria-label="Aperçu du profil">
-        <div className="profil__avatar" aria-hidden="true">{pseudo.trim().charAt(0) || "?"}</div>
+        <Avatar className="profil__avatar" pseudo={pseudo} />
         <p className="connexion__slogan">{pseudo.trim() || "Ton pseudo"}</p>
         <p className="profil__mail">{mailcompte}</p>
       </section>
