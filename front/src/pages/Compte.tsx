@@ -4,6 +4,7 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import "./mycocktail.css";
 import { avecToken } from "../utils/api";
+import { API_URL } from "../config";
 
 interface CompteInfo {
   idcompte: string;
@@ -42,7 +43,7 @@ function Profil() {
       return;
     }
 
-    axios.get("/api/compte/me", avecToken())
+    axios.get(`${API_URL}/compte/me`, avecToken())
       .then((res) => setCompte(res.data))
       .catch(() => {
         localStorage.removeItem("token");

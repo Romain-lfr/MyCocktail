@@ -6,6 +6,7 @@ import type { RecetteResume } from "./CarteRecette";
 import { GlasseY } from "./Logo";
 import "./mycocktail.css";
 import { avecToken } from "../utils/api";
+import { API_URL } from "../config";
 
 function MesCocktails() {
   const [cocktails, setCocktails] = useState<RecetteResume[] | null>(null);
@@ -15,14 +16,14 @@ function MesCocktails() {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
 
-    axios.get("/api/compte/mes-cocktails", avecToken())
+    axios.get(`${API_URL}/compte/mes-cocktails`, avecToken())
       .then((res) => setCocktails(res.data))
       .catch(() => navigate("/login"));
   }, [navigate]);
 
   const supprimer = async (idcocktail: string) => {
     if (!confirm("Supprimer ce cocktail ?")) return;
-    await axios.delete(`/api/cocktail/${idcocktail}`, avecToken());
+    await axios.delete(`${API_URL}/cocktail/${idcocktail}`, avecToken());
     setCocktails((liste) => (liste ?? []).filter((c) => c.idcocktail !== idcocktail));
   };
 

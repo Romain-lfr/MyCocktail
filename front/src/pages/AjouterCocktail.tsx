@@ -5,6 +5,7 @@ import { GlasseY, GlasseU } from "./Logo";
 import "./mycocktail.css";
 import { avecToken, messageApi } from "../utils/api";
 import { unitesPourCategorie } from "../utils/unites";
+import { API_URL } from "../config";
 
 interface Ingredient {
   idingredient: string;
@@ -56,9 +57,9 @@ function AjouterCocktail() {
   const [imageEnvoyee, setImageEnvoyee] = useState<File | null>(null);
 
   useEffect(() => {
-    axios.get("/api/cocktail/listes/ingredients")
+    axios.get(`${API_URL}/cocktail/listes/ingredients`)
       .then((res) => setIngredients(res.data));
-    axios.get("/api/cocktail/listes/ustensiles")
+    axios.get(`${API_URL}/cocktail/listes/ustensiles`)
       .then((res) => setUstensiles(res.data));
   }, []);
 
@@ -142,9 +143,9 @@ function AjouterCocktail() {
       // Retour par « Précédent » : le cocktail existe déjà, on le met à jour au lieu d'en créer un second
       let id = idcocktail;
       if (id) {
-        await axios.put(`/api/cocktail/${id}`, infos, auth);
+        await axios.put(`${API_URL}/cocktail/${id}`, infos, auth);
       } else {
-        const res = await axios.post("/api/cocktail", infos, auth);
+        const res = await axios.post(`${API_URL}/cocktail`, infos, auth);
         id = res.data.idcocktail;
         setIdcocktail(id);
       }
@@ -152,7 +153,7 @@ function AjouterCocktail() {
       if (image && image !== imageEnvoyee) {
         const formData = new FormData();
         formData.append("image", image);
-        await axios.post(`/api/cocktail/${id}/image`, formData, {
+        await axios.post(`${API_URL}/cocktail/${id}/image`, formData, {
           headers: { ...avecToken().headers, "Content-Type": "multipart/form-data" },
         });
         setImageEnvoyee(image);
@@ -193,7 +194,7 @@ function AjouterCocktail() {
 
     try {
       for (const e of etapes) {
-        const etapeRes = await axios.post(`/api/cocktail/${idcocktail}/etape`, {
+        const etapeRes = await axios.post(`${API_URL}/cocktail/${idcocktail}/etape`, {
           numeroetape: e.numeroetape,
           descriptionetape: e.descriptionetape,
         }, avecToken());
@@ -201,7 +202,7 @@ function AjouterCocktail() {
         const idetape = etapeRes.data.idetape;
 
         for (const ing of e.ingredients) {
-          await axios.post(`/api/cocktail/${idcocktail}/dosage`, {
+          await axios.post(`${API_URL}/cocktail/${idcocktail}/dosage`, {
             idingredient: ing.idingredient,
             quantite: ing.quantite,
             unite: ing.unite,
@@ -210,7 +211,7 @@ function AjouterCocktail() {
         }
 
         for (const ust of e.ustensiles) {
-          await axios.post(`/api/cocktail/etape/ustensile`, {
+          await axios.post(`${API_URL}/cocktail/etape/ustensile`, {
             idetape,
             idustensile: ust.idustensile,
           }, avecToken());
@@ -220,7 +221,7 @@ function AjouterCocktail() {
         navigate("/compte/cocktails");
         return;
       }
-      await axios.put(`/api/cocktail/${idcocktail}`, { nomcocktail, description, difficulte, alcool, duree, statut },
+      await axios.put(`${API_URL}/cocktail/${idcocktail}`, { nomcocktail, description, difficulte, alcool, duree, statut },
         avecToken());
       navigate(`/cocktail/${encodeURIComponent(nomcocktail)}`);
     } catch (err: unknown) {
@@ -239,7 +240,7 @@ function AjouterCocktail() {
   };
 
   const creerIngredient = async (i: number) => {
-    const res = await axios.post('/api/cocktail/listes/ingredients', {
+    const res = await axios.post(`${API_URL}/cocktail/listes/ingredients`, {
       nomingredient: recherches[i].ingredient,
       categorie: nouvelleCategorie[i] || "autre",
     }, avecToken());
@@ -249,7 +250,7 @@ function AjouterCocktail() {
   };
 
   const creerUstensile = async (i: number) => {
-    const res = await axios.post('/api/cocktail/listes/ustensiles', {
+    const res = await axios.post(`${API_URL}/cocktail/listes/ustensiles`, {
       nomustensile: recherches[i].ustensile,
     }, avecToken());
     setUstensiles([...ustensiles, res.data]);

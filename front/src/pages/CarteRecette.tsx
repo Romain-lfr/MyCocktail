@@ -5,6 +5,7 @@ import ImageOuSecours from "./ImageOuSecours";
 import { libelleStatut } from "../utils/statut";
 import "./mycocktail.css";
 import { formatNote, noteMoyenne } from "../utils/format";
+import { API_URL } from "../config";
 
 export interface RecetteResume {
   idcocktail: string;
@@ -56,7 +57,7 @@ export default function CarteRecette({ c, avecStatut = false, children }: { c: R
 
       <ImageOuSecours
         className="recette__visuel"
-        src={image && `/api${image.urlimage}`}
+        src={image && `${API_URL}${image.urlimage}`}
         alt={image?.titleimage || c.nomcocktail}
         secours={
           <div className={`recette__visuel recette__visuel--vide ${c.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">

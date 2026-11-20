@@ -8,6 +8,7 @@ import "./mycocktail.css";
 import { avecToken } from "../utils/api";
 import { unitesPourCategorie } from "../utils/unites";
 import { formatQuantite } from "../utils/format";
+import { API_URL } from "../config";
 
 interface FrigoComposition {
   idingredient: string;
@@ -29,22 +30,22 @@ function MonFrigo() {
 
   // Relit le frigo et les cocktails réalisables (qui en dépendent) sans recharger la page
   const chargerFrigo = useCallback(() => Promise.all([
-    axios.get("/api/compte/frigo", avecToken())
+    axios.get(`${API_URL}/compte/frigo`, avecToken())
       .then((res) => setComposition(res.data.frigo_composition)),
-    axios.get("/api/compte/frigo/cocktails", avecToken())
+    axios.get(`${API_URL}/compte/frigo/cocktails`, avecToken())
       .then((res) => setCocktails(res.data)),
   ]), []);
 
   useEffect(() => {
     if (!token) { navigate("/login"); return; }
     chargerFrigo();
-    axios.get("/api/cocktail/listes/ingredients")
+    axios.get(`${API_URL}/cocktail/listes/ingredients`)
       .then((res) => setIngredients(res.data));
   }, [token, navigate, chargerFrigo]);
 
   const handleAjouter = async (idingredient: string, categorie: string) => {
     const unite = unitesPourCategorie(categorie)[0];
-    await axios.post(`/api/compte/frigo/${idingredient}`, {
+    await axios.post(`${API_URL}/compte/frigo/${idingredient}`, {
       quantite: 1,
       unite,
     }, avecToken());
@@ -53,7 +54,7 @@ function MonFrigo() {
   };
 
   const handleModifier = async (idingredient: string) => {
-    await axios.post(`/api/compte/frigo/${idingredient}`, {
+    await axios.post(`${API_URL}/compte/frigo/${idingredient}`, {
       quantite: editQuantite,
       unite: editUnite,
     }, avecToken());
@@ -63,10 +64,10 @@ function MonFrigo() {
 
   const handleSupprimer = async (idingredient: string) => {
     if (!confirm("Supprimer cet ingrédient du frigo ?")) return;
-    await axios.delete(`/api/compte/frigo/${idingredient}`, avecToken());
+    await axios.delete(`${API_URL}/compte/frigo/${idingredient}`, avecToken());
     setComposition((liste) => (liste ?? []).filter((c) => c.idingredient !== idingredient));
     // Un cocktail peut ne plus être réalisable sans cet ingrédient
-    axios.get("/api/compte/frigo/cocktails", avecToken())
+    axios.get(`${API_URL}/compte/frigo/cocktails`, avecToken())
       .then((res) => setCocktails(res.data));
   };
 

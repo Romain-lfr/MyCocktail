@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { GlasseU } from "./Logo";
 import "./mycocktail.css";
 import { messageApi } from "../utils/api";
+import { API_URL } from "../config";
 
 type Champ = "pseudo" | "mail" | "mdp" | "confirmMdp" | "dateNaissance" | "global";
 
@@ -65,7 +66,7 @@ function Register() {
 
     setChargement(true);
     try {
-      await axios.post("/api/auth/register", { pseudo, mail, mdp, dateNaissance });
+      await axios.post(`${API_URL}/auth/register`, { pseudo, mail, mdp, dateNaissance });
       navigate("/login");
     } catch (e: unknown) {
       const message = messageApi(e);

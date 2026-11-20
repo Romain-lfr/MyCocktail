@@ -5,6 +5,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./mycocktail.css";
 import { avecToken, messageApi } from "../utils/api";
+import { API_URL } from "../config";
 
 function ModifierCompte() {
   const [pseudo, setPseudo] = useState("");
@@ -20,7 +21,7 @@ function ModifierCompte() {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
 
-    axios.get("/api/compte/me", avecToken()).then((res) => {
+    axios.get(`${API_URL}/compte/me`, avecToken()).then((res) => {
       setPseudo(res.data.pseudo);
       setMail(res.data.mailcompte);
       setNumtel(res.data.numtel || "");
@@ -48,7 +49,7 @@ function ModifierCompte() {
 
     setChargement(true);
     try {
-      await axios.put("/api/compte/me", {
+      await axios.put(`${API_URL}/compte/me`, {
         pseudo,
         mailcompte,
         numtel: numtel || null,

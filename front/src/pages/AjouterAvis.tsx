@@ -8,6 +8,7 @@ import NoteEtoiles from "./NoteEtoiles";
 import { idCompteDuToken } from "../utils/token";
 import "./mycocktail.css";
 import { avecToken, tokenSiConnecte, messageApi } from "../utils/api";
+import { API_URL } from "../config";
 
 interface CocktailResume {
   idcocktail: string;
@@ -33,7 +34,7 @@ function AjouterAvis() {
 
   // Le cocktail est chargé dès l'ouverture : photo, id pour l'envoi, et vérification « c'est ma recette »
   useEffect(() => {
-    axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, tokenSiConnecte())
+    axios.get(`${API_URL}/cocktail/${encodeURIComponent(nom!)}`, tokenSiConnecte())
       .then((res) => setCocktail(res.data))
       .catch(() => setErreurs({ global: "Cocktail introuvable." }));
   }, [nom, token]);
@@ -51,7 +52,7 @@ function AjouterAvis() {
 
     setChargement(true);
     try {
-      await axios.post(`/api/avis/${cocktail.idcocktail}`, {
+      await axios.post(`${API_URL}/avis/${cocktail.idcocktail}`, {
         noteavis: note,
         titreavis: titre,
         descriptionavis: description,
@@ -79,7 +80,7 @@ function AjouterAvis() {
       <section className={`connexion__gauche ${cocktail && !cocktail.alcool ? "connexion__gauche--citron" : ""}`} aria-label="Recette notée">
         <ImageOuSecours
           className="avis-page__photo"
-          src={image && `/api${image.urlimage}`}
+          src={image && `${API_URL}${image.urlimage}`}
           alt={image?.titleimage || nom || ""}
           secours={cocktail?.alcool === false
             ? <GlasseU className="connexion__verre" />

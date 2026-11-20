@@ -1,4 +1,4 @@
-// Petits outils partagés pour parler à l'API (toujours via axios et des chemins /api/...).
+// Petits outils partagés pour parler à l'API (toujours via axios et des chemins `${API_URL}/...`, voir config.ts).
 
 /** Options d'une requête authentifiée : le token est lu au moment de l'appel. */
 export const avecToken = () => ({

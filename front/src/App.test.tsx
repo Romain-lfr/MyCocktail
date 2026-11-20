@@ -33,6 +33,16 @@ describe('App (routes)', () => {
     },
   );
 
+  it('sert les routes sous le sous-dossier de déploiement (basename = BASE_URL)', async () => {
+    vi.stubEnv('BASE_URL', '/mycocktail/');
+    try {
+      ouvrir('/mycocktail/login');
+      expect(await screen.findByRole('heading', { name: 'Connexion' })).toBeInTheDocument();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('/ affiche l’accueil', async () => {
     ouvrir('/');
     expect(await screen.findByRole('heading', { name: 'Qu\'est-ce qu\'on a dans le frigo ?' })).toBeInTheDocument();

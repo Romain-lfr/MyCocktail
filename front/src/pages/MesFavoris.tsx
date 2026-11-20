@@ -6,6 +6,7 @@ import type { RecetteResume } from "./CarteRecette";
 import { GlasseU } from "./Logo";
 import "./mycocktail.css";
 import { avecToken } from "../utils/api";
+import { API_URL } from "../config";
 
 interface Favori { cocktail: RecetteResume }
 
@@ -17,13 +18,13 @@ function MesFavoris() {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
 
-    axios.get("/api/compte/mes-favoris", avecToken())
+    axios.get(`${API_URL}/compte/mes-favoris`, avecToken())
       .then((res) => setFavoris(res.data))
       .catch(() => navigate("/login"));
   }, [navigate]);
 
   const retirer = async (idcocktail: string) => {
-    await axios.delete(`/api/compte/favori/${idcocktail}`, avecToken());
+    await axios.delete(`${API_URL}/compte/favori/${idcocktail}`, avecToken());
     setFavoris((liste) => (liste ?? []).filter((f) => f.cocktail.idcocktail !== idcocktail));
   };
 

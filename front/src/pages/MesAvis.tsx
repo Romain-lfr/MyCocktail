@@ -6,6 +6,7 @@ import { GlasseU } from "./Logo";
 import "./mycocktail.css";
 import { avecToken, messageApi } from "../utils/api";
 import { formatNote, noteMoyenne } from "../utils/format";
+import { API_URL } from "../config";
 
 interface Avis {
   idavis: string;
@@ -29,7 +30,7 @@ function MesAvis() {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
 
-    axios.get("/api/compte/mes-avis", avecToken())
+    axios.get(`${API_URL}/compte/mes-avis`, avecToken())
       .then((res) => setAvis(res.data))
       .catch(() => navigate("/login"));
   }, [navigate]);
@@ -50,7 +51,7 @@ function MesAvis() {
     if (Object.keys(err).length > 0) return;
 
     try {
-      await axios.put(`/api/avis/${editId}`, {
+      await axios.put(`${API_URL}/avis/${editId}`, {
         noteavis: editNote,
         titreavis: editTitre,
         descriptionavis: editDescription,
@@ -69,7 +70,7 @@ function MesAvis() {
 
   const handleSupprimer = async (idavis: string) => {
     if (!confirm("Supprimer cet avis ?")) return;
-    await axios.delete(`/api/avis/${idavis}`, avecToken());
+    await axios.delete(`${API_URL}/avis/${idavis}`, avecToken());
     setAvis((liste) => (liste ?? []).filter((a) => a.idavis !== idavis));
   };
 

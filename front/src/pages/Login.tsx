@@ -4,8 +4,9 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { GlasseY } from "./Logo";
 import "./mycocktail.css";
+import { API_URL } from "../config";
 
-const URL_CONNEXION = "/api/auth/login";
+const URL_CONNEXION = `${API_URL}/auth/login`;
 const corps = (email: string, mdp: string) => ({ pseudoOrMail: email, mdp });
 
 function Login() {

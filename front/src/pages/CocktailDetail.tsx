@@ -7,6 +7,7 @@ import { idCompteDuToken } from "../utils/token";
 import "./mycocktail.css";
 import { avecToken, tokenSiConnecte } from "../utils/api";
 import { formatNote, formatQuantite, noteMoyenne } from "../utils/format";
+import { API_URL } from "../config";
 
 interface Reponse {
   idreponse: string;
@@ -84,7 +85,7 @@ function CocktailDetail() {
 
   // (Re)charge la fiche : au montage, puis après chaque action sur les avis, sans recharger toute la page
   const charger = useCallback(() =>
-    axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, tokenSiConnecte())
+    axios.get(`${API_URL}/cocktail/${encodeURIComponent(nom!)}`, tokenSiConnecte())
       .then((res) => {
         if (res.data) setCocktail(res.data);
         else setIntrouvable(true);
@@ -95,7 +96,7 @@ function CocktailDetail() {
       }), [nom, token, navigate]);
 
   const handleSauvegarderAvis = async () => {
-    await axios.put(`/api/avis/${editAvisId}`, {
+    await axios.put(`${API_URL}/avis/${editAvisId}`, {
       noteavis: editNote,
       titreavis: editTitre,
       descriptionavis: editDescription,
@@ -106,25 +107,25 @@ function CocktailDetail() {
 
   const handleSupprimerAvis = async (idavis: string) => {
     if (!confirm("Supprimer cet avis ?")) return;
-    await axios.delete(`/api/avis/${idavis}`, auth);
+    await axios.delete(`${API_URL}/avis/${idavis}`, auth);
     await charger();
   };
 
   const sauvegarderReponse = async (idreponse: string) => {
-    await axios.put(`/api/avis/reponse/${idreponse}`, { commentaire: editCommentaire }, auth);
+    await axios.put(`${API_URL}/avis/reponse/${idreponse}`, { commentaire: editCommentaire }, auth);
     setEditReponseId(null);
     await charger();
   };
 
   const supprimerReponse = async (idreponse: string) => {
     if (!confirm("Supprimer cette réponse ?")) return;
-    await axios.delete(`/api/avis/reponse/${idreponse}`, auth);
+    await axios.delete(`${API_URL}/avis/reponse/${idreponse}`, auth);
     await charger();
   };
 
   const envoyerReponse = async (idavis: string, parent: string | null) => {
     if (commentaire.trim().length < 2) return;
-    await axios.post(`/api/avis/${idavis}/reponse`,
+    await axios.post(`${API_URL}/avis/${idavis}/reponse`,
       parent ? { commentaire, idreponse_parent: parent } : { commentaire }, auth);
     setReponseAvisId(null);
     setReponseParentId(null);
@@ -140,17 +141,17 @@ function CocktailDetail() {
 
   useEffect(() => {
     if (!token || !cocktail) return;
-    axios.get(`/api/compte/favori/${cocktail.idcocktail}`, auth)
+    axios.get(`${API_URL}/compte/favori/${cocktail.idcocktail}`, auth)
       .then((res) => setIsFavori(res.data.isFavori));
   }, [cocktail?.idcocktail]);
 
   const toggleFavori = async () => {
     if (!token) { navigate("/login"); return; }
     if (isFavori) {
-      await axios.delete(`/api/compte/favori/${cocktail!.idcocktail}`, auth);
+      await axios.delete(`${API_URL}/compte/favori/${cocktail!.idcocktail}`, auth);
       setIsFavori(false);
     } else {
-      await axios.post(`/api/compte/favori/${cocktail!.idcocktail}`, {}, auth);
+      await axios.post(`${API_URL}/compte/favori/${cocktail!.idcocktail}`, {}, auth);
       setIsFavori(true);
     }
   };
@@ -238,7 +239,7 @@ function CocktailDetail() {
 
           <ImageOuSecours
             className="fiche__photo"
-            src={cocktail.image?.[0] && `/api${cocktail.image[0].urlimage}`}
+            src={cocktail.image?.[0] && `${API_URL}${cocktail.image[0].urlimage}`}
             alt={cocktail.image?.[0]?.titleimage || cocktail.nomcocktail}
             secours={
               <div className={`fiche__photo fiche__photo--vide ${cocktail.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">

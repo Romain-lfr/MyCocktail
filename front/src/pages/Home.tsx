@@ -8,6 +8,7 @@ import { pubAutorisee } from "../utils/pub";
 import "./mycocktail.css";
 import { avecToken, tokenSiConnecte } from "../utils/api";
 import { formatNote, noteMoyenne } from "../utils/format";
+import { API_URL } from "../config";
 
 interface Cocktail {
     idcocktail: string;
@@ -114,13 +115,13 @@ function Home() {
     }, [tri, filtreDifficulte, filtreDureeMin, filtreDureeMax, filtreNoteMin, filtreNoteMax, filtreIngredients, filtreUstensiles]);
 
     useEffect(() => {
-        axios.get("/api/cocktail/listes/ingredients").then((res) => setListeIngredients(res.data));
-        axios.get("/api/cocktail/listes/ustensiles").then((res) => setListeUstensiles(res.data));
+        axios.get(`${API_URL}/cocktail/listes/ingredients`).then((res) => setListeIngredients(res.data));
+        axios.get(`${API_URL}/cocktail/listes/ustensiles`).then((res) => setListeUstensiles(res.data));
     }, []);
 
     useEffect(() => {
         if (!token) return;
-        axios.get("/api/compte/mes-favoris", avecToken()).then((res) => setFavoris(res.data.map((f: { idcocktail: string }) => f.idcocktail)));
+        axios.get(`${API_URL}/compte/mes-favoris`, avecToken()).then((res) => setFavoris(res.data.map((f: { idcocktail: string }) => f.idcocktail)));
     }, []);
 
     useEffect(() => {
@@ -139,7 +140,7 @@ function Home() {
         if (filtreUstensiles.length > 0) params.set("ustensiles", filtreUstensiles.join(","));
 
         const query = params.toString();
-        const url = `/api/cocktail${query ? `?${query}` : ""}`;
+        const url = `${API_URL}/cocktail${query ? `?${query}` : ""}`;
 
         axios.get(url, tokenSiConnecte())
             .then((res) => setCocktails(res.data))
@@ -156,10 +157,10 @@ function Home() {
     const toggleFavori = async (idcocktail: string) => {
         if (!token) { navigate("/login"); return; }
         if (favoris.includes(idcocktail)) {
-            await axios.delete(`/api/compte/favori/${idcocktail}`, avecToken());
+            await axios.delete(`${API_URL}/compte/favori/${idcocktail}`, avecToken());
             setFavoris(favoris.filter((id) => id !== idcocktail));
         } else {
-            await axios.post(`/api/compte/favori/${idcocktail}`, {}, avecToken());
+            await axios.post(`${API_URL}/compte/favori/${idcocktail}`, {}, avecToken());
             setFavoris([...favoris, idcocktail]);
         }
     };
@@ -264,7 +265,7 @@ function Home() {
                         <button className="vedette" onClick={() => navigate(`/cocktail/${encodeURIComponent(vedette.nomcocktail)}`)}>
                             <ImageOuSecours
                                 className="vedette__visuel"
-                                src={vedette.image[0] && `/api${vedette.image[0].urlimage}`}
+                                src={vedette.image[0] && `${API_URL}${vedette.image[0].urlimage}`}
                                 alt=""
                                 secours={
                                     <span className={`vedette__visuel vedette__visuel--vide ${vedette.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">
@@ -418,7 +419,7 @@ function Home() {
 
                                 <ImageOuSecours
                                     className="recette__visuel"
-                                    src={c.image[0] && `/api${c.image[0].urlimage}`}
+                                    src={c.image[0] && `${API_URL}${c.image[0].urlimage}`}
                                     alt={c.image[0]?.titleimage || c.nomcocktail}
                                     secours={
                                         <div className={`recette__visuel recette__visuel--vide ${c.alcool ? "recette__visuel--alcool" : "recette__visuel--moktail"}`} aria-hidden="true">

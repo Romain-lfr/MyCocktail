@@ -8,6 +8,7 @@ import { GlasseU } from "./Logo";
 import Avatar from "./Avatar";
 import { tokenSiConnecte } from "../utils/api";
 import "./mycocktail.css";
+import { API_URL } from "../config";
 
 interface Compte {
   idcompte: string;
@@ -37,14 +38,14 @@ function Recherche() {
     const token = localStorage.getItem("token");
     const estMineur = localStorage.getItem("estMineur") === "true";
     const url = token && !estMineur
-      ? `/api/cocktail?recherche=${encodeURIComponent(recherche)}`
-      : `/api/cocktail?alcool=false&recherche=${encodeURIComponent(recherche)}`;
+      ? `${API_URL}/cocktail?recherche=${encodeURIComponent(recherche)}`
+      : `${API_URL}/cocktail?alcool=false&recherche=${encodeURIComponent(recherche)}`;
 
     axios.get(url, tokenSiConnecte()).then((res) => {
       setCocktails(res.data);
     });
 
-    axios.get(`/api/compte/recherche/${encodeURIComponent(recherche)}`)
+    axios.get(`${API_URL}/compte/recherche/${encodeURIComponent(recherche)}`)
       .then((res) => setComptes(res.data))
       .catch((err) => console.error("erreur comptes:", err));
   }, [recherche]);

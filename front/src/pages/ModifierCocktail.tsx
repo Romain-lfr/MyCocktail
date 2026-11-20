@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import "./mycocktail.css";
 import { avecToken, messageApi } from "../utils/api";
 import { unitesPourCategorie } from "../utils/unites";
+import { API_URL } from "../config";
 
 interface Etape {
   idetape: string;
@@ -71,7 +72,7 @@ function ModifierCocktail() {
   // Relit les ingrédients et ustensiles des étapes depuis l'API, sans toucher aux textes
   // pas encore enregistrés ni au reste du formulaire (remplace l'ancien rechargement de page)
   const rafraichirEtapes = async () => {
-    const res = await axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, avecToken());
+    const res = await axios.get(`${API_URL}/cocktail/${encodeURIComponent(nom!)}`, avecToken());
     const fraiches: Etape[] = res.data.etape || [];
     setEtapes((actuelles) => actuelles.map((e) => {
       const f = fraiches.find((x) => x.idetape === e.idetape);
@@ -81,7 +82,7 @@ function ModifierCocktail() {
 
   const ajouterIngredientEtape = async (idetape: string, idingredient: string, unite: string) => {
     try {
-      await axios.post(`/api/cocktail/${idcocktail}/dosage`, {
+      await axios.post(`${API_URL}/cocktail/${idcocktail}/dosage`, {
         idingredient,
         quantite: 1,
         unite,
@@ -95,7 +96,7 @@ function ModifierCocktail() {
   };
 
   const ajouterUstensileEtape = async (idetape: string, idustensile: string) => {
-    await axios.post(`/api/cocktail/etape/ustensile`, { idetape, idustensile }, avecToken());
+    await axios.post(`${API_URL}/cocktail/etape/ustensile`, { idetape, idustensile }, avecToken());
     await rafraichirEtapes();
   };
 
@@ -103,7 +104,7 @@ function ModifierCocktail() {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
 
-    axios.get(`/api/cocktail/${encodeURIComponent(nom!)}`, avecToken()).then((res) => {
+    axios.get(`${API_URL}/cocktail/${encodeURIComponent(nom!)}`, avecToken()).then((res) => {
       setNom(res.data.nomcocktail);
       setDescription(res.data.description);
       setDifficulte(res.data.difficulte);
@@ -114,8 +115,8 @@ function ModifierCocktail() {
       setEtapes(res.data.etape || []);
     }).catch(() => navigate("/"));
 
-    axios.get("/api/cocktail/listes/ingredients").then((res) => setIngredients(res.data));
-    axios.get("/api/cocktail/listes/ustensiles").then((res) => setUstensiles(res.data));
+    axios.get(`${API_URL}/cocktail/listes/ingredients`).then((res) => setIngredients(res.data));
+    axios.get(`${API_URL}/cocktail/listes/ustensiles`).then((res) => setUstensiles(res.data));
   }, [nom, navigate]);
 
   const handleSubmit = async () => {
@@ -131,7 +132,7 @@ function ModifierCocktail() {
     if (!token) { navigate("/login"); return; }
 
     try {
-      await axios.put(`/api/cocktail/${idcocktail}`, {
+      await axios.put(`${API_URL}/cocktail/${idcocktail}`, {
         nomcocktail, description, difficulte, alcool, duree, statut,
       }, avecToken());
       navigate("/compte/cocktails");
@@ -145,7 +146,7 @@ function ModifierCocktail() {
     const token = localStorage.getItem("token");
     if (!token) { navigate("/login"); return; }
     try {
-      await axios.delete(`/api/cocktail/${idcocktail}`, avecToken());
+      await axios.delete(`${API_URL}/cocktail/${idcocktail}`, avecToken());
       navigate("/");
     } catch {
       setErreurs({ global: "Erreur lors de la suppression" });
@@ -160,7 +161,7 @@ function ModifierCocktail() {
     }
 
     try {
-      const res = await axios.post(`/api/cocktail/${idcocktail}/etape`, { descriptionetape: texte }, avecToken());
+      const res = await axios.post(`${API_URL}/cocktail/${idcocktail}/etape`, { descriptionetape: texte }, avecToken());
       setEtapes([...etapes, {
         idetape: res.data.idetape,
         numeroetape: res.data.numeroetape,
@@ -176,14 +177,14 @@ function ModifierCocktail() {
   };
 
   const sauvegarderEtape = async (e: Etape) => {
-    await axios.put(`/api/cocktail/etape/${e.idetape}`, { descriptionetape: e.descriptionetape }, avecToken());
+    await axios.put(`${API_URL}/cocktail/etape/${e.idetape}`, { descriptionetape: e.descriptionetape }, avecToken());
     setEnregistre(e.idetape);
   };
 
   const supprimerEtape = async (e: Etape) => {
     if (!confirm("Supprimer cette étape ?")) return;
     try {
-      await axios.delete(`/api/cocktail/etape/${e.idetape}`, avecToken());
+      await axios.delete(`${API_URL}/cocktail/etape/${e.idetape}`, avecToken());
       setEtapes(etapes.filter((et) => et.idetape !== e.idetape));
     } catch (err) {
       // ex. 409 : dernière étape d'un cocktail publié
@@ -192,14 +193,14 @@ function ModifierCocktail() {
   };
 
   const sauvegarderDosage = async (idetape: string, d: Etape["dosage"][number]) => {
-    await axios.put(`/api/cocktail/${idcocktail}/dosage/${d.idingredient}`, { quantite: Number(d.quantite), unite: d.unite }, avecToken());
+    await axios.put(`${API_URL}/cocktail/${idcocktail}/dosage/${d.idingredient}`, { quantite: Number(d.quantite), unite: d.unite }, avecToken());
     setEnregistre(`${idetape}-${d.idingredient}`);
   };
 
   const retirerIngredient = async (i: number, idetape: string, d: Etape["dosage"][number]) => {
     if (!confirm(`Retirer ${d.ingredient.nomingredient} de la recette ?`)) return;
     try {
-      await axios.delete(`/api/cocktail/${idcocktail}/dosage/${d.idingredient}`, avecToken());
+      await axios.delete(`${API_URL}/cocktail/${idcocktail}/dosage/${d.idingredient}`, avecToken());
       const copy = [...etapes];
       copy[i] = { ...copy[i], dosage: copy[i].dosage.filter((x) => x.idingredient !== d.idingredient) };
       setEtapes(copy);
@@ -209,14 +210,14 @@ function ModifierCocktail() {
   };
 
   const retirerUstensile = async (i: number, idetape: string, idustensile: string) => {
-    await axios.delete(`/api/cocktail/etape/${idetape}/ustensile/${idustensile}`, avecToken());
+    await axios.delete(`${API_URL}/cocktail/etape/${idetape}/ustensile/${idustensile}`, avecToken());
     const copy = [...etapes];
     copy[i] = { ...copy[i], etape_ustensile: copy[i].etape_ustensile.filter((u) => u.idustensile !== idustensile) };
     setEtapes(copy);
   };
 
   const creerIngredient = async (idetape: string, nomingredient: string) => {
-    const res = await axios.post('/api/cocktail/listes/ingredients', {
+    const res = await axios.post(`${API_URL}/cocktail/listes/ingredients`, {
       nomingredient,
       categorie: nouvelleCategorie[idetape] || "autre",
     }, avecToken());
@@ -225,7 +226,7 @@ function ModifierCocktail() {
   };
 
   const creerUstensile = async (idetape: string, nomustensile: string) => {
-    const res = await axios.post('/api/cocktail/listes/ustensiles', { nomustensile }, avecToken());
+    const res = await axios.post(`${API_URL}/cocktail/listes/ustensiles`, { nomustensile }, avecToken());
     setUstensiles([...ustensiles, res.data]);
     ajouterUstensileEtape(idetape, res.data.idustensile);
   };

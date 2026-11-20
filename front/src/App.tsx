@@ -18,7 +18,7 @@ import MonFrigo from "./pages/MonFrigo";
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <div className="layout">
       <Header />
       <Routes>
