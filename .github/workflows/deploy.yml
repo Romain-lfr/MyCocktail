@@ -34,4 +34,4 @@ jobs:
           protocol: ftp
           max-connections: 1
           local-dir: ./front/dist/
-          server-dir: ./public_html/mycocktail/
+          server-dir: ./mycocktail/
