@@ -26,12 +26,18 @@ jobs:
         run: npm ci && npm run build
 
       - name: Envoi FTP vers Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
-          timeout: 120000
-          local-dir: ./front/dist/
-          server-dir: ./mycocktail/
+        env:
+          FTP_HOST: ${{ secrets.FTP_SERVER }}
+          FTP_USER: ${{ secrets.FTP_USERNAME }}
+          FTP_PASS: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+          lftp -u "$FTP_USER,$FTP_PASS" "$FTP_HOST" -e "
+            set ftp:ssl-allow no;
+            set ftp:passive-mode on;
+            set net:max-retries 5;
+            set net:reconnect-interval-base 5;
+            set net:timeout 30;
+            mirror --reverse --delete --verbose ./front/dist/ ./mycocktail/;
+            bye
+          "
