@@ -32,6 +32,6 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftp
-          max-connections: 1
+          timeout: 120000
           local-dir: ./front/dist/
           server-dir: ./mycocktail/
