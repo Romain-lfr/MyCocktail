@@ -9,6 +9,9 @@ import { CocktailModule } from './cocktail/cocktail.module';
 import { CompteModule } from './compte/compte.module';
 import { ImageModule } from './image/image.module';
 import { AvisModule } from './avis/avis.module';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { moduleLimiteRequetes } from './securite';
 
 @Module({
   imports: [
@@ -16,6 +19,7 @@ import { AvisModule } from './avis/avis.module';
       rootPath: join(__dirname, '..', 'public'),
       serveRoot: '/public',
     }),
+    moduleLimiteRequetes,
     PrismaModule,
     AuthModule,
     CocktailModule,
@@ -24,6 +28,6 @@ import { AvisModule } from './avis/avis.module';
     AvisModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
