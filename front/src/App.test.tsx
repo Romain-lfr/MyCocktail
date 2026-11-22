@@ -16,6 +16,7 @@ describe('App (routes)', () => {
     ['/register', { role: 'heading', name: 'Créer un compte' }],
     ['/recherche?q=moj', { role: 'heading', name: 'Résultats pour « moj »' }],
     ['/cocktail/Mojito/avis', { role: 'heading', name: /Laisser un avis sur Mojito/ }],
+    ['/nimportequoi/xx', { role: 'heading', name: 'Page introuvable' }],
   ])('%s affiche la bonne page', async (url, { role, name }) => {
     ouvrir(url);
     expect(await screen.findByRole(role, { name })).toBeInTheDocument();

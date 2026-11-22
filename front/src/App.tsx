@@ -15,6 +15,7 @@ import Recherche from "./pages/Recherche";
 import ModifierCocktail from "./pages/ModifierCocktail";
 import ModifierCompte from "./pages/ModifierCompte";
 import MonFrigo from "./pages/MonFrigo";
+import PageIntrouvable from "./pages/PageIntrouvable";
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
         <Route path="/cocktail/:nom/modifier" element={<ModifierCocktail />} />
         <Route path="/compte/modifier" element={<ModifierCompte />} />
         <Route path="/compte/frigo" element={<MonFrigo />} />
+        <Route path="*" element={<PageIntrouvable />} />
       </Routes>
       <Footer />
       </div>

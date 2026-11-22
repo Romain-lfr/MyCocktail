@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import Header from './Header';
 import { connecter, emplacement, rendre } from '../test/utils';
@@ -60,5 +60,40 @@ describe('Header (pages)', () => {
   it('sur l’accueil sans filtre, « Tous » est la page courante', () => {
     rendre(<Header />, { route: '/' });
     expect(screen.getByRole('link', { name: 'Tous' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  describe('hauteur du header (footer toujours sous l’écran)', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+      document.documentElement.style.removeProperty('--hauteur-header');
+    });
+
+    it('expose la hauteur réelle du header dans --hauteur-header', () => {
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(68);
+      rendre(<Header />);
+      expect(document.documentElement.style.getPropertyValue('--hauteur-header')).toBe('68px');
+    });
+
+    it('remesure quand le header change de taille, et arrête au démontage', () => {
+      const observe = vi.fn();
+      const disconnect = vi.fn();
+      let rappel: () => void = () => {};
+      vi.stubGlobal('ResizeObserver', class {
+        constructor(cb: () => void) { rappel = cb; }
+        observe = observe;
+        disconnect = disconnect;
+      });
+      const hauteur = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(68);
+      const { unmount } = rendre(<Header />);
+      expect(observe).toHaveBeenCalledWith(screen.getByRole('banner'));
+
+      hauteur.mockReturnValue(248); // passage en mise en page mobile (plusieurs lignes)
+      rappel();
+      expect(document.documentElement.style.getPropertyValue('--hauteur-header')).toBe('248px');
+
+      unmount();
+      expect(disconnect).toHaveBeenCalled();
+    });
   });
 });

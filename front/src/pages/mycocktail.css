@@ -199,6 +199,9 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 /* overflow-x: clip (et non hidden) : coupe tout débordement horizontal sans casser le header sticky */
 .layout { min-height: 100vh; display: flex; flex-direction: column; overflow-x: clip; }
 .layout > main { flex: 1; padding-bottom: 48px; background: var(--encre); } /* les pages restent sur fond encre */
+/* Le contenu remplit au moins l'écran sous le header : le footer reste toujours sous le pli, quelle que soit la page.
+   --hauteur-header est mesurée par Header.tsx (elle varie selon la largeur). */
+.layout > main { min-height: calc(100vh - var(--hauteur-header, 0px)); }
 /* Pages en deux volets : les volets vont jusqu'au pied de page, sans bande encre en dessous */
 .layout > main.connexion, .layout > main.profil { padding-bottom: 0; }
 

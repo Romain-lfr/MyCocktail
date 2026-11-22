@@ -88,9 +88,16 @@ export class CocktailService {
     });
   }
 
+  /**
+   * Fiche d'un cocktail par son nom. Le nom n'est unique que par auteur : parmi les homonymes,
+   * on renvoie d'abord celui du compte connecté, sinon le plus ancien publié qu'il a le droit de voir.
+   * - aucun homonyme visible (inexistant, brouillon / privé / archivé d'un autre) → 404
+   * - seulement des publiés alcoolisés pour un visiteur ou un mineur → 403
+   */
   async findByNom(nom: string, user?: UtilisateurConnecte | null) {
-    const cocktail = await this.prisma.cocktail.findFirst({
+    const homonymes = await this.prisma.cocktail.findMany({
       where: { nomcocktail: { equals: nom, mode: 'insensitive' } },
+      orderBy: { datecreation: 'asc' },
       include: {
         image: true,
         etape: {
@@ -113,20 +120,21 @@ export class CocktailService {
       },
     });
 
-    // Brouillon / privé / archivé : visible uniquement par son auteur
-    if (
-      cocktail &&
-      cocktail.statut !== 'publi_' &&
-      cocktail.idcompte !== user?.idcompte
-    ) {
+    const peutVoirAlcool = !!user && !user.estMineur;
+    const sien = user && homonymes.find((c) => c.idcompte === user.idcompte);
+    if (sien) {
+      if (sien.alcool && !peutVoirAlcool)
+        throw new ForbiddenException('Accès refusé');
+      return sien;
+    }
+
+    const publies = homonymes.filter((c) => c.statut === 'publi_');
+    if (publies.length === 0)
       throw new NotFoundException('Cocktail introuvable');
-    }
 
-    if (cocktail?.alcool && (!user || user.estMineur)) {
-      throw new ForbiddenException('Accès refusé');
-    }
-
-    return cocktail;
+    const visible = publies.find((c) => peutVoirAlcool || !c.alcool);
+    if (!visible) throw new ForbiddenException('Accès refusé');
+    return visible;
   }
 
   async create(data: CreateCocktailDto, idcompte: string, estMineur: boolean) {

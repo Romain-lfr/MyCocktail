@@ -113,9 +113,9 @@ describe('CocktailService', () => {
 
   describe('findByNom', () => {
     it('cache un brouillon aux autres comptes (404)', async () => {
-      prisma.cocktail.findFirst.mockResolvedValue(
+      prisma.cocktail.findMany.mockResolvedValue([
         cocktailDe('CPT-00002', { statut: 'brouillon' }),
-      );
+      ]);
       await expect(
         service.findByNom('Mojito', {
           idcompte: 'CPT-00001',
@@ -127,9 +127,9 @@ describe('CocktailService', () => {
     });
 
     it('cache un brouillon aux visiteurs non connectés (404)', async () => {
-      prisma.cocktail.findFirst.mockResolvedValue(
+      prisma.cocktail.findMany.mockResolvedValue([
         cocktailDe('CPT-00002', { statut: 'brouillon' }),
-      );
+      ]);
       await expect(service.findByNom('Mojito')).rejects.toThrow(
         NotFoundException,
       );
@@ -137,7 +137,7 @@ describe('CocktailService', () => {
 
     it('montre un brouillon à son auteur', async () => {
       const cocktail = cocktailDe('CPT-00001', { statut: 'brouillon' });
-      prisma.cocktail.findFirst.mockResolvedValue(cocktail);
+      prisma.cocktail.findMany.mockResolvedValue([cocktail]);
       await expect(
         service.findByNom('Mojito', {
           idcompte: 'CPT-00001',
@@ -149,9 +149,9 @@ describe('CocktailService', () => {
     });
 
     it('refuse un cocktail alcoolisé à un mineur (403)', async () => {
-      prisma.cocktail.findFirst.mockResolvedValue(
+      prisma.cocktail.findMany.mockResolvedValue([
         cocktailDe('CPT-00002', { alcool: true }),
-      );
+      ]);
       await expect(
         service.findByNom('Mojito', {
           idcompte: 'CPT-00001',
@@ -163,9 +163,9 @@ describe('CocktailService', () => {
     });
 
     it('refuse un cocktail alcoolisé à un visiteur non connecté (403)', async () => {
-      prisma.cocktail.findFirst.mockResolvedValue(
+      prisma.cocktail.findMany.mockResolvedValue([
         cocktailDe('CPT-00002', { alcool: true }),
-      );
+      ]);
       await expect(service.findByNom('Mojito')).rejects.toThrow(
         ForbiddenException,
       );
@@ -173,7 +173,7 @@ describe('CocktailService', () => {
 
     it('montre un cocktail alcoolisé publié à un majeur', async () => {
       const cocktail = cocktailDe('CPT-00002', { alcool: true });
-      prisma.cocktail.findFirst.mockResolvedValue(cocktail);
+      prisma.cocktail.findMany.mockResolvedValue([cocktail]);
       await expect(
         service.findByNom('Mojito', {
           idcompte: 'CPT-00001',
@@ -182,6 +182,62 @@ describe('CocktailService', () => {
           estMineur: false,
         }),
       ).resolves.toBe(cocktail);
+    });
+    const romain = {
+      idcompte: 'CPT-00001',
+      pseudo: 'romain',
+      role: 'user',
+      estMineur: false,
+    };
+
+    it('cherche tous les homonymes, sans tenir compte de la casse', async () => {
+      prisma.cocktail.findMany.mockResolvedValue([cocktailDe('CPT-00002')]);
+      await service.findByNom('mojito');
+      expect(prisma.cocktail.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { nomcocktail: { equals: 'mojito', mode: 'insensitive' } },
+        }),
+      );
+    });
+
+    it('le brouillon homonyme d’un autre compte ne cache pas le cocktail publié', async () => {
+      const brouillon = cocktailDe('CPT-00003', {
+        idcocktail: 'COK-00002',
+        statut: 'brouillon',
+      });
+      const publie = cocktailDe('CPT-00002');
+      prisma.cocktail.findMany.mockResolvedValue([brouillon, publie]);
+      await expect(service.findByNom('Mojito')).resolves.toBe(publie);
+      await expect(service.findByNom('Mojito', romain)).resolves.toBe(publie);
+    });
+
+    it('renvoie d’abord le cocktail du compte connecté parmi les homonymes', async () => {
+      const publie = cocktailDe('CPT-00002');
+      const sien = cocktailDe('CPT-00001', {
+        idcocktail: 'COK-00002',
+        statut: 'brouillon',
+      });
+      prisma.cocktail.findMany.mockResolvedValue([publie, sien]);
+      await expect(service.findByNom('Mojito', romain)).resolves.toBe(sien);
+    });
+
+    it('montre à un mineur l’homonyme sans alcool plutôt que de refuser', async () => {
+      const alcoolise = cocktailDe('CPT-00002', { alcool: true });
+      const sansAlcool = cocktailDe('CPT-00003', { idcocktail: 'COK-00002' });
+      prisma.cocktail.findMany.mockResolvedValue([alcoolise, sansAlcool]);
+      await expect(
+        service.findByNom('Mojito', { ...romain, estMineur: true }),
+      ).resolves.toBe(sansAlcool);
+      await expect(service.findByNom('Mojito')).resolves.toBe(sansAlcool);
+    });
+
+    it('refuse à un mineur son propre cocktail s’il est alcoolisé (403)', async () => {
+      prisma.cocktail.findMany.mockResolvedValue([
+        cocktailDe('CPT-00001', { alcool: true }),
+      ]);
+      await expect(
+        service.findByNom('Mojito', { ...romain, estMineur: true }),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -427,9 +483,11 @@ describe('CocktailService', () => {
   });
 
   describe('findByNom (cas limites)', () => {
-    it('renvoie null si le cocktail n’existe pas', async () => {
-      prisma.cocktail.findFirst.mockResolvedValue(null);
-      await expect(service.findByNom('Inconnu')).resolves.toBeNull();
+    it('renvoie 404 si le cocktail n’existe pas', async () => {
+      prisma.cocktail.findMany.mockResolvedValue([]);
+      await expect(service.findByNom('Inconnu')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

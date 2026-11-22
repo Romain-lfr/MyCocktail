@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Logo from "./Logo.tsx";
@@ -11,6 +11,21 @@ export default function Header() {
   const connecte = !!localStorage.getItem("token");
   const estMineur = localStorage.getItem("estMineur") === "true";
   const alcool = new URLSearchParams(location.search).get("alcool");
+
+  // Hauteur réelle du header (une ligne sur ordinateur, plusieurs sur mobile) exposée en CSS :
+  // le contenu remplit au moins tout l'écran sous le header, le footer n'apparaît qu'en défilant.
+  const refHeader = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const header = refHeader.current;
+    if (!header) return;
+    const mesurer = () =>
+      document.documentElement.style.setProperty("--hauteur-header", `${header.offsetHeight}px`);
+    mesurer();
+    if (typeof ResizeObserver === "undefined") return;
+    const observateur = new ResizeObserver(mesurer);
+    observateur.observe(header);
+    return () => observateur.disconnect();
+  }, []);
 
   const rechercher = (e: FormEvent) => {
     e.preventDefault();
@@ -25,7 +40,7 @@ export default function Header() {
   };
 
   return (
-    <header className="header">
+    <header className="header" ref={refHeader}>
       <div className="header__inner">
         <Link to="/" className="logo" aria-label="MyCocktail, accueil"><Logo /></Link>
 

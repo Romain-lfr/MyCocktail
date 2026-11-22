@@ -1,5 +1,29 @@
 RewriteEngine On
 RewriteBase /mycocktail/
+
+# Une seule adresse : www.romain-lfr.com → romain-lfr.com (même token de connexion, meilleur référencement)
+RewriteCond %{HTTP_HOST} ^www\.romain-lfr\.com$ [NC]
+RewriteRule ^(.*)$ https://romain-lfr.com/mycocktail/$1 [R=301,L]
+
+# Fallback SPA : toute URL qui n'est pas un fichier ou un dossier sert index.html (React Router)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule . index.html [L]
+
+<IfModule mod_headers.c>
+  # En-têtes de sécurité
+  Header always set Strict-Transport-Security "max-age=31536000"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  # CSP minimale : interdit l'affichage du site dans une iframe d'un autre site (clickjacking)
+  # sans restreindre scripts / images / polices (API Render, Google Fonts).
+  Header always set Content-Security-Policy "frame-ancestors 'self'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests"
+
+  # index.html jamais mis en cache : un nouveau déploiement est vu tout de suite
+  # (les fichiers de assets/ ont un nom haché, ils peuvent rester en cache)
+  <FilesMatch "^index\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
