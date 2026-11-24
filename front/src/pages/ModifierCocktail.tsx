@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import "./mycocktail.css";
+import "./myxo.css";
 import { avecToken, messageApi } from "../utils/api";
 import { unitesPourCategorie } from "../utils/unites";
 import { API_URL } from "../config";

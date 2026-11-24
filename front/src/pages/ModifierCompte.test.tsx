@@ -5,7 +5,7 @@ import { api, connecter, emplacement, erreurApi, rendre } from '../test/utils';
 
 const compte = {
   pseudo: 'romain',
-  mailcompte: 'romain@mycocktail.com',
+  mailcompte: 'romain@myxo.com',
   numtel: null,
   datenaissance: '2000-05-12T00:00:00.000Z',
 };
@@ -33,7 +33,7 @@ describe('ModifierCompte', () => {
 
   it('pré-remplit le formulaire', async () => {
     await ouvrir();
-    expect(champs().mail).toHaveValue('romain@mycocktail.com');
+    expect(champs().mail).toHaveValue('romain@myxo.com');
     expect(champs().tel).toHaveValue('');
     expect(screen.getByLabelText('Date de naissance')).toHaveValue('2000-05-12');
   });
@@ -44,7 +44,7 @@ describe('ModifierCompte', () => {
     await user.click(enregistrer());
     expect(api.put).toHaveBeenCalledWith(
       '/api/compte/me',
-      { pseudo: 'romain', mailcompte: 'romain@mycocktail.com', numtel: null },
+      { pseudo: 'romain', mailcompte: 'romain@myxo.com', numtel: null },
       expect.any(Object),
     );
     expect(await screen.findByRole('status')).toHaveTextContent('Profil mis à jour !');

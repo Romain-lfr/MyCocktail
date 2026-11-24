@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import NoteEtoiles from "./NoteEtoiles";
 import { GlasseU } from "./Logo";
-import "./mycocktail.css";
+import "./myxo.css";
 import { avecToken, messageApi } from "../utils/api";
 import { formatNote, noteMoyenne } from "../utils/format";
 import { API_URL } from "../config";

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { CLIENT_ADSENSE as CLIENT, estMineur } from "../utils/pub";
-import "./mycocktail.css";
+import "./myxo.css";
 
 declare global {
   interface Window { adsbygoogle?: unknown[] }

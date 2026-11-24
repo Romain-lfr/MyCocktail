@@ -5,7 +5,7 @@ import { GlasseY, GlasseU } from "./Logo";
 import ImageOuSecours from "./ImageOuSecours";
 import AdSlot from "./Adslot";
 import { pubAutorisee } from "../utils/pub";
-import "./mycocktail.css";
+import "./myxo.css";
 import { avecToken, tokenSiConnecte } from "../utils/api";
 import { formatNote, noteMoyenne } from "../utils/format";
 import { API_URL } from "../config";

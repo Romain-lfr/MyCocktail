@@ -14,7 +14,7 @@ describe('API_URL', () => {
   });
 
   it('reprend VITE_API_URL quand elle est définie (API Render en prod)', async () => {
-    vi.stubEnv('VITE_API_URL', 'https://mycocktail-api.onrender.com');
-    expect(await chargerConfig()).toBe('https://mycocktail-api.onrender.com');
+    vi.stubEnv('VITE_API_URL', 'https://myxo-api.onrender.com');
+    expect(await chargerConfig()).toBe('https://myxo-api.onrender.com');
   });
 });

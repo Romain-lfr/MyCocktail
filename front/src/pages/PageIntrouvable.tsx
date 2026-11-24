@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { GlasseY } from "./Logo";
-import "./mycocktail.css";
+import "./myxo.css";
 
 // Page affichée pour toute URL inconnue (route "*" dans App.tsx)
 export default function PageIntrouvable() {

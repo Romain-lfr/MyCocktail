@@ -3,7 +3,7 @@ import { screen, waitFor } from '@testing-library/react';
 import Login from './Login';
 import { api, connecter, emplacement, erreurApi, rendre } from '../test/utils';
 
-const remplir = async (user: ReturnType<typeof rendre>['user'], email = 'Romain@MyCocktail.com ', mdp = 'Romain1234') => {
+const remplir = async (user: ReturnType<typeof rendre>['user'], email = 'Romain@Myxo.com ', mdp = 'Romain1234') => {
   await user.type(screen.getByLabelText('E-mail'), email);
   await user.type(screen.getByLabelText('Mot de passe'), mdp);
 };
@@ -31,7 +31,7 @@ describe('Login', () => {
     await waitFor(() => expect(emplacement()).toBe('/'));
 
     expect(api.post).toHaveBeenCalledWith('/api/auth/login', {
-      pseudoOrMail: 'romain@mycocktail.com', // nettoyé et en minuscules
+      pseudoOrMail: 'romain@myxo.com', // nettoyé et en minuscules
       mdp: 'Romain1234',
     });
     expect(localStorage.getItem('token')).toBe('jwt');

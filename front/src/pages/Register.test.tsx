@@ -6,7 +6,7 @@ import { api, connecter, emplacement, erreurApi, rendre } from '../test/utils';
 type Champs = { pseudo?: string; mail?: string; mdp?: string; confirm?: string; date?: string };
 const valides: Required<Champs> = {
   pseudo: 'romain',
-  mail: 'romain@mycocktail.com',
+  mail: 'romain@myxo.com',
   mdp: 'Romain1234',
   confirm: 'Romain1234',
   date: '2000-05-12',
@@ -28,7 +28,7 @@ describe('Register', () => {
     await remplirEtEnvoyer(user);
     expect(api.post).toHaveBeenCalledWith('/api/auth/register', {
       pseudo: 'romain',
-      mail: 'romain@mycocktail.com',
+      mail: 'romain@myxo.com',
       mdp: 'Romain1234',
       dateNaissance: '2000-05-12',
     });

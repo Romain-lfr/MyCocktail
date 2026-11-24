@@ -178,8 +178,8 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .fiche__connexion a { color: var(--mangue); }
 
 @media (max-width: 900px) {
-  .fiche__entete { grid-template-columns: 1fr; }
-  .fiche__corps { grid-template-columns: 1fr; gap: 32px; }
+  .fiche__entete { grid-template-columns: minmax(0, 1fr); }
+  .fiche__corps { grid-template-columns: minmax(0, 1fr); gap: 32px; }
   .fiche__ingredients { position: static; }
   .fiche__photo { transform: none; box-shadow: 8px 8px 0 var(--paprika); max-width: calc(100% - 8px); }
   .fiche__photo--vide { width: calc(100% - 8px); }
@@ -256,18 +256,18 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .espace__texte { font-size: 14px; opacity: .8; padding-right: 28px; }
 .espace__fleche { position: absolute; right: 20px; bottom: 18px; font-size: 22px; color: var(--mangue); transition: transform .2s; }
 .espace a:hover .espace__fleche { transform: translateX(4px); }
-@media (max-width: 520px) { .espace { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .espace { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .espace a, .espace a:hover, .espace a:hover .espace__fleche { transition: none; transform: none; } }
 .profil__action { margin-top: 40px; }
 .profil__action .pill { background: var(--encre); border-color: var(--encre); color: var(--sable); padding: 12px 28px; font-weight: 600; }
 .profil__action .pill:hover { background: var(--encre-claire); }
 
 @media (max-width: 800px) {
-  .profil { grid-template-columns: 1fr; }
+  .profil { grid-template-columns: minmax(0, 1fr); }
   .profil__avatar { width: 120px; height: 120px; font-size: 56px; }
-  .infos { grid-template-columns: 1fr; gap: 2px 0; }
+  .infos { grid-template-columns: minmax(0, 1fr); gap: 2px 0; }
   .infos dd { margin-bottom: 12px; }
-  .footer__haut { grid-template-columns: 1fr 1fr; }
+  .footer__haut { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .footer__haut > :first-child { grid-column: 1 / -1; }
 }
 
@@ -305,7 +305,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .champ__erreur { color: var(--mangue); font-size: 13px; margin: 0; }
 
 .recettes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.recette { display: grid; grid-template-columns: 1fr 112px; gap: 8px 20px; padding: 24px; background: var(--fond-carte); color: var(--encre); border-radius: var(--radius-card); align-content: start; transition: transform .2s, box-shadow .2s; }
+.recette { display: grid; grid-template-columns: minmax(0, 1fr) 112px; gap: 8px 20px; padding: 24px; background: var(--fond-carte); color: var(--encre); border-radius: var(--radius-card); align-content: start; transition: transform .2s, box-shadow .2s; }
 .recette .pill { border-color: var(--encre); color: var(--encre); }
 .recette .pill:hover { background: rgba(18, 58, 58, .1); }
 .recette .pill--mangue { background: var(--mangue); border-color: var(--mangue); }
@@ -346,10 +346,10 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .espace-entete__compte { margin: 12px 0 0; font: italic 500 20px var(--font-titre); }
 
 @media (max-width: 1000px) {
-  .recettes { grid-template-columns: 1fr; }
+  .recettes { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 600px) {
-  .recette { grid-template-columns: 1fr 84px; gap: 8px 16px; }
+  .recette { grid-template-columns: minmax(0, 1fr) 84px; gap: 8px 16px; }
   .recette__visuel { width: 84px; height: 84px; border-radius: 18px; }
   .selecteur input { width: 100%; }
 }
@@ -376,7 +376,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .frigo__ligne { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .frigo__label { font: italic 500 clamp(20px, 2.4vw, 26px) var(--font-titre); margin-right: 6px; }
 @media (max-width: 900px) {
-  .frigo { grid-template-columns: 1fr; padding-top: 40px; }
+  .frigo { grid-template-columns: minmax(0, 1fr); padding-top: 40px; }
 }
 .surtitre { margin: 0 0 14px; font: 600 12px var(--font-texte); letter-spacing: .14em; text-transform: uppercase; color: var(--citron); }
 .frigo h1 em { color: var(--sable); text-decoration: underline wavy var(--paprika); text-decoration-thickness: 3px; text-underline-offset: 10px; }
@@ -421,7 +421,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .vedette .tag { border-color: var(--sable); color: var(--sable); }
 .vedette .tag--alcool { border-color: var(--mangue); color: var(--encre); }
 @media (max-width: 520px) {
-  .vedette { grid-template-columns: 1fr; }
+  .vedette { grid-template-columns: minmax(0, 1fr); }
   /* Photo en pleine largeur : pas d'inclinaison et ombre gardée dans l'écran */
   .vedette__visuel { grid-row: auto; width: 100%; height: 200px; transform: none; box-shadow: 8px 8px 0 var(--paprika); }
   .vedette__legende, .vedette__nom, .vedette__desc, .vedette__meta { grid-column: 1; }
@@ -461,7 +461,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 @media (prefers-reduced-motion: reduce) { .connexion__verre { transform: none; } }
 
 @media (max-width: 800px) {
-  .connexion { grid-template-columns: 1fr; }
+  .connexion { grid-template-columns: minmax(0, 1fr); }
   .connexion__gauche { padding: 32px; flex-direction: row; text-align: left; }
   .connexion__verre { width: 72px; }
   .connexion__slogan { font-size: 22px; max-width: none; }
@@ -481,7 +481,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .apercu__nom:hover { text-decoration: none; }
 .apercu__aide { margin: 14px 0 0; font-size: 13px; opacity: .7; }
 @media (max-width: 1000px) {
-  .creation__grille { grid-template-columns: 1fr; gap: 40px; }
+  .creation__grille { grid-template-columns: minmax(0, 1fr); gap: 40px; }
   .apercu { position: static; }
   .apercu .recette, .apercu .recette:hover { transform: none; box-shadow: 8px 8px 0 var(--paprika); }
 }
@@ -559,7 +559,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 
 @media (max-width: 720px) {
   .etape-form { padding: 20px; }
-  .etape-form__colonnes { grid-template-columns: 1fr; gap: 20px; }
+  .etape-form__colonnes { grid-template-columns: minmax(0, 1fr); gap: 20px; }
 }
 
 /* ============ Modification d'un cocktail ============ */
@@ -630,7 +630,7 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .mon-avis .etoiles__etoile--pleine { color: var(--mangue); }
 .mon-avis .etoiles__etoile:focus-within { outline-color: var(--encre); }
 .mon-avis .etoiles__libelle { font-size: 17px; }
-@media (max-width: 900px) { .mes-avis { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .mes-avis { grid-template-columns: minmax(0, 1fr); } }
 
 /* ============ Modifier mon profil ============ */
 .modifier-compte .connexion__droite { justify-content: flex-start; padding-top: 32px; }
@@ -666,11 +666,11 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .monfrigo__edition .btn--plein { background: var(--mangue); border-color: var(--mangue); }
 .monfrigo__edition .actions { margin-top: 0; }
 .monfrigo__realisables h2 { color: var(--mangue); }
-.monfrigo__recettes { grid-template-columns: 1fr; }
+.monfrigo__recettes { grid-template-columns: minmax(0, 1fr); }
 .monfrigo .vide { padding-top: 8px; }
 @media (min-width: 1300px) { .monfrigo__recettes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 900px) {
-  .monfrigo { grid-template-columns: 1fr; gap: 40px; }
+  .monfrigo { grid-template-columns: minmax(0, 1fr); gap: 40px; }
   .monfrigo__contenu { position: static; padding: 24px; }
 }
 
@@ -693,3 +693,67 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 .avatar__photo { object-fit: cover; padding: 0; }
 .compte-trouve__pseudo { display: block; font: italic 700 20px var(--font-titre); line-height: 1.1; }
 .compte-trouve__depuis { display: block; font-size: 13px; opacity: .7; }
+
+/* ============ Responsive : petits écrans ============
+   Mesuré à 320 / 375 / 768 / 1024 px. Les grilles utilisent minmax(0, 1fr) : une colonne « 1fr » s'élargit
+   au contenu le plus long et fait déborder la page (cartes coupées à droite). */
+@media (max-width: 720px) {
+  /* Header compact : logo + actions, puis la navigation (liens jamais coupés en deux), puis la recherche.
+     Il n'est plus collant : un header de plusieurs lignes figé mangerait un quart de l'écran. */
+  .header { position: static; }
+  .header__inner { gap: 12px 16px; padding-top: 12px; padding-bottom: 12px; }
+  .logo { font-size: 24px; }
+  .logo svg { height: 32px; }
+  .header__actions { order: 2; margin-left: auto; }
+  .nav { order: 3; width: 100%; gap: 2px; flex-wrap: wrap; }
+  .nav a { white-space: nowrap; padding: 8px 9px; font-size: 14px; }
+  .header__actions .pill { padding-left: 14px; padding-right: 14px; }
+  .header__search { order: 4; }
+
+  /* Lignes d'ingrédients d'une étape (modification) : le nom sur sa ligne, les réglages dessous */
+  .dosages-form li { flex-wrap: wrap; }
+  .dosages-form__nom { flex-basis: 100%; }
+  .dosages-form__retirer { margin-left: auto; }
+  .etape-form__entete { flex-wrap: wrap; }
+}
+
+@media (max-width: 720px), (pointer: coarse) {
+  /* Cibles tactiles d'au moins 36–40px de haut (téléphones et tablettes tactiles) */
+  .pill, .btn, .nav a { min-height: 40px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; }
+  .pill--petite { min-height: 36px; }
+  .connexion__voir { min-height: 36px; padding-left: 10px; padding-right: 10px; }
+  .monfrigo__icone, .dosages-form__retirer { min-width: 40px; min-height: 40px; display: inline-grid; place-items: center; }
+  .puce button { min-width: 32px; min-height: 32px; }
+  .dosages-form input, .dosages-form select, .monfrigo__edition input, .monfrigo__edition select { min-height: 40px; }
+  .footer ul { gap: 2px; }
+  .footer a { display: inline-block; padding: 7px 0; }
+}
+
+@media (max-width: 600px) {
+  /* Étapes de la fiche : numéro et case sur une ligne, le texte prend toute la largeur dessous */
+  .etape { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "num case" "texte texte"; gap: 4px 12px; padding: 18px 20px; }
+  .etape__num { grid-area: num; font-size: 44px; }
+  .etape__case { grid-area: case; }
+  .etape > div { grid-area: texte; }
+  .etape p { font-size: 17px; }
+}
+
+@media (max-width: 400px) {
+  /* Frigo sur très petit écran : sans les pointillés, la quantité et les boutons tiennent sur la ligne */
+  .monfrigo__contenu { padding: 20px 16px; }
+  .monfrigo__liste li { gap: 6px; }
+  .monfrigo__liste .dosages__trait { display: none; }
+  .monfrigo__liste .dosages__qte { margin-left: auto; }
+  .monfrigo__liste .dosages__nom { min-width: 0; overflow-wrap: anywhere; }
+}
+
+/* Titres équilibrés : pas de mot seul sur la dernière ligne (« ? » orphelin sur mobile) */
+h1, h2 { text-wrap: balance; }
+
+/* Mentions « (facultatif) » : jamais sous 12px */
+.creation__label small, .modifier-compte__facultatif { font-size: 12px; }
+
+/* Sur-titre lisible sur le volet mangue (Compte, Modifier le compte) : encre, jamais citron sur mangue */
+.profil__gauche .surtitre { color: var(--encre); opacity: .75; }
+

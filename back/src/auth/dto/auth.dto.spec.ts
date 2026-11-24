@@ -11,7 +11,7 @@ describe('DTO auth', () => {
   describe('RegisterDto', () => {
     const valide = {
       pseudo: 'romain',
-      mail: 'romain@mycocktail.com',
+      mail: 'romain@myxo.com',
       mdp: 'Romain1234',
       dateNaissance: '2000-05-12',
     };

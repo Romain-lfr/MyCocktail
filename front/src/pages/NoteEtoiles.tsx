@@ -1,4 +1,4 @@
-import "./mycocktail.css";
+import "./myxo.css";
 
 const LIBELLES_NOTE = ["", "Décevant", "Bof", "Correct", "Très bon", "Excellent"];
 

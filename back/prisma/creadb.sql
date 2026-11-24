@@ -1,10 +1,10 @@
 /* ============================================================ */
-/*          MyCocktail - Base de données PostgreSQL             */
+/*          Myxo - Base de données PostgreSQL             */
 /* ============================================================ */
 
-DROP SCHEMA IF EXISTS MyCocktail CASCADE;
-CREATE SCHEMA MyCocktail;
-SET search_path TO MyCocktail;
+DROP SCHEMA IF EXISTS Myxo CASCADE;
+CREATE SCHEMA Myxo;
+SET search_path TO Myxo;
 
 -- Extension nécessaire pour le hachage bcrypt
 CREATE EXTENSION IF NOT EXISTS pgcrypto;

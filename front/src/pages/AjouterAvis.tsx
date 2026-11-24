@@ -6,7 +6,7 @@ import { GlasseY, GlasseU } from "./Logo";
 import ImageOuSecours from "./ImageOuSecours";
 import NoteEtoiles from "./NoteEtoiles";
 import { idCompteDuToken } from "../utils/token";
-import "./mycocktail.css";
+import "./myxo.css";
 import { avecToken, tokenSiConnecte, messageApi } from "../utils/api";
 import { API_URL } from "../config";
 

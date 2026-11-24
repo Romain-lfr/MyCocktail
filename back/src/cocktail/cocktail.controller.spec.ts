@@ -154,7 +154,7 @@ describe('CocktailController', () => {
     it('supprime le fichier envoyé si on n’est pas l’auteur', async () => {
       // vrai fichier temporaire, comme celui que multer écrit sur le disque
       const dossier = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'mycocktail-test-'),
+        path.join(os.tmpdir(), 'myxo-test-'),
       );
       const chemin = path.join(dossier, 'upload.png');
       fs.writeFileSync(chemin, 'image');

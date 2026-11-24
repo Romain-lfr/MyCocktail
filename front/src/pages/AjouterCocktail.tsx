@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { GlasseY, GlasseU } from "./Logo";
-import "./mycocktail.css";
+import "./myxo.css";
 import { avecToken, messageApi } from "../utils/api";
 import { unitesPourCategorie } from "../utils/unites";
 import { API_URL } from "../config";

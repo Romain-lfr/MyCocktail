@@ -6,7 +6,7 @@ import { api, connecter, emplacement, rendre } from '../test/utils';
 const compte = {
   idcompte: 'CPT-00001',
   pseudo: 'romain',
-  mailcompte: 'romain@mycocktail.com',
+  mailcompte: 'romain@myxo.com',
   numtel: '0600000000',
   dateinscription: '2024-01-15T00:00:00.000Z',
   datenaissance: '2000-05-12T00:00:00.000Z',

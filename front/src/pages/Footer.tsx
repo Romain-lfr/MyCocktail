@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import Logo from "./Logo";
-import "./mycocktail.css";
+import "./myxo.css";
 
 /** Pied de page commun à toutes les pages (affiché par App.tsx, comme le Header). */
 export default function Footer() {
@@ -13,7 +13,7 @@ export default function Footer() {
       <div className="footer__inner">
         <div className="footer__haut">
           <div>
-            <Link to="/" className="logo" aria-label="MyCocktail, accueil"><Logo /></Link>
+            <Link to="/" className="logo" aria-label="Myxo, accueil"><Logo /></Link>
             <p className="footer__slogan">Cocktails et mocktails à faire chez soi, avec ce qu'il y a dans le frigo.</p>
           </div>
 
@@ -48,7 +48,7 @@ export default function Footer() {
         </div>
 
         <div className="footer__bas">
-          <p>© {annee} MyCocktail</p>
+          <p>© {annee} Myxo</p>
           <p>L'abus d'alcool est dangereux pour la santé, à consommer avec modération.</p>
         </div>
       </div>

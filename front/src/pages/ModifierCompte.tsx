@@ -3,7 +3,7 @@ import Avatar from "./Avatar";
 import type { FormEvent } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import "./mycocktail.css";
+import "./myxo.css";
 import { avecToken, messageApi } from "../utils/api";
 import { API_URL } from "../config";
 

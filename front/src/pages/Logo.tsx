@@ -4,7 +4,7 @@ const LIQUIDE = { fill: "var(--verre-liquide, var(--citron))" };
 const DECO = { fill: "var(--verre-deco, var(--mangue))" };
 const PAILLE = { stroke: "var(--verre-paille, var(--paprika))" };
 
-// Logo MyCocktail : verre en Y (cocktails)
+// Logo Myxo : verre en Y (cocktails)
 export function GlasseY({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 48 64" aria-hidden="true" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -21,7 +21,7 @@ export default function Logo() {
     <>
       <span>M</span>
       <GlasseY />
-      <span>Cocktails</span>
+      <span>xo</span>
     </>
   );
 }

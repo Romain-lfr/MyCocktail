@@ -36,9 +36,9 @@ describe('Footer', () => {
 
   it('affiche l’année, la mention légale sur l’alcool, et le logo ramène à l’accueil', async () => {
     const { user } = rendre(<Footer />, { route: '/compte' });
-    expect(screen.getByText(`© ${new Date().getFullYear()} MyCocktail`)).toBeInTheDocument();
+    expect(screen.getByText(`© ${new Date().getFullYear()} Myxo`)).toBeInTheDocument();
     expect(screen.getByText(/à consommer avec modération/)).toBeInTheDocument();
-    await user.click(screen.getByRole('link', { name: 'MyCocktail, accueil' }));
+    await user.click(screen.getByRole('link', { name: 'Myxo, accueil' }));
     expect(emplacement()).toBe('/');
   });
 });

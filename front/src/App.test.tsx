@@ -35,9 +35,9 @@ describe('App (routes)', () => {
   );
 
   it('sert les routes sous le sous-dossier de déploiement (basename = BASE_URL)', async () => {
-    vi.stubEnv('BASE_URL', '/mycocktail/');
+    vi.stubEnv('BASE_URL', '/myxo/');
     try {
-      ouvrir('/mycocktail/login');
+      ouvrir('/myxo/login');
       expect(await screen.findByRole('heading', { name: 'Connexion' })).toBeInTheDocument();
     } finally {
       vi.unstubAllEnvs();

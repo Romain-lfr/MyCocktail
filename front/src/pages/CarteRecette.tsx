@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { GlasseY, GlasseU } from "./Logo";
 import ImageOuSecours from "./ImageOuSecours";
 import { libelleStatut } from "../utils/statut";
-import "./mycocktail.css";
+import "./myxo.css";
 import { formatNote, noteMoyenne } from "../utils/format";
 import { API_URL } from "../config";
 

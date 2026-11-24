@@ -3,9 +3,9 @@ import { render } from '@testing-library/react';
 import Logo, { GlasseU, GlasseY } from './Logo';
 
 describe('Logo', () => {
-  it('affiche « M », le verre et « Cocktails »', () => {
+  it('affiche « M », le verre en Y et « xo » (se lit « Myxo »)', () => {
     const { container } = render(<Logo />);
-    expect(container.textContent).toBe('MCocktails');
+    expect(container.textContent).toBe('Mxo');
     expect(container.querySelector('svg')).toBeInTheDocument();
   });
 

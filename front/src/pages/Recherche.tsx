@@ -7,7 +7,7 @@ import type { RecetteResume } from "./CarteRecette";
 import { GlasseU } from "./Logo";
 import Avatar from "./Avatar";
 import { tokenSiConnecte } from "../utils/api";
-import "./mycocktail.css";
+import "./myxo.css";
 import { API_URL } from "../config";
 
 interface Compte {

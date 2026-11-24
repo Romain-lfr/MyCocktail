@@ -4,7 +4,7 @@ import axios from "axios";
 import { GlasseY, GlasseU } from "./Logo";
 import ImageOuSecours from "./ImageOuSecours";
 import { idCompteDuToken } from "../utils/token";
-import "./mycocktail.css";
+import "./myxo.css";
 import { avecToken, tokenSiConnecte } from "../utils/api";
 import { formatNote, formatQuantite, noteMoyenne } from "../utils/format";
 import { API_URL } from "../config";

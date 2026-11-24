@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import CarteRecette from "./CarteRecette";
 import type { RecetteResume } from "./CarteRecette";
 import { GlasseU } from "./Logo";
-import "./mycocktail.css";
+import "./myxo.css";
 import { avecToken } from "../utils/api";
 import { API_URL } from "../config";
 

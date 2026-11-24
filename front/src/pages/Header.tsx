@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Logo from "./Logo.tsx";
-import "./mycocktail.css";
+import "./myxo.css";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -42,7 +42,7 @@ export default function Header() {
   return (
     <header className="header" ref={refHeader}>
       <div className="header__inner">
-        <Link to="/" className="logo" aria-label="MyCocktail, accueil"><Logo /></Link>
+        <Link to="/" className="logo" aria-label="Myxo, accueil"><Logo /></Link>
 
         <nav className="nav" aria-label="Navigation principale">
           {/* Link et non NavLink : NavLink marquerait « Tous » actif même sur /?alcool=… */}

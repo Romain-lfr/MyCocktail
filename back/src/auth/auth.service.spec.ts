@@ -98,7 +98,7 @@ describe('AuthService', () => {
       await expect(
         service.register(
           'romain',
-          'r@mycocktail.com',
+          'r@myxo.com',
           'MotDePasse123',
           '2000-01-01',
         ),
@@ -112,13 +112,13 @@ describe('AuthService', () => {
       await expect(
         service.register(
           'nouveau',
-          'R@MyCocktail.com',
+          'R@Myxo.com',
           'MotDePasse123',
           '2000-01-01',
         ),
       ).rejects.toThrow(new ConflictException('Cet email est déjà utilisé'));
       expect(prisma.compte.findUnique.mock.calls[1][0].where.mailcompte).toBe(
-        'r@mycocktail.com',
+        'r@myxo.com',
       );
     });
 
@@ -127,7 +127,7 @@ describe('AuthService', () => {
       prisma.$queryRaw.mockResolvedValue([{ idcompte: 'CPT-00002' }]);
       await service.register(
         'nouveau',
-        'n@mycocktail.com',
+        'n@myxo.com',
         'MotDePasse123',
         '2000-01-01',
       );

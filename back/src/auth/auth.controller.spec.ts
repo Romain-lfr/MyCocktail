@@ -33,13 +33,13 @@ describe('AuthController', () => {
   it('register transmet les champs du formulaire au service', async () => {
     await controller.register({
       pseudo: 'nouveau',
-      mail: 'n@mycocktail.com',
+      mail: 'n@myxo.com',
       mdp: 'MotDePasse123',
       dateNaissance: '2000-01-01',
     });
     expect(authService.register).toHaveBeenCalledWith(
       'nouveau',
-      'n@mycocktail.com',
+      'n@myxo.com',
       'MotDePasse123',
       '2000-01-01',
     );

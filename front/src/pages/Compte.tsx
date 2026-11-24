@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Avatar from "./Avatar";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import "./mycocktail.css";
+import "./myxo.css";
 import { avecToken } from "../utils/api";
 import { API_URL } from "../config";
 

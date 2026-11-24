@@ -38,6 +38,6 @@ jobs:
             set net:max-retries 5;
             set net:reconnect-interval-base 5;
             set net:timeout 30;
-            mirror --reverse --delete --verbose ./front/dist/ ./mycocktail/;
+            mirror --reverse --delete --verbose ./front/dist/ ./myxo/;
             bye
           "

@@ -107,10 +107,10 @@ describe('CompteService', () => {
     it('met l’email en minuscules', async () => {
       prisma.compte.update.mockResolvedValue({});
       await service.modifierCompte('CPT-00001', {
-        mailcompte: 'Romain@MyCocktail.com',
+        mailcompte: 'Romain@Myxo.com',
       });
       expect(prisma.compte.update.mock.calls[0][0].data.mailcompte).toBe(
-        'romain@mycocktail.com',
+        'romain@myxo.com',
       );
     });
   });
