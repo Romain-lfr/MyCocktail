@@ -4,6 +4,11 @@ import APropos from './APropos';
 import { api, rendre } from '../test/utils';
 
 const URL_CONTRIBUTEURS = 'https://api.github.com/repos/Romain-lfr/Myxo/contributors';
+const URL_COMMITS = 'https://api.github.com/repos/Romain-lfr/Myxo/commits';
+const commit = (n: number, message: string, date: string) => ({
+  sha: `${n}abcdef0123456789`, html_url: `https://github.com/Romain-lfr/Myxo/commit/${n}`,
+  commit: { message, author: { date } },
+});
 const contributeur = (login: string, type = 'User') => ({
   login, type, avatar_url: `https://avatars.example/${login}.png`, html_url: `https://github.com/${login}`,
 });
@@ -43,7 +48,7 @@ describe('APropos', () => {
 
   it('propose les nouveautés, le contact par e-mail et le code source', async () => {
     rendre(<APropos />);
-    expect(screen.getByRole('link', { name: /Nouveautés/ })).toHaveAttribute('href', 'https://github.com/Romain-lfr/Myxo/commits/main');
+    expect(screen.getByRole('button', { name: /Nouveautés/ })).toHaveAttribute('aria-expanded', 'false');
     const contact = screen.getByRole('link', { name: /Contacter l'équipe/ });
     expect(contact).toHaveAttribute('href', 'mailto:lefranc.romain@outlook.fr');
     expect(contact).not.toHaveAttribute('target');
@@ -90,5 +95,64 @@ describe('APropos', () => {
     const contribuer = screen.getByRole('link', { name: /Contribuer sur GitHub/ });
     expect(contribuer).toHaveAttribute('href', 'https://github.com/Romain-lfr/Myxo');
     expect(contribuer).toHaveAttribute('target', '_blank');
+  });
+
+  describe('nouveautés (tuile 01)', () => {
+    const tuile = () => screen.getByRole('button', { name: /Nouveautés/ });
+    const panneau = () => document.getElementById('apropos-nouveautes') as HTMLElement;
+    const commitsGithub = [
+      commit(1, 'Add PDP\n\nCo-Authored-By: quelqu’un', '2026-11-25T21:30:00Z'),
+      commit(2, 'Correction front', '2026-11-24T10:00:00Z'),
+      commit(3, 'Modify peuplement.sql', '2026-11-20T10:00:00Z'),
+      commit(4, 'ADD front', '2026-11-18T10:00:00Z'),
+      commit(5, 'ADD unit test', '2026-11-10T10:00:00Z'),
+      commit(6, 'Commit en trop', '2026-11-01T10:00:00Z'),
+    ];
+    const repondre = () => api.get.mockImplementation((url: string) =>
+      Promise.resolve({ data: url === URL_COMMITS ? commitsGithub : [] }));
+
+    it('ne charge ni n’affiche rien tant qu’on n’a pas cliqué', async () => {
+      repondre();
+      rendre(<APropos />);
+      await screen.findByText(/Pas encore d'autres contributeurs/);
+      expect(panneau()).not.toBeVisible();
+      expect(tuile()).toHaveAttribute('aria-controls', 'apropos-nouveautes');
+      expect(api.get).not.toHaveBeenCalledWith(URL_COMMITS, expect.anything());
+    });
+
+    it('au clic : affiche les 5 derniers commits (date, titre, lien) puis se referme', async () => {
+      repondre();
+      const { user } = rendre(<APropos />);
+      await user.click(tuile());
+      expect(tuile()).toHaveAttribute('aria-expanded', 'true');
+      expect(panneau()).toBeVisible();
+      expect(screen.getByRole('region', { name: 'Nouveautés' })).toBe(panneau());
+      expect(api.get).toHaveBeenCalledWith(URL_COMMITS, { params: { per_page: 5 } });
+
+      const commits = await within(panneau()).findAllByRole('listitem');
+      expect(commits).toHaveLength(5);
+      expect(within(commits[0]).getByRole('link')).toHaveAccessibleName(/^Add PDP ?\(nouvel onglet\)$/);
+      expect(within(commits[0]).getByRole('link')).toHaveAttribute('href', 'https://github.com/Romain-lfr/Myxo/commit/1');
+      expect(within(commits[0]).getByText('25 novembre 2026')).toHaveAttribute('datetime', '2026-11-25T21:30:00Z');
+      expect(within(commits[0]).getByText('1abcdef')).toBeInTheDocument();
+      expect(within(panneau()).queryByText('Commit en trop')).not.toBeInTheDocument();
+      expect(within(panneau()).getByRole('link', { name: /Voir tout l'historique/ })).toHaveAttribute('href', 'https://github.com/Romain-lfr/Myxo/commits/main');
+
+      await user.click(tuile());
+      expect(tuile()).toHaveAttribute('aria-expanded', 'false');
+      expect(panneau()).not.toBeVisible();
+
+      // Rouvrir ne relance pas la requête
+      await user.click(tuile());
+      expect(api.get.mock.calls.filter(([url]) => url === URL_COMMITS)).toHaveLength(1);
+    });
+
+    it('reste lisible si GitHub ne répond pas, avec le lien vers tout l’historique', async () => {
+      api.get.mockRejectedValue(new Error('réseau'));
+      const { user } = rendre(<APropos />);
+      await user.click(tuile());
+      expect(await within(panneau()).findByText('Impossible de charger les nouveautés pour le moment.')).toBeInTheDocument();
+      expect(within(panneau()).getByRole('link', { name: /Voir tout l'historique/ })).toBeInTheDocument();
+    });
   });
 });

@@ -17,18 +17,28 @@ const ETAPES = [
   { titre: "Secoue, note, partage", texte: "Suis la recette étape par étape, garde tes favoris, laisse ton avis ou publie tes créations." },
 ];
 
+const HISTORIQUE = `https://github.com/${DEPOT}/commits/main`;
+// Après la tuile « Nouveautés » (01), qui ouvre la liste des derniers commits
 const LIENS = [
-  { href: `https://github.com/${DEPOT}/commits/main`, titre: "Nouveautés", texte: "Ce qui a changé récemment" },
   { href: `mailto:${CONTACT}`, titre: "Contacter l'équipe", texte: CONTACT },
   { href: `https://github.com/${DEPOT}`, titre: "Code source", texte: `${DEPOT} sur GitHub` },
 ];
 
 interface Contributeur { login: string; avatar_url: string; html_url: string; type: string }
+interface Commit { sha: string; html_url: string; commit: { message: string; author: { date: string } } }
+
+const NB_NOUVEAUTES = 5;
+// « 25 novembre 2026 »
+const dateCommit = (iso: string) => new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+// Titre du commit : sa première ligne (le corps et les mentions de co-auteurs sont ignorés)
+const titreCommit = (message: string) => message.split("\n")[0].trim();
 
 const externe = (href: string) => href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {};
 
 export default function APropos() {
   const [contributeurs, setContributeurs] = useState<Contributeur[] | null>(null);
+  const [commits, setCommits] = useState<Commit[] | null>(null);
+  const [nouveautesOuvertes, setNouveautesOuvertes] = useState(false);
   // Commit déployé (fourni par le workflow GitHub Actions), « dev » en local
   const build = (import.meta.env.VITE_BUILD ?? "").slice(0, 7) || "dev";
 
@@ -39,6 +49,17 @@ export default function APropos() {
         .filter((c) => c.type !== "Bot" && !membres.includes(c.login.toLowerCase()))))
       .catch(() => setContributeurs([]));
   }, []);
+
+  // Derniers commits : chargés au premier clic sur « Nouveautés » seulement
+  const basculerNouveautes = () => {
+    setNouveautesOuvertes((o) => !o);
+    if (commits !== null) return;
+    axios.get(`https://api.github.com/repos/${DEPOT}/commits`, { params: { per_page: NB_NOUVEAUTES } })
+      .then((res) => setCommits((Array.isArray(res.data) ? res.data as Commit[] : [])
+        .filter((c) => c?.commit?.message && c.commit.author?.date)
+        .slice(0, NB_NOUVEAUTES)))
+      .catch(() => setCommits([]));
+  };
 
   return (
     <main className="page apropos">
@@ -124,10 +145,19 @@ export default function APropos() {
       <section className="apropos-bande apropos-bande--fin" aria-labelledby="apropos-contact">
         <h2 id="apropos-contact">Garder le contact</h2>
         <ul className="espace apropos-liens">
+          <li>
+            <button type="button" className="espace__bouton" onClick={basculerNouveautes}
+              aria-expanded={nouveautesOuvertes} aria-controls="apropos-nouveautes">
+              <span className="espace__num" aria-hidden="true">01</span>
+              <span className="espace__titre">Nouveautés</span>
+              <span className="espace__texte">Ce qui a changé récemment</span>
+              <span className="espace__fleche" aria-hidden="true">↓</span>
+            </button>
+          </li>
           {LIENS.map((l, i) => (
             <li key={l.titre}>
               <a href={l.href} {...externe(l.href)}>
-                <span className="espace__num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                <span className="espace__num" aria-hidden="true">{String(i + 2).padStart(2, "0")}</span>
                 <span className="espace__titre">{l.titre}</span>
                 <span className="espace__texte">{l.texte}</span>
                 {l.href.startsWith("http") && <span className="sr-only"> (nouvel onglet)</span>}
@@ -136,6 +166,30 @@ export default function APropos() {
             </li>
           ))}
         </ul>
+
+        {/* Derniers commits, ouverts par la tuile « Nouveautés » */}
+        <div id="apropos-nouveautes" className="apropos-nouveautes" role="region" aria-label="Nouveautés" hidden={!nouveautesOuvertes}>
+          {commits === null ? (
+            <p className="apropos-merci">Chargement…</p>
+          ) : commits.length === 0 ? (
+            <p className="apropos-merci">Impossible de charger les nouveautés pour le moment.</p>
+          ) : (
+            <ol className="apropos-commits">
+              {commits.map((c) => (
+                <li key={c.sha}>
+                  <time dateTime={c.commit.author.date}>{dateCommit(c.commit.author.date)}</time>
+                  <a href={c.html_url} target="_blank" rel="noopener noreferrer">
+                    {titreCommit(c.commit.message)}<span className="sr-only"> (nouvel onglet)</span>
+                  </a>
+                  <span className="apropos-commits__sha" aria-hidden="true">{c.sha.slice(0, 7)}</span>
+                </li>
+              ))}
+            </ol>
+          )}
+          <a className="pill apropos-commits__tout" href={HISTORIQUE} target="_blank" rel="noopener noreferrer">
+            Voir tout l'historique<span className="sr-only"> (nouvel onglet)</span>
+          </a>
+        </div>
       </section>
 
     </main>

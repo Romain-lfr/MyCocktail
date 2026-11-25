@@ -246,21 +246,24 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 
 /* Mon espace : tuiles numérotées */
 .espace { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 720px; }
-.espace a {
+.espace a, .espace__bouton {
   position: relative; display: flex; flex-direction: column; gap: 4px; height: 100%;
   padding: 20px 22px 22px; border-radius: var(--radius-card);
   background: var(--encre); color: var(--sable); text-decoration: none;
   transition: transform .2s, box-shadow .2s;
 }
-.espace a:hover { transform: translateY(-4px); box-shadow: 8px 8px 0 var(--paprika); }
-.espace a:focus-visible { outline: 3px solid var(--encre); outline-offset: 4px; }
+.espace a:hover, .espace__bouton:hover { transform: translateY(-4px); box-shadow: 8px 8px 0 var(--paprika); }
+.espace a:focus-visible, .espace__bouton:focus-visible { outline: 3px solid var(--encre); outline-offset: 4px; }
 .espace__num { font: italic 700 36px var(--font-titre); color: var(--mangue); line-height: 1; margin-bottom: 8px; }
 .espace__titre { font: italic 700 24px var(--font-titre); }
 .espace__texte { font-size: 14px; opacity: .8; padding-right: 28px; }
 .espace__fleche { position: absolute; right: 20px; bottom: 18px; font-size: 22px; color: var(--mangue); transition: transform .2s; }
 .espace a:hover .espace__fleche { transform: translateX(4px); }
+/* Tuile-bouton (ouvre un panneau) : même rendu qu'une tuile-lien, flèche qui pivote une fois ouverte */
+.espace__bouton { width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer; }
+.espace__bouton[aria-expanded="true"] .espace__fleche { transform: rotate(180deg); }
 @media (max-width: 520px) { .espace { grid-template-columns: minmax(0, 1fr); } }
-@media (prefers-reduced-motion: reduce) { .espace a, .espace a:hover, .espace a:hover .espace__fleche { transition: none; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .espace a, .espace a:hover, .espace a:hover .espace__fleche, .espace__bouton, .espace__bouton:hover { transition: none; transform: none; } }
 .profil__action { margin-top: 40px; }
 .profil__action .pill { background: var(--encre); border-color: var(--encre); color: var(--sable); padding: 12px 28px; font-weight: 600; }
 .profil__action .pill:hover { background: var(--encre-claire); }
@@ -789,6 +792,25 @@ h1, h2 { text-wrap: balance; }
 .apropos-etapes__num { display: block; margin-bottom: 12px; font: italic 700 64px var(--font-titre); color: var(--mangue); line-height: 1; }
 .apropos-etapes h3 { margin: 0 0 8px; font-size: 24px; color: var(--sable); }
 .apropos-etapes p { margin: 0; max-width: 34ch; opacity: .85; }
+
+/* Nouveautés : panneau sous les tuiles (bande sable, contexte clair) avec les derniers commits */
+.apropos-nouveautes { margin-top: 24px; padding: 24px 28px; border-radius: var(--radius-card); border: 1.5px solid rgba(18, 58, 58, .25); background: var(--sable-clair); color: var(--encre); }
+.apropos-nouveautes[hidden] { display: none; }
+.apropos-commits { list-style: none; margin: 0 0 20px; padding: 0; }
+.apropos-commits li { display: grid; grid-template-columns: 180px minmax(0, 1fr) auto; gap: 4px 24px; align-items: baseline; padding: 14px 0; border-bottom: 2px dotted rgba(18, 58, 58, .25); }
+.apropos-commits time { font: italic 700 18px var(--font-titre); color: var(--paprika); }
+.apropos-commits a { color: var(--encre); font-size: 17px; text-decoration: none; overflow-wrap: anywhere; }
+.apropos-commits a:hover { text-decoration: underline wavy var(--paprika); text-underline-offset: 5px; }
+.apropos-commits__sha { padding: 2px 10px; border-radius: 999px; border: 1px solid rgba(18, 58, 58, .35); font-size: 12px; letter-spacing: .06em; opacity: .75; }
+.apropos-nouveautes .apropos-merci { margin-bottom: 16px; }
+.apropos-nouveautes .pill { border-color: var(--encre); color: var(--encre); }
+.apropos-nouveautes .pill:hover { background: rgba(18, 58, 58, .1); }
+.apropos-nouveautes :focus-visible { outline-color: var(--encre); }
+@media (max-width: 600px) {
+  .apropos-nouveautes { padding: 20px; }
+  .apropos-commits li { grid-template-columns: minmax(0, 1fr) auto; }
+  .apropos-commits time { grid-column: 1 / -1; font-size: 16px; }
+}
 
 /* Bande sable pleine largeur : les liens en tuiles encre (mêmes tuiles que « Mon espace ») */
 .apropos-bande { margin: 0 calc(-1 * var(--marge)) 80px; padding: 64px var(--marge) 72px; background: var(--fond-carte); color: var(--encre); }
