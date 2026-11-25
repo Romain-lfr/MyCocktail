@@ -9,6 +9,7 @@ describe('Footer', () => {
   it('visiteur : liens pour explorer, se connecter ou créer un compte', () => {
     rendre(<Footer />);
     expect(bloc('Explorer').getByRole('link', { name: 'Avec alcool' })).toHaveAttribute('href', '/?alcool=true');
+    expect(bloc('Explorer').getByRole('link', { name: 'À propos' })).toHaveAttribute('href', '/a-propos');
     expect(bloc('Mon espace').getByRole('link', { name: 'Connexion' })).toHaveAttribute('href', '/login');
     expect(bloc('Mon espace').getByRole('link', { name: 'Créer un compte' })).toHaveAttribute('href', '/register');
     expect(screen.queryByRole('link', { name: 'Mon frigo' })).not.toBeInTheDocument();

@@ -12,6 +12,13 @@ describe('Header (pages)', () => {
     expect(screen.getByRole('link', { name: 'Avec alcool' })).toBeInTheDocument();
   });
 
+  it('affiche le badge « Bêta » à côté du logo, en dehors du lien vers l’accueil', () => {
+    rendre(<Header />);
+    const beta = screen.getByText('Bêta');
+    expect(beta).toHaveAttribute('title', 'Le site est en cours de développement');
+    expect(screen.getByRole('link', { name: 'Myxo, accueil' })).not.toContainElement(beta);
+  });
+
   it('connecté : Mon compte, Mon frigo et Déconnexion', () => {
     connecter();
     rendre(<Header />);

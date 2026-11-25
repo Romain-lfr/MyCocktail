@@ -23,6 +23,7 @@ export default function Footer() {
               <li><Link to="/">Toutes les recettes</Link></li>
               <li><Link to="/?alcool=false">Sans alcool</Link></li>
               {!estMineur && <li><Link to="/?alcool=true">Avec alcool</Link></li>}
+              <li><Link to="/a-propos">À propos</Link></li>
             </ul>
           </nav>
 

@@ -40,7 +40,7 @@ Nous visons à rendre la découverte des cocktails plus simple et sur mesure, qu
 ### 1. Cloner le projet
 
 ```bash
-git clone https://github.com/Romain-lfr/mycocktail.git
+git clone https://github.com/Romain-lfr/Myxo.git
 cd myxo
 ```
 

@@ -42,7 +42,10 @@ export default function Header() {
   return (
     <header className="header" ref={refHeader}>
       <div className="header__inner">
-        <Link to="/" className="logo" aria-label="Myxo, accueil"><Logo /></Link>
+        <div className="header__marque">
+          <Link to="/" className="logo" aria-label="Myxo, accueil"><Logo /></Link>
+          <span className="badge-beta" title="Le site est en cours de développement">Bêta</span>
+        </div>
 
         <nav className="nav" aria-label="Navigation principale">
           {/* Link et non NavLink : NavLink marquerait « Tous » actif même sur /?alcool=… */}

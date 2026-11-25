@@ -66,6 +66,9 @@ h1, h2, h3 { font-family: var(--font-titre); font-style: italic; font-weight: 70
 }
 .logo { display: flex; align-items: center; gap: 4px; color: var(--sable); text-decoration: none; font: italic 700 28px var(--font-titre); }
 .logo svg { height: 38px; width: auto; }
+/* Logo + badge « Bêta » (site en cours de développement ; aussi sur la page À propos) */
+.header__marque { display: flex; align-items: center; gap: 8px; }
+.badge-beta { padding: 2px 8px; border-radius: 999px; background: var(--citron); color: var(--encre); font: 600 12px var(--font-texte); letter-spacing: .08em; text-transform: uppercase; line-height: 1.4; transform: rotate(-4deg); }
 .nav { display: flex; gap: 8px; }
 .nav a { color: var(--sable); text-decoration: none; padding: 8px 14px; border-radius: 999px; font-weight: 500; font-size: 15px; }
 .nav a:hover { background: rgba(252, 235, 209, .12); }
@@ -757,3 +760,76 @@ h1, h2 { text-wrap: balance; }
 /* Sur-titre lisible sur le volet mangue (Compte, Modifier le compte) : encre, jamais citron sur mangue */
 .profil__gauche .surtitre { color: var(--encre); opacity: .75; }
 
+/* ============ À propos ============ */
+/* Ouverture : titre éditorial (même famille que l'accueil) + l'équipe sur une carte sable inclinée */
+.apropos-hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(40px, 6vw, 96px); align-items: center; padding: 48px 0 80px; }
+.apropos-hero h1 { font-size: clamp(42px, 6vw, 84px); color: var(--mangue); line-height: 1.02; max-width: 12ch; }
+.apropos-hero h1 em { color: var(--sable); text-decoration: underline wavy var(--paprika); text-decoration-thickness: 3px; text-underline-offset: 10px; }
+.apropos-hero__texte { margin: 24px 0 0; font-size: 19px; max-width: 44ch; opacity: .9; }
+.apropos-hero__meta { display: flex; align-items: center; gap: 12px; margin: 24px 0 28px; }
+.apropos-hero__build { padding: 3px 12px; border-radius: 999px; border: 1px solid rgba(252, 235, 209, .3); font-size: 12px; letter-spacing: .06em; opacity: .75; }
+
+.apropos-carte { position: relative; justify-self: center; width: 100%; max-width: 460px; padding: 40px 36px 32px; background: var(--fond-carte); color: var(--encre); border-radius: var(--radius-card); transform: rotate(2deg); box-shadow: 14px 14px 0 var(--paprika); }
+.apropos-carte__sous { margin: 0 0 4px; font: 600 12px var(--font-texte); letter-spacing: .14em; text-transform: uppercase; color: var(--paprika); }
+.apropos .apropos-carte h2 { margin: 0 0 18px; font-size: 34px; color: var(--encre); }
+.apropos-carte__verre { position: absolute; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 18px; color: var(--encre); }
+.apropos-carte__verre svg { height: 44px; width: auto; }
+.apropos-carte__verre--y { top: -28px; right: 70px; background: var(--mangue); --verre-deco: var(--paprika); transform: rotate(-10deg); } /* fond mangue : déco paprika */
+.apropos-carte__verre--u { top: -18px; right: -14px; background: var(--citron); --verre-liquide: var(--mangue); transform: rotate(8deg); } /* fond citron : liquide mangue */
+.apropos-carte__contributeurs { margin-top: 24px; padding-top: 20px; border-top: 2px dotted rgba(18, 58, 58, .35); }
+.apropos-carte h3 { margin: 0 0 10px; font-size: 22px; color: var(--encre); }
+
+/* Sections */
+.apropos-bloc { padding: 16px 0 80px; }
+.apropos .apropos-bloc h2, .apropos .apropos-bande h2 { margin: 0 0 28px; font-size: clamp(30px, 3.6vw, 44px); color: var(--mangue); }
+
+/* Comment ça marche : trois temps, gros numéros comme les étapes d'une recette */
+.apropos-etapes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+.apropos-etapes li { padding-top: 20px; border-top: 1.5px solid rgba(252, 235, 209, .3); }
+.apropos-etapes__num { display: block; margin-bottom: 12px; font: italic 700 64px var(--font-titre); color: var(--mangue); line-height: 1; }
+.apropos-etapes h3 { margin: 0 0 8px; font-size: 24px; color: var(--sable); }
+.apropos-etapes p { margin: 0; max-width: 34ch; opacity: .85; }
+
+/* Bande sable pleine largeur : les liens en tuiles encre (mêmes tuiles que « Mon espace ») */
+.apropos-bande { margin: 0 calc(-1 * var(--marge)) 80px; padding: 64px var(--marge) 72px; background: var(--fond-carte); color: var(--encre); }
+.apropos .apropos-bande h2 { color: var(--encre); }
+.apropos-liens { max-width: none; margin: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.apropos-liens .espace__texte { overflow-wrap: anywhere; }
+
+/* Équipe et contributeurs (sur la carte sable : contexte clair, textes et bordures encre) */
+.apropos-membres { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; }
+.apropos-membres a { display: flex; align-items: center; gap: 20px; margin: -10px; padding: 10px; border-radius: var(--radius-card); color: inherit; text-decoration: none; transition: background .15s; }
+.apropos-membres a:hover { background: rgba(18, 58, 58, .08); }
+.apropos-membres a:hover .apropos-membres__nom { text-decoration: underline wavy var(--paprika); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.apropos-membres img { flex: none; width: 80px; height: 80px; border-radius: 50%; background: var(--encre); box-shadow: 0 0 0 4px var(--fond-carte), 0 0 0 7px var(--mangue); }
+.apropos-membres__nom { display: block; font: italic 700 28px var(--font-titre); line-height: 1.1; }
+.apropos-membres__pseudo { display: block; margin: 2px 0 8px; font-size: 14px; opacity: .7; }
+.apropos-membres__role { display: inline-block; padding: 4px 12px; border-radius: 999px; background: var(--encre); color: var(--mangue); font: 600 12px var(--font-texte); letter-spacing: .08em; text-transform: uppercase; }
+.contributeurs { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.contributeurs a { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 18px 6px 6px; border-radius: 999px; border: 1.5px solid var(--encre); color: var(--encre); text-decoration: none; font-weight: 500; transition: background .15s; }
+.contributeurs a:hover { background: rgba(18, 58, 58, .1); }
+.contributeurs img { width: 32px; height: 32px; border-radius: 50%; }
+.apropos-merci { margin: 0 0 16px; font-size: 15px; opacity: .8; }
+.apropos-carte .pill { border-color: var(--encre); color: var(--encre); }
+.apropos-carte .pill:hover { background: rgba(18, 58, 58, .1); }
+.apropos-carte :focus-visible { outline-color: var(--encre); }
+.apropos-bande--fin { margin-bottom: 0; }
+.layout > main.apropos { padding-bottom: 0; }
+
+@media (max-width: 900px) {
+  .apropos-hero { grid-template-columns: minmax(0, 1fr); gap: 56px; padding-top: 24px; }
+  .apropos-carte { justify-self: start; max-width: min(460px, calc(100% - 10px)); transform: rotate(1deg); box-shadow: 8px 8px 0 var(--paprika); }
+  .apropos-etapes, .apropos-liens { grid-template-columns: minmax(0, 1fr); }
+  .apropos-etapes { gap: 24px; }
+  .apropos-bande { padding-top: 48px; padding-bottom: 56px; }
+}
+@media (max-width: 600px) {
+  .apropos-carte { padding: 36px 22px 24px; }
+  .apropos-carte__verre { width: 52px; height: 52px; border-radius: 14px; }
+  .apropos-carte__verre svg { height: 36px; }
+  .apropos-carte__verre--y { right: 54px; }
+  .apropos-carte__verre--u { right: -6px; }
+  .apropos-etapes__num { font-size: 52px; }
+  .apropos-membres img { width: 64px; height: 64px; }
+  .apropos-membres__nom { font-size: 24px; }
+}

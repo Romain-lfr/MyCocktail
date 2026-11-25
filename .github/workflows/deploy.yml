@@ -23,6 +23,7 @@ jobs:
         working-directory: front
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_BUILD: ${{ github.sha }}
         run: npm ci && npm run build
 
       - name: Envoi FTP vers Hostinger
