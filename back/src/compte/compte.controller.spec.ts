@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CompteController } from './compte.controller';
+import { BadRequestException } from '@nestjs/common';
 import { CompteService } from './compte.service';
+import { ImageService } from '../image/image.service';
 
 describe('CompteController', () => {
   let controller: CompteController;
@@ -19,6 +21,10 @@ describe('CompteController', () => {
     supprimerIngredientFrigo: jest.fn(),
     getCocktailsRealisables: jest.fn(),
   };
+  const imageService = {
+    ajouterImageCompte: jest.fn(),
+    supprimerImageCompte: jest.fn(),
+  };
   const req = {
     user: {
       idcompte: 'CPT-00001',
@@ -31,7 +37,10 @@ describe('CompteController', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [{ provide: CompteService, useValue: compteService }],
+      providers: [
+        { provide: CompteService, useValue: compteService },
+        { provide: ImageService, useValue: imageService },
+      ],
       controllers: [CompteController],
     }).compile();
 
@@ -105,5 +114,46 @@ describe('CompteController', () => {
       'CPT-00001',
       true,
     );
+  });
+
+  describe('photo de profil', () => {
+    const fichier = {
+      path: 'public/images/123.png',
+      originalname: 'moi.png',
+    } as Express.Multer.File;
+
+    it('enregistre la photo du compte du token et renvoie son URL', async () => {
+      imageService.ajouterImageCompte.mockResolvedValue([
+        { urlimage: '/public/images/456.webp' },
+      ]);
+      await expect(controller.modifierPhoto(fichier, req)).resolves.toEqual({
+        photo: '/public/images/456.webp',
+      });
+      expect(imageService.ajouterImageCompte).toHaveBeenCalledWith(
+        'CPT-00001',
+        'public/images/123.png',
+        'moi.png',
+      );
+    });
+
+    it('refuse un envoi sans fichier (400)', async () => {
+      await expect(
+        controller.modifierPhoto(
+          undefined as unknown as Express.Multer.File,
+          req,
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(imageService.ajouterImageCompte).not.toHaveBeenCalled();
+    });
+
+    it('retire la photo du compte du token', async () => {
+      imageService.supprimerImageCompte.mockResolvedValue({ photo: null });
+      await expect(controller.supprimerPhoto(req)).resolves.toEqual({
+        photo: null,
+      });
+      expect(imageService.supprimerImageCompte).toHaveBeenCalledWith(
+        'CPT-00001',
+      );
+    });
   });
 });

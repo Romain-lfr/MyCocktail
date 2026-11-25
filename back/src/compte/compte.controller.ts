@@ -8,16 +8,30 @@ import {
   Body,
   UseGuards,
   Request,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 import { CompteService } from './compte.service';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { UpdateCompteDto } from './dto/update-compte.dto';
 import type { RequeteAuth } from '../auth/utilisateur';
 import { QuantiteDto } from '../commun/dto/quantite.dto';
+import { ImageService } from '../image/image.service';
+import {
+  TAILLE_MAX_IMAGE,
+  nomFichierUpload,
+  filtreImage,
+} from '../commun/upload';
 
 @Controller('compte')
 export class CompteController {
-  constructor(private compteService: CompteService) {}
+  constructor(
+    private compteService: CompteService,
+    private imageService: ImageService,
+  ) {}
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
@@ -79,6 +93,38 @@ export class CompteController {
   @UseGuards(JwtAuthGuard)
   modifierCompte(@Body() body: UpdateCompteDto, @Request() req: RequeteAuth) {
     return this.compteService.modifierCompte(req.user.idcompte, body);
+  }
+
+  // Photo de profil : jpg / png / webp, 5 Mo max, convertie en WebP ; remplace l'ancienne
+  @Post('me/photo')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './public/images',
+        filename: nomFichierUpload,
+      }),
+      limits: { fileSize: TAILLE_MAX_IMAGE },
+      fileFilter: filtreImage,
+    }),
+  )
+  async modifierPhoto(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: RequeteAuth,
+  ) {
+    if (!file) throw new BadRequestException('Aucune image reçue');
+    const [image] = await this.imageService.ajouterImageCompte(
+      req.user.idcompte,
+      file.path,
+      file.originalname,
+    );
+    return { photo: image.urlimage };
+  }
+
+  @Delete('me/photo')
+  @UseGuards(JwtAuthGuard)
+  supprimerPhoto(@Request() req: RequeteAuth) {
+    return this.imageService.supprimerImageCompte(req.user.idcompte);
   }
 
   @Get('frigo')

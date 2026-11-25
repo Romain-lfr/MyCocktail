@@ -14,6 +14,7 @@ interface Compte {
   idcompte: string;
   pseudo: string;
   dateinscription: string;
+  photo?: string | null;
 }
 
 const moisAnnee = (d: string) => new Date(d).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
@@ -105,7 +106,7 @@ function Recherche() {
           <ul className="comptes-trouves">
             {comptes.map((c) => (
               <li key={c.idcompte} className="compte-trouve">
-                <Avatar className="compte-trouve__avatar" pseudo={c.pseudo} />
+                <Avatar className="compte-trouve__avatar" pseudo={c.pseudo} photo={c.photo} />
                 <span>
                   <span className="compte-trouve__pseudo">{c.pseudo}</span>
                   <span className="compte-trouve__depuis">Membre depuis {moisAnnee(c.dateinscription)}</span>

@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import Avatar from "./Avatar";
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./myxo.css";
 import { avecToken, messageApi } from "../utils/api";
 import { API_URL } from "../config";
+
+// Mêmes règles que l'API (jpg, png ou webp, 5 Mo max), vérifiées avant l'envoi
+const FORMATS_PHOTO = ["image/jpeg", "image/png", "image/webp"];
+const TAILLE_MAX_PHOTO = 5 * 1024 * 1024;
 
 function ModifierCompte() {
   const [pseudo, setPseudo] = useState("");
@@ -15,6 +19,9 @@ function ModifierCompte() {
   const [erreurs, setErreurs] = useState<Record<string, string>>({});
   const [succes, setSucces] = useState("");
   const [chargement, setChargement] = useState(false);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [envoiPhoto, setEnvoiPhoto] = useState(false);
+  const [messagePhoto, setMessagePhoto] = useState<{ erreur: boolean; texte: string } | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,6 +33,7 @@ function ModifierCompte() {
       setMail(res.data.mailcompte);
       setNumtel(res.data.numtel || "");
       setDatenaissance(res.data.datenaissance.split('T')[0]);
+      setPhoto(res.data.photo ?? null);
     }).catch(() => navigate("/login"));
   }, [navigate]);
 
@@ -62,6 +70,44 @@ function ModifierCompte() {
     }
   };
 
+  const changerPhoto = async (e: ChangeEvent<HTMLInputElement>) => {
+    const fichier = e.target.files?.[0];
+    e.target.value = ""; // permet de rechoisir le même fichier après une erreur
+    if (!fichier) return;
+    if (!FORMATS_PHOTO.includes(fichier.type)) {
+      setMessagePhoto({ erreur: true, texte: "Format non supporté (jpg, png ou webp)" });
+      return;
+    }
+    if (fichier.size > TAILLE_MAX_PHOTO) {
+      setMessagePhoto({ erreur: true, texte: "Image trop lourde (5 Mo maximum)" });
+      return;
+    }
+    const formData = new FormData();
+    formData.append("image", fichier);
+    setEnvoiPhoto(true);
+    setMessagePhoto(null);
+    try {
+      const res = await axios.post(`${API_URL}/compte/me/photo`, formData, avecToken());
+      setPhoto(res.data.photo);
+      setMessagePhoto({ erreur: false, texte: "Photo mise à jour !" });
+    } catch (err: unknown) {
+      setMessagePhoto({ erreur: true, texte: messageApi(err) || "Erreur lors de l'envoi de la photo" });
+    } finally {
+      setEnvoiPhoto(false);
+    }
+  };
+
+  const retirerPhoto = async () => {
+    if (!window.confirm("Retirer ta photo de profil ?")) return;
+    try {
+      await axios.delete(`${API_URL}/compte/me/photo`, avecToken());
+      setPhoto(null);
+      setMessagePhoto({ erreur: false, texte: "Photo retirée." });
+    } catch (err: unknown) {
+      setMessagePhoto({ erreur: true, texte: messageApi(err) || "Erreur lors du retrait de la photo" });
+    }
+  };
+
   // Champ invalide relié à son message d'erreur (et à son aide éventuelle)
   const etat = (champ: string, aide?: string) => ({
     "aria-invalid": !!erreurs[champ],
@@ -74,7 +120,21 @@ function ModifierCompte() {
     <main className="connexion modifier-compte">
       {/* Aperçu en direct, comme sur la page Mon compte */}
       <section className="connexion__gauche profil__gauche" aria-label="Aperçu du profil">
-        <Avatar className="profil__avatar" pseudo={pseudo} />
+        <Avatar className="profil__avatar" pseudo={pseudo} photo={photo} />
+        <div className="photo-profil">
+          <label className={`pill photo-profil__choisir ${envoiPhoto ? "photo-profil__choisir--envoi" : ""}`}>
+            {envoiPhoto ? "Envoi…" : photo ? "Changer la photo" : "Ajouter une photo"}
+            <input type="file" className="sr-only" accept={FORMATS_PHOTO.join(",")} onChange={changerPhoto}
+              disabled={envoiPhoto} aria-describedby="aide-photo" />
+          </label>
+          {photo && <button type="button" className="pill" onClick={retirerPhoto}>Retirer</button>}
+        </div>
+        <p id="aide-photo" className="photo-profil__aide">JPG, PNG ou WebP, 5 Mo maximum</p>
+        {messagePhoto && (
+          <p role={messagePhoto.erreur ? "alert" : "status"} className={`photo-profil__message ${messagePhoto.erreur ? "photo-profil__message--erreur" : ""}`}>
+            {messagePhoto.texte}
+          </p>
+        )}
         <p className="connexion__slogan">{pseudo.trim() || "Ton pseudo"}</p>
         <p className="profil__mail">{mailcompte}</p>
       </section>

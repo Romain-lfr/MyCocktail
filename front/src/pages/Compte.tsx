@@ -14,6 +14,7 @@ interface CompteInfo {
   dateinscription: string;
   datenaissance: string;
   role: string;
+  photo?: string | null;
 }
 
 const libelleRole: Record<string, string> = {
@@ -65,7 +66,7 @@ function Profil() {
       <main className="profil">
         <section className="profil__gauche" aria-label="Aperçu du compte">
           <p className="surtitre profil__surtitre">Mon compte</p>
-          <Avatar className="profil__avatar" pseudo={compte.pseudo} />
+          <Avatar className="profil__avatar" pseudo={compte.pseudo} photo={compte.photo} />
           <h1>{compte.pseudo}</h1>
           <p className="profil__mail">{compte.mailcompte}</p>
           <span className="profil__role">{libelleRole[compte.role] ?? compte.role}</span>

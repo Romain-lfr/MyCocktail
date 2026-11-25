@@ -833,3 +833,25 @@ h1, h2 { text-wrap: balance; }
   .apropos-membres img { width: 64px; height: 64px; }
   .apropos-membres__nom { font-size: 24px; }
 }
+
+
+/* ============ Photo de profil (Modifier mon profil, volet mangue) ============ */
+.photo-profil { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; }
+.profil__gauche .pill { border-color: var(--encre); color: var(--encre); }
+.profil__gauche .pill:hover { background: rgba(18, 58, 58, .1); }
+.photo-profil__choisir { cursor: pointer; }
+.photo-profil__choisir:focus-within { outline: 3px solid var(--encre); outline-offset: 2px; }
+.photo-profil__choisir--envoi { opacity: .6; cursor: progress; }
+.photo-profil__aide { margin: 8px 0 0; font-size: 13px; opacity: .75; }
+.photo-profil__message { margin: 8px 0 0; font-size: 14px; font-weight: 600; }
+.photo-profil__message--erreur { padding: 6px 12px; border-radius: 12px; background: var(--paprika); color: var(--sable); }
+
+@media (max-width: 800px) {
+  /* Volet compact : avatar à gauche, pseudo et e-mail à droite, réglages de la photo dessous */
+  .modifier-compte .connexion__gauche { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 16px; align-items: center; justify-items: start; }
+  .modifier-compte .profil__avatar { grid-column: 1; grid-row: 1 / span 2; }
+  .modifier-compte .connexion__slogan { grid-column: 2; grid-row: 1; align-self: end; }
+  .modifier-compte .connexion__gauche .profil__mail { grid-column: 2; grid-row: 2; align-self: start; }
+  .modifier-compte .photo-profil, .modifier-compte .photo-profil__aide, .modifier-compte .photo-profil__message { grid-column: 1 / -1; justify-content: flex-start; }
+  .modifier-compte .photo-profil { margin-top: 12px; }
+}

@@ -117,7 +117,7 @@ describe('CompteService', () => {
 
   describe('getMonCompte', () => {
     it('ne renvoie jamais le mot de passe', async () => {
-      prisma.compte.findUnique.mockResolvedValue({});
+      prisma.compte.findUnique.mockResolvedValue({ image: [] });
       await service.getMonCompte('CPT-00001');
       const select = prisma.compte.findUnique.mock.calls[0][0].select;
       expect(select).not.toHaveProperty('mdpcompte');
@@ -125,7 +125,39 @@ describe('CompteService', () => {
         idcompte: true,
         pseudo: true,
         mailcompte: true,
+        numtel: true,
       });
+    });
+
+    it('renvoie la photo de profil à plat (photo), sans le tableau image', async () => {
+      prisma.compte.findUnique.mockResolvedValue({
+        idcompte: 'CPT-00001',
+        pseudo: 'romain',
+        image: [{ urlimage: '/public/images/1.webp' }],
+      });
+      await expect(service.getMonCompte('CPT-00001')).resolves.toEqual({
+        idcompte: 'CPT-00001',
+        pseudo: 'romain',
+        photo: '/public/images/1.webp',
+      });
+      expect(prisma.compte.findUnique.mock.calls[0][0].select.image).toEqual({
+        where: { typeimage: 'profil' },
+        select: { urlimage: true },
+        take: 1,
+      });
+    });
+
+    it('photo null sans photo de profil, null si le compte n’existe pas', async () => {
+      prisma.compte.findUnique.mockResolvedValueOnce({
+        idcompte: 'CPT-00001',
+        image: [],
+      });
+      await expect(service.getMonCompte('CPT-00001')).resolves.toEqual({
+        idcompte: 'CPT-00001',
+        photo: null,
+      });
+      prisma.compte.findUnique.mockResolvedValueOnce(null);
+      await expect(service.getMonCompte('CPT-00099')).resolves.toBeNull();
     });
   });
 
@@ -234,7 +266,31 @@ describe('CompteService', () => {
         idcompte: true,
         pseudo: true,
         dateinscription: true,
+        image: {
+          where: { typeimage: 'profil' },
+          select: { urlimage: true },
+          take: 1,
+        },
       });
+    });
+
+    it('renvoie la photo de profil de chaque compte (ou null)', async () => {
+      prisma.compte.findMany.mockResolvedValue([
+        {
+          idcompte: 'CPT-00001',
+          pseudo: 'romain',
+          image: [{ urlimage: '/public/images/1.webp' }],
+        },
+        { idcompte: 'CPT-00002', pseudo: 'romane', image: [] },
+      ]);
+      await expect(service.rechercherComptes('rom')).resolves.toEqual([
+        {
+          idcompte: 'CPT-00001',
+          pseudo: 'romain',
+          photo: '/public/images/1.webp',
+        },
+        { idcompte: 'CPT-00002', pseudo: 'romane', photo: null },
+      ]);
     });
   });
 

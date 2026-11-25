@@ -13,6 +13,9 @@ function repondre({ cocktails = [] as unknown[], comptes = [] as unknown[], erre
   });
 }
 
+/** Photo de profil affichée (img décorative : alt vide, donc pas de rôle « img ») */
+const photo = (classe: string) => waitFor(() => { const img = document.querySelector(`img.${classe}`); expect(img).not.toBeNull(); return img as HTMLElement; });
+
 describe('Recherche', () => {
   it('ne fait aucune requête sans terme', () => {
     rendre(<Recherche />, { route: '/recherche' });
@@ -59,6 +62,15 @@ describe('Recherche', () => {
     expect(screen.getByRole('heading', { name: 'Résultats pour « moj »' })).toBeInTheDocument();
     expect(screen.getByText('1 cocktail · 1 compte')).toBeInTheDocument();
     expect(screen.getByRole('img')).toHaveAttribute('src', '/api/public/images/1.webp');
+  });
+
+  it('affiche la photo de profil des comptes trouvés', async () => {
+    repondre({
+      cocktails: [],
+      comptes: [{ idcompte: 'CPT-00002', pseudo: 'mojitoLover', dateinscription: '2024-01-15T00:00:00.000Z', photo: '/public/images/p.webp' }],
+    });
+    rendre(<Recherche />, { route: '/recherche?q=moj' });
+    expect(await photo('compte-trouve__avatar')).toHaveAttribute('src', '/api/public/images/p.webp');
   });
 
   it('cliquer sur un cocktail ouvre sa fiche', async () => {

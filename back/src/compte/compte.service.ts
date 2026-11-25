@@ -3,22 +3,40 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UpdateCompteDto } from './dto/update-compte.dto';
 import { codePrisma } from '../commun/erreurs';
 
+// Photo de profil d'un compte (au plus une, typeimage « profil »)
+const PHOTO = {
+  where: { typeimage: 'profil' as const },
+  select: { urlimage: true },
+  take: 1,
+};
+
+// { …, image: [{ urlimage }] } → { …, photo: urlimage | null }
+function avecPhoto<T extends { image: { urlimage: string }[] }>({
+  image,
+  ...compte
+}: T) {
+  return { ...compte, photo: image[0]?.urlimage ?? null };
+}
+
 @Injectable()
 export class CompteService {
   constructor(private prisma: PrismaService) {}
 
   async getMonCompte(idcompte: string) {
-    return this.prisma.compte.findUnique({
+    const compte = await this.prisma.compte.findUnique({
       where: { idcompte },
       select: {
         idcompte: true,
         pseudo: true,
         mailcompte: true,
+        numtel: true,
         dateinscription: true,
         datenaissance: true,
         role: true,
+        image: PHOTO,
       },
     });
+    return compte && avecPhoto(compte);
   }
 
   async getMesCocktails(idcompte: string) {
@@ -78,7 +96,7 @@ export class CompteService {
   }
 
   async rechercherComptes(recherche: string) {
-    return this.prisma.compte.findMany({
+    const comptes = await this.prisma.compte.findMany({
       where: {
         pseudo: { contains: recherche, mode: 'insensitive' },
       },
@@ -86,8 +104,10 @@ export class CompteService {
         idcompte: true,
         pseudo: true,
         dateinscription: true,
+        image: PHOTO,
       },
     });
+    return comptes.map(avecPhoto);
   }
 
   async modifierCompte(idcompte: string, data: UpdateCompteDto) {

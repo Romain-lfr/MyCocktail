@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import { screen, within, waitFor } from '@testing-library/react';
 import Compte from './Compte';
 import { api, connecter, emplacement, rendre } from '../test/utils';
 
@@ -12,6 +12,9 @@ const compte = {
   datenaissance: '2000-05-12T00:00:00.000Z',
   role: 'moderateur',
 };
+
+/** Photo de profil affichée (img décorative : alt vide, donc pas de rôle « img ») */
+const photo = (classe: string) => waitFor(() => { const img = document.querySelector(`img.${classe}`); expect(img).not.toBeNull(); return img as HTMLElement; });
 
 describe('Compte (profil)', () => {
   it('renvoie vers /login sans token', () => {
@@ -30,6 +33,13 @@ describe('Compte (profil)', () => {
     expect(screen.getByText('0600000000')).toBeInTheDocument();
     expect(screen.getByText('12/05/2000')).toBeInTheDocument();
     expect(screen.getByText('15/01/2024')).toBeInTheDocument();
+  });
+
+  it('affiche la photo de profil quand il y en a une', async () => {
+    connecter();
+    api.get.mockResolvedValue({ data: { ...compte, photo: '/public/images/moi.webp' } });
+    rendre(<Compte />, { route: '/compte' });
+    expect(await photo('profil__avatar')).toHaveAttribute('src', '/api/public/images/moi.webp');
   });
 
   it('n’affiche pas la ligne téléphone sans numéro et garde un rôle inconnu tel quel', async () => {
